@@ -1,4 +1,4 @@
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system filesystem unit_test_framework REQUIRED)
 
 include_directories(${TKOM2_SOURCE_DIR}/include
 					${Boost_INCLUDE_DIRS})
@@ -13,4 +13,6 @@ target_link_libraries(Test
 		Lexer
 		Lexer_tests
 		${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+		${Boost_FILESYSTEM_LIBRARY}
+		${Boost_SYSTEM_LIBRARY}
 		)

@@ -6,4 +6,6 @@ target_link_libraries(lexer_tests
         Lexer
         Lexer_tests
         ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+        ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
         )
