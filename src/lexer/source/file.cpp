@@ -8,7 +8,7 @@ Lexer::Source::File::File(std::string file_path) {
     _file.open(file_path);
     if(_file.bad()) {
         // todo custom error
-        throw std::runtime_error("Lexer could not open the file");
+        throw std::runtime_error("lexer could not open the file");
     }
 
     next_char();
