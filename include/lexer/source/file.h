@@ -15,7 +15,7 @@ namespace Lexer::Source {
     class File: public Base {
     public:
         // Opens file under file_path and calls next_char.
-        File(std::string file_path);
+        explicit File(std::string file_path);
         // Calls close_file.
         ~File();
 

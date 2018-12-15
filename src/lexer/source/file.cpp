@@ -28,18 +28,21 @@ const char Lexer::Source::File::curr_char() {
 }
 
 const char Lexer::Source::File::next_char() {
-    // todo eof handling
     if(_next_char != '\0') {
         _curr_char = std::exchange(_next_char, '\0');
     } else {
         _file >> std::noskipws >> _curr_char;
     }
 
-    if(_curr_char == '\n') {
-        ++_file_line;
-        _in_line_pos = 1;
+    if(_file.eof()) {
+        _curr_char = '\0';
     } else {
-        ++_in_line_pos;
+        if (_curr_char == '\n') {
+            ++_file_line;
+            _in_line_pos = 1;
+        } else {
+            ++_in_line_pos;
+        }
     }
 
     return _curr_char;
@@ -47,9 +50,11 @@ const char Lexer::Source::File::next_char() {
 }
 
 const char Lexer::Source::File::peek() {
-    // todo eof handling
     if(_next_char == '\0') {
         _file >> std::noskipws >> _next_char;
+    }
+    if(_file.eof()) {
+        _next_char = '\0';
     }
     return _next_char;
 }

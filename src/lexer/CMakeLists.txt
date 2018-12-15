@@ -1,3 +1,3 @@
 add_library(Lexer
         source/base.cpp
-        source/file.cpp)
+        source/file.cpp source/string.cpp)

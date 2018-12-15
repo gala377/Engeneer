@@ -16,10 +16,12 @@ namespace Lexer::Source {
         virtual const char curr_char() = 0;
         // Proceeds in the source one character at a time.
         // Modifies next character to read position.
+        // Returns \0 on eof. todo should ot be like this?
         virtual const char next_char() = 0;
 
         // Returns character after the current one.
         // Doesn't change next character read position and line.
+        // Returns \0 on eof. todo should it be like this?
         virtual const char peek() = 0;
 
         // Line of the next character to read from the source.
