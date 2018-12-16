@@ -5,6 +5,8 @@
 #ifndef TKOM2_TOKEN_H
 #define TKOM2_TOKEN_H
 
+#include <string>
+
 namespace Lexer {
 
     struct Token {
@@ -66,12 +68,20 @@ namespace Lexer {
             DoubleMinus,
             DoublePlus,
 
+            // ConstExpr
+            Integer,
+            Float,
+            String,
+            Char,
+
             // Other
             NewLine=300,
             Space,
             End,
         };
+
         Id id;
+        std::string symbol;
     };
 
 }
