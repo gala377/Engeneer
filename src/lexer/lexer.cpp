@@ -153,6 +153,9 @@ std::string Lexer::Lexer::_assemble_numeric(char current) {
     std::string symbol;
     while(is_digit(current)) {
         symbol += std::exchange(current, _source.next_char());
+        if(is_alpha(current)) {
+            throw std::runtime_error("Expected numeric value got " + std::string{current});
+        }
     }
     if(symbol.empty()) {
         throw std::runtime_error("Could not assemble const expr!");
