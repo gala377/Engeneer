@@ -1,2 +1,2 @@
 add_library(Visitors
-        log.cpp)
+        log.cpp base.cpp)

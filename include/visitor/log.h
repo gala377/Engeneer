@@ -7,12 +7,12 @@
 
 #include <sstream>
 
-#include <parser/visitor.h>
+#include <visitor/base.h>
 #include <parser/nodes/concrete.h>
 
 namespace Visitor {
 
-    class Log: public Parser::Visitor {
+    class Log: public Base {
     public:
         virtual void visit(const Parser::Nodes::Base& node) override;
         virtual void visit(const Parser::Nodes::Program& node) override;
