@@ -3,3 +3,7 @@
 //
 
 #include <parser/ast.h>
+
+void Parser::AST::visit(Parser::Visitor &v) {
+    v.visit(_root);
+}

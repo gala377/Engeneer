@@ -5,14 +5,14 @@
 #ifndef TKOM2_CONCRETE_H
 #define TKOM2_CONCRETE_H
 
-#endif //TKOM2_CONCRETE_H
-
 #include <parser/nodes/base.h>
 
-namespace parser::nodes {
+namespace Parser::Nodes {
 
     class Program: public Base {
 
     };
 
 }
+
+#endif //TKOM2_CONCRETE_H

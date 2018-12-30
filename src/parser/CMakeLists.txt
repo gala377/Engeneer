@@ -1,5 +1,10 @@
 add_library(Parser
         nodes/base.cpp
+        nodes/concrete.cpp
         ast.cpp
         parser.cpp
-        visitor.cpp)
+        visitor.cpp
+        )
+target_link_libraries(Parser
+        Lexer
+        )

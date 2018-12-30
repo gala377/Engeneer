@@ -17,7 +17,6 @@ namespace Parser {
 
         AST parse();
     private:
-        Lexer::Source::Base& _source;
         Lexer::Lexer _lexer;
     };
 

@@ -8,9 +8,12 @@ add_executable(Test test.cpp)
 
 
 add_subdirectory(lexer)
+add_subdirectory(parser)
 
 target_link_libraries(Test
 		Lexer
+		Parser
+		Visitors
 		${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 		${Boost_SYSTEM_LIBRARY}
 		stdc++fs
