@@ -10,10 +10,10 @@
 
 int main() {
     Lexer::Source::String s("");
-    Visitor::Log v;
+    Visitor::Stringify v;
 
     Parser::Parser p(s);
-    p.parse().visit(v);
+    p.parse().accept(v);
     std::cout << v.repr();
     return 0;
 }

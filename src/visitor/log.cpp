@@ -4,14 +4,25 @@
 
 #include <visitor/log.h>
 
-void Visitor::Log::visit(const Parser::Nodes::Base& node) {
-    _stream << "Unknown node\n";
+void Visitor::Stringify::visit(const Parser::Nodes::Base& node) {
+    stringify(node, "Unknown node");
 }
 
-void Visitor::Log::visit(const Parser::Nodes::Program& node) {
-    _stream << "Program\n";
+void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
+    stringify(node, "Program");
 }
 
-std::string Visitor::Log::repr() {
+std::string Visitor::Stringify::repr() {
     return _stream.str();
+}
+
+void Visitor::Stringify::stringify(const Parser::Nodes::Base &node, std::string &&as) {
+    add_margin(node.depth());
+    _stream << as << "\n";
+}
+
+void Visitor::Stringify::add_margin(std::uint32_t depth) {
+    for(int i = 0; i < depth; ++i) {
+        _stream << "\t";
+    }
 }

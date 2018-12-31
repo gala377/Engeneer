@@ -10,10 +10,10 @@ BOOST_AUTO_TEST_SUITE()
 
 BOOST_AUTO_TEST_CASE(empty_source_initializes_to_empty_program) {
     Lexer::Source::String s{""};
-    Visitor::Log v{};
+    Visitor::Stringify v{};
 
     Parser::Parser p{s};
-    p.parse().visit(v);
+        p.parse().accept(v);
 
     BOOST_CHECK_EQUAL("Program\n", v.repr());
 

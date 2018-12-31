@@ -12,7 +12,7 @@
 
 namespace Visitor {
 
-    class Log: public Base {
+    class Stringify: public Base {
     public:
         virtual void visit(const Parser::Nodes::Base& node) override;
         virtual void visit(const Parser::Nodes::Program& node) override;
@@ -21,6 +21,9 @@ namespace Visitor {
 
     private:
         std::stringstream _stream;
+
+        void add_margin(std::uint32_t depth);
+        void stringify(const Parser::Nodes::Base& node, std::string&& as);
     };
 
 }

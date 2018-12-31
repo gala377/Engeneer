@@ -18,17 +18,24 @@ namespace Parser::Nodes {
 
     class Base {
     public:
+        Base() = default;
+        explicit Base(std::uint32_t depth);
+
         using children_t = std::vector<std::unique_ptr<Base>>;
 
         virtual void add_child(Base* child);
         virtual void add_child(std::unique_ptr<Base>&& child);
 
         virtual const children_t& children() const;
+        virtual const std::uint32_t& depth() const;
+
 
         // todo this kinda works, but i doubt it will in the long run
-        virtual void visit(Parser::Visitor& v) const;
+        virtual void accept(Parser::Visitor &v) const;
     protected:
         children_t _children;
+        std::uint32_t _depth{0};
+
     };
 
 }

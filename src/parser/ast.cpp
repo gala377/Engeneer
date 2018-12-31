@@ -4,6 +4,6 @@
 
 #include <parser/ast.h>
 
-void Parser::AST::visit(Parser::Visitor &v) {
+void Parser::AST::accept(Parser::Visitor &v) {
     v.visit(_root);
 }
