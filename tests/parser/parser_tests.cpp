@@ -10,6 +10,15 @@
 
 BOOST_AUTO_TEST_SUITE()
 
+void check_ast_equal(const std::string& test_string, const std::string& expected) {
+    Lexer::Source::String s{test_string};
+    Visitor::Stringify v;
+    Parser::Parser p{s};
+    auto ast = p.parse();
+    ast.accept(v);
+    BOOST_CHECK_EQUAL(v.repr(), expected);
+}
+
 BOOST_AUTO_TEST_CASE(empty_source_initializes_to_empty_program) {
     Lexer::Source::String s{""};
     Visitor::Stringify v;
@@ -30,12 +39,7 @@ let test int;
             R"(Program
 --------VarDecl: int test
 )"};
-    Lexer::Source::String s{test_string};
-    Visitor::Stringify v;
-    Parser::Parser p{s};
-    auto ast = p.parse();
-    ast.accept(v);
-    BOOST_CHECK_EQUAL(v.repr(), expected);
+    check_ast_equal(test_string, expected);
 }
 
 BOOST_AUTO_TEST_CASE(top_level_many_variable_decl_without_initialization) {
@@ -51,13 +55,44 @@ let test3 UnknownIdentifier;
 --------VarDecl: string test2
 --------VarDecl: UnknownIdentifier test3
 )"};
-
-    Lexer::Source::String s{test_string};
-    Visitor::Stringify v;
-    Parser::Parser p{s};
-    auto ast = p.parse();
-    ast.accept(v);
-    BOOST_CHECK_EQUAL(v.repr(), expected);
+    check_ast_equal(test_string, expected);
 }
+
+BOOST_AUTO_TEST_CASE(top_level_function_declaration_without_arguments_and_body) {
+        std::string test_string{
+                R"(
+int test();
+string test2 ( ) ;
+UnknownIdentifier test3 ();
+)"};
+        std::string expected{
+                R"(Program
+--------FuncDecl: int test()
+--------FuncDecl: string test2()
+--------FuncDecl: UnknownIdentifier test3()
+)"};
+        check_ast_equal(test_string, expected);
+}
+
+BOOST_AUTO_TEST_CASE(top_level_function_declaration_without_arguments_and_body_with_empty_variable_declarations) {
+        std::string test_string{
+                R"(
+int test();
+let var1 int; let var2 string;
+string test2 ( ) ;
+UnknownIdentifier test3 ();
+let var_4 char;
+)"};
+        std::string expected{
+                R"(Program
+--------FuncDecl: int test()
+--------VarDecl: int var1
+--------VarDecl: string var2
+--------FuncDecl: string test2()
+--------FuncDecl: UnknownIdentifier test3()
+--------VarDecl: char var_4
+)"};
+        check_ast_equal(test_string, expected);
+    }
 
 BOOST_AUTO_TEST_SUITE_END()

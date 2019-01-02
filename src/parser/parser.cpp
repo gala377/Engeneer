@@ -27,37 +27,74 @@ Parser::AST Parser::Parser::parse() {
     return std::move(ast);
 }
 
-std::unique_ptr<Parser::Nodes::Base> Parser::Parser::parse_top_level_decl() {
-    return parser_var_decl();
+std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_decl() {
+    if(auto res = parse_var_decl(); res != nullptr) {
+        return res;
+    }
+    if(auto res = parse_func_decl(); res != nullptr) {
+        return res;
+    }
+    return {nullptr};
 }
 
-std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parser_var_decl() {
+std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     if(!parse_token(Lexer::Token::Id::Let)) {
         return {nullptr};
     }
-    auto parse_res = parse_token(Lexer::Token::Id::Identifier);
-    if(!parse_res) {
+    auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
+    if(!identifier_res) {
         throw std::runtime_error("Expected variable name after let");
     }
-    Lexer::Token var = parse_res.value();
+    Lexer::Token var = identifier_res.value();
 
-    parse_res = parse_token(Lexer::Token::Id::Identifier);
-    if(!parse_res) {
+    auto type_res = parse_type();
+    if(!identifier_res) {
         throw std::runtime_error("Expected type after variable name");
     }
-    Lexer::Token type = parse_res.value();
+    auto type_symbol = type_res.value();
+
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         throw std::runtime_error("Missing semicolon");
     }
-    return std::make_unique<Nodes::VariableDecl>(
-        var.symbol,
-        type.symbol);
+
+    return std::make_unique<Nodes::VariableDecl>(var.symbol, type_symbol);
 }
 
-std::unique_ptr<Parser::Nodes::Base> Parser::Parser::parse_end_of_file() {
+std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
+    // todo identifier list
+    // todo rewrite as combining functions
+    auto type_res = parse_type();
+    if(!type_res) {
+        return {nullptr};
+    }
+    auto type_symbol = type_res.value();
+
+    auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
+    if(!identifier_res) {
+        throw std::runtime_error("Expected function identifier");
+    }
+    auto identifier = identifier_res.value().symbol;
+    if(!parse_token(Lexer::Token::Id::LeftParenthesis)) {
+        throw std::runtime_error("( expected");
+    }
+    // todo list but lets make it a functional parser of sorts
+    if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
+        throw std::runtime_error(") expected");
+    }
+    if(!parse_token(Lexer::Token::Id::Semicolon)) {
+        throw std::runtime_error("Missing semicolon");
+    };
+
+    return std::make_unique<Nodes::FunctionDecl>(
+            identifier,
+            type_symbol,
+            std::vector<Nodes::VariableDecl>{});
+}
+
+std::unique_ptr<Parser::Nodes::End> Parser::Parser::parse_end_of_file() {
     auto tok = _lexer.curr_token();
     if(tok.id != Lexer::Token::Id::End) {
-        return std::unique_ptr<Nodes::Base>(nullptr);
+        return {nullptr};
     }
     return std::make_unique<Nodes::End>();
 }
@@ -69,4 +106,9 @@ std::optional<Lexer::Token> Parser::Parser::parse_token(Lexer::Token::Id id) {
     }
     _lexer.next_token();
     return {tok};
+}
+
+std::optional<std::string> Parser::Parser::parse_type() {
+    auto res = parse_token(Lexer::Token::Id::Identifier);
+    return res ? std::optional{res.value().symbol} : std::nullopt;
 }

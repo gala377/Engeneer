@@ -12,9 +12,11 @@ namespace Visitor {
 
     class Base: public Parser::Visitor {
     public:
-        void visit(const Parser::Nodes::Base& node) override = 0;
+        void visit(const Parser::Nodes::Base &node) override = 0;
+        void visit(const Parser::Nodes::BaseParent& node) override;
         void visit(const Parser::Nodes::Program& node) override;
         void visit(const Parser::Nodes::VariableDecl& node) override;
+        void visit(const Parser::Nodes::FunctionDecl& node) override;
     };
 
 }

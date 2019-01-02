@@ -15,7 +15,7 @@ namespace Parser {
     public:
         AST() = default;
 
-        Nodes::Base& root();  
+        Nodes::BaseParent& root();
 
         void accept(Visitor &v);
     private:

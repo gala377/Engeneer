@@ -10,6 +10,6 @@ void Parser::AST::accept(Parser::Visitor &v) {
     _root.accept(v);
 }
 
-Parser::Nodes::Base& Parser::AST::root() {
+Parser::Nodes::BaseParent& Parser::AST::root() {
     return _root; 
 }

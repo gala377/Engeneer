@@ -21,24 +21,32 @@ namespace Parser::Nodes {
         Base() = default;
         explicit Base(std::uint32_t depth);
 
-        using children_t = std::vector<std::unique_ptr<Base>>;
-
-        virtual void add_child(Base* child);
-        virtual void add_child(std::unique_ptr<Base>&& child);
-
-        virtual const children_t& children() const;
         virtual const std::uint32_t& depth() const;
-
+        virtual void set_depth(std::uint32_t depth);
 
         // todo this kinda works, but i doubt it will in the long run
         virtual void accept(Parser::Visitor &v) const;
-    protected:
-        children_t _children;
-        std::uint32_t _depth{0};
 
-        virtual void visit_children(Parser::Visitor &v) const;
+    protected:
+        std::uint32_t _depth{0};
     };
 
+    class BaseParent: public Base {
+    public:
+        using Base::Base;
+
+        using children_t = std::vector<std::unique_ptr<Base>>;
+
+        virtual void add_child(Base *child);
+        virtual void add_child(std::unique_ptr<Base> &&child);
+        virtual const children_t& children() const;
+
+        // todo this kinda works, but i doubt it will in the long run
+        void accept(Parser::Visitor &v) const override;
+    protected:
+        children_t _children;
+        virtual void visit_children(Parser::Visitor &v) const;
+    };
 }
 
 #endif //TKOM2_BASE_H
