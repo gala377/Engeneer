@@ -5,8 +5,12 @@
 #ifndef TKOM2_PARSER_H
 #define TKOM2_PARSER_H
 
+#include <memory>
+
 #include <lexer/lexer.h>
 #include <parser/ast.h>
+#include <parser/nodes/base.h>
+#include <parser/nodes/concrete.h>
 
 namespace Parser {
 
@@ -18,6 +22,8 @@ namespace Parser {
         AST parse();
     private:
         Lexer::Lexer _lexer;
+
+        std::unique_ptr<Nodes::Base> parse_top_level_decl();
     };
 
 }

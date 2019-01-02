@@ -7,3 +7,7 @@
 void Parser::AST::accept(Parser::Visitor &v) {
     v.visit(_root);
 }
+
+const Nodes::Base& Parser::AST::root() const {
+    return _root; 
+}

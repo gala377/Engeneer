@@ -31,11 +31,11 @@ namespace Lexer::Source {
     private:
         std::ifstream _file;
 
-        std::uint32_t _file_line = 1;
-        std::uint32_t  _in_line_pos = 1;
+        std::uint32_t _file_line{1};
+        std::uint32_t  _in_line_pos{1};
 
-        char _curr_char = '\0';
-        char _next_char = '\0';
+        char _curr_char{'\0'};
+        char _next_char{'\0'};
     };
 }
 

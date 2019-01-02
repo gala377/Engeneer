@@ -35,7 +35,6 @@ namespace Parser::Nodes {
     protected:
         children_t _children;
         std::uint32_t _depth{0};
-
     };
 
 }
