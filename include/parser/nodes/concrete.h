@@ -13,6 +13,8 @@ namespace Parser::Nodes {
 
     class Program: public Base {};
 
+    class End: public Base {};
+
     class TopLevelDecl: public Base {};
 
     class VarGlobalDecl: public TopLevelDecl {
@@ -30,7 +32,7 @@ namespace Parser::Nodes {
         };
         std::string symbol; 
         Type type; 
-        Types::Basic::type value; 
+        Types::basic_t value; 
     };
 }
 

@@ -1,0 +1,95 @@
+identifier = [_A-z][_A-z0-9]*
+integer
+float
+string_literal
+
+should I add jump and then compile whiles and fors to if jump?
+
+and so on...
+
+
+Program = { top_level_decl } ;
+
+top_level_decl = import_decl | struct_decl | func_decl | mem_decl | global_var_decl ;
+
+# import_decl -> na potem
+# struct_decl -> na potem, ale ogólnie bez słowa struct, tylko identifier
+# mem_decl -> na potem
+# global_var_decl -> na potem 
+
+func_decl = type, identifier, (, arg_list, ), code_block;
+
+type = identifier | int | double | string | char | byte | void ... 
+identifier -> wiemy
+
+arg_list = [func_argument], { "," , func_argument };
+func_argument = type, identifier ;
+
+code_block = "{", { statement }, "}" ;
+
+statement = var_decl, assignment, if_stmt, loop_stmt, return_stmt, code_block ;
+# and what more ? ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+var_decl = "let", identifier, type, [ assignment_lhs ] ;
+
+assignment = identifier, assignment_lhs ;
+assignment_lhs = "=", expression ;
+
+if_stmt = "if", condition, code_block, [ else_stmt ] ;
+else_stmt = "else", if_stmt | code_block ;
+
+loop_stmt = while_stmt | for_stmt ;
+while_stmt = "while", condition, code_clock ;
+for_stmt = "for", [ init_stmt_list ], ";", [for_cond_list], ";", [for_step_list], code_block ;
+^^^^^^^^^^^^^^^^^^^^^^ rozpisać je kiedy indziej, na razie sie nimi nie zajmujemy ^^^^^^^^^^^
+
+return_stmt = "return", expression, ;
+
+
+# expression taken from C expressions
+ 
+const_expr = conditional_expr
+conditional_expr = logical_or_expr | ( logical_or_expr, "?", expression, ":", conditional_expr );
+logical_or_expr = logical_and_expr | ( logical_or_expr, "||", logical_and_expr );
+logical_and_expr = inclusive_or_expr | ( logical_and_expr, "&&", inclusive_or_expr );
+inclusive_or_expr = exclusive_or_expr | ( inclusive_or_expr, "|", exclusive_or_expr );
+exclusive_or_expr = and_expr | ( exclusive_or_expr, "^", and_expr );
+and_expr = equality_expr  | ( and_expr, "&", equality_expr );
+equality_expr = relational_expr | (equaliy_expr, "==", relational_expr) | (equality_expr, "!=", relational_expr);
+relational_expr = shift_expr | (relational_expr, "<", shit_expr) | (relational_expr, ">", shit_expr) |  (relational_expr, "<=", shit_expr) | (relational_expr, ">=", shit_expr);
+shift_expr = additive_expr | (shift_expr, "<<", additive_expr) | (shift_expr, ">>", additive_expr);
+
+vVVVVVVVVVVVVVVVVVVVVVVVVVVVVv tu zaczniemy VVVVVVVVVVVVVVVVVV
+additive_expr = multiplicative_expr | (additive_expr, "+", multiplicative_expr) | (additive_expr, "-", multiplicative_expr) ;
+multiplicvative_expr = cast_expr | (multiplicative_expr, "*", cast_expr) | (multiplicative_expr, "/", cast_expr) | (multiplicative_expr, "%", cast_expr) ;
+cast_expr = unar_expr | ( "(", type, ")", cast_expression );
+unary_expr = postfix_expr | ("++", unary_expression) | ("--", unary_expression) | (unary_op, cast_expr) # | sizof unary_expr | sizeof type
+unary_op = & | * | + | - | ~ | !
+
+# zmeczylo mnie pisane tego w rozsadnym ebnefie, przepisuje jak leci i zrozumiem potem
+postfix_expr = primary_expr |
+				postfix_expr [ expr ] |
+				postfix_expr ( {assignment_expr} ) |
+				postfix_espr . identifier |
+				postfix_expr -> identifier |
+				postfix_expr ++ |
+				postfix_expr -- |
+
+primary_expr = identifier | constant | string | ( expr )	
+constant = int_const | char_const | float_const | enum_const
+
+
+
+expression  = conditional_expr 				  
+
+
+
+
+
+
+
+
+
+ 
+
+

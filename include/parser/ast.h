@@ -5,8 +5,8 @@
 #ifndef TKOM2_AST_H
 #define TKOM2_AST_H
 
-#include <parser/nodes/base.h>
 #include <parser/nodes/concrete.h>
+#include <parser/nodes/base.h>
 #include <parser/visitor.h>
 
 namespace Parser {
@@ -15,7 +15,7 @@ namespace Parser {
     public:
         AST() = default;
 
-        const Nodes::Base& root() const;  
+        Nodes::Base& root();  
 
         void accept(Visitor &v);
     private:
