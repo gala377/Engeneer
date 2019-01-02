@@ -2,6 +2,8 @@
 // Created by igor on 30.12.18.
 //
 
+#include <iostream>
+
 #include <parser/nodes/base.h>
 
 Parser::Nodes::Base::Base(std::uint32_t depth): _depth(depth) {}
@@ -24,7 +26,9 @@ const std::uint32_t &Parser::Nodes::Base::depth() const {
 }
 
 void Parser::Nodes::Base::accept(Parser::Visitor &v) const {
+    std::cout << "Root: Visiting myself\n";
     v.visit(*this);
+    std::cout << "Root: visiting children\n";
     for(const auto& ch: _children) {
         v.visit(*ch);
     }

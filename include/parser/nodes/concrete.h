@@ -11,7 +11,10 @@
 
 namespace Parser::Nodes {
 
-    class Program: public Base {};
+    class Program: public Base {
+    public:
+        using Base::Base;
+    };
 
     class End: public Base {};
 
