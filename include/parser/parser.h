@@ -6,6 +6,7 @@
 #define TKOM2_PARSER_H
 
 #include <memory>
+#include <optional>
 
 #include <lexer/lexer.h>
 
@@ -24,9 +25,15 @@ namespace Parser {
     private:
         Lexer::Lexer _lexer;
 
+        // Syntax parsers
         std::unique_ptr<Nodes::Base> parse_top_level_decl();
         // todo rename
         std::unique_ptr<Nodes::Base> parse_end_of_file();
+
+        std::unique_ptr<Nodes::VariableDecl> parser_var_decl();
+
+        // Token parsers
+        std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
     };
 
 }

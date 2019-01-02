@@ -26,11 +26,14 @@ const std::uint32_t &Parser::Nodes::Base::depth() const {
 }
 
 void Parser::Nodes::Base::accept(Parser::Visitor &v) const {
-    std::cout << "Root: Visiting myself\n";
+
     v.visit(*this);
-    std::cout << "Root: visiting children\n";
-    for(const auto& ch: _children) {
-        v.visit(*ch);
-    }
+
+    visit_children(v);
 }
 
+void Parser::Nodes::Base::visit_children(Parser::Visitor &v) const {
+    for(const auto& ch: _children) {
+        ch->accept(v);
+    }
+}

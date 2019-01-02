@@ -12,17 +12,52 @@ BOOST_AUTO_TEST_SUITE()
 
 BOOST_AUTO_TEST_CASE(empty_source_initializes_to_empty_program) {
     Lexer::Source::String s{""};
-    Visitor::Stringify v{};
-
-    std::cout << "Initializing parser\n";
+    Visitor::Stringify v;
     Parser::Parser p{s};
-    std::cout << "Parsing\n";
     auto ast = p.parse();
-    std::cout << "Running visitor\n";
     ast.accept(v);
-    std::cout << "Aaaand done\n";
     BOOST_CHECK_EQUAL("Program\n", v.repr());
+}
 
+// todo failing variable decl
+
+BOOST_AUTO_TEST_CASE(top_level_variable_decl_without_initialization) {
+    std::string test_string{
+            R"(
+let test int;
+)"};
+    std::string expected{
+            R"(Program
+--------VarDecl: int test
+)"};
+    Lexer::Source::String s{test_string};
+    Visitor::Stringify v;
+    Parser::Parser p{s};
+    auto ast = p.parse();
+    ast.accept(v);
+    BOOST_CHECK_EQUAL(v.repr(), expected);
+}
+
+BOOST_AUTO_TEST_CASE(top_level_many_variable_decl_without_initialization) {
+    std::string test_string{
+            R"(
+let test int;
+let test2 string;
+let test3 UnknownIdentifier;
+)"};
+    std::string expected{
+            R"(Program
+--------VarDecl: int test
+--------VarDecl: string test2
+--------VarDecl: UnknownIdentifier test3
+)"};
+
+    Lexer::Source::String s{test_string};
+    Visitor::Stringify v;
+    Parser::Parser p{s};
+    auto ast = p.parse();
+    ast.accept(v);
+    BOOST_CHECK_EQUAL(v.repr(), expected);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -14,8 +14,9 @@ namespace Visitor {
 
     class Stringify: public Base {
     public:
-        virtual void visit(const Parser::Nodes::Base& node) override;
-        virtual void visit(const Parser::Nodes::Program& node) override;
+        void visit(const Parser::Nodes::Base& node) override;
+        void visit(const Parser::Nodes::Program& node) override;
+        void visit(const Parser::Nodes::VariableDecl& node) override;
 
         std::string repr();
 

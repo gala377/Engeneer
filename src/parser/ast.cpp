@@ -7,9 +7,7 @@
 #include <parser/ast.h>
 
 void Parser::AST::accept(Parser::Visitor &v) {
-    std::cout << "Root accepts visitor\n";
     _root.accept(v);
-    std::cout << "Visitor is done in root\n";
 }
 
 Parser::Nodes::Base& Parser::AST::root() {

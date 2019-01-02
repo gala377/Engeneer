@@ -5,6 +5,9 @@
 #include <visitor/base.h>
 
 void Visitor::Base::visit(const Parser::Nodes::Program &node) {
-    // todo how to get Base overload to work?
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }

@@ -13,26 +13,45 @@ Parser::Parser::Parser(Lexer::Source::Base &s): _lexer(s) {}
 Parser::AST Parser::Parser::parse() {
     AST ast;
     while(true) {
-        auto curr_node = parse_top_level_decl(); 
-        std::cout << "Parsing top level decl\n";
-        if(curr_node.get() == nullptr) {
-            std::cout << "It's a nullptr\n";
+        auto curr_node = parse_top_level_decl();
+        if(curr_node == nullptr) {
             break;
         }
-        std::cout << "Adding decl to an ast child\n";
         ast.root().add_child(std::move(curr_node));
     }
-    std::cout << "Parsing end of file\n";
     auto curr_node = parse_end_of_file();
-    if(curr_node.get() == nullptr) {
-        std::cout << "It's a nullptr\n";
+    if(curr_node == nullptr) {
+
         throw std::runtime_error("End of program expected!");
     }
-    std::cout << "It is not\n";
+    return std::move(ast);
 }
 
 std::unique_ptr<Parser::Nodes::Base> Parser::Parser::parse_top_level_decl() {
-    return std::unique_ptr<Nodes::Base>(nullptr);
+    return parser_var_decl();
+}
+
+std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parser_var_decl() {
+    if(!parse_token(Lexer::Token::Id::Let)) {
+        return {nullptr};
+    }
+    auto parse_res = parse_token(Lexer::Token::Id::Identifier);
+    if(!parse_res) {
+        throw std::runtime_error("Expected variable name after let");
+    }
+    Lexer::Token var = parse_res.value();
+
+    parse_res = parse_token(Lexer::Token::Id::Identifier);
+    if(!parse_res) {
+        throw std::runtime_error("Expected type after variable name");
+    }
+    Lexer::Token type = parse_res.value();
+    if(!parse_token(Lexer::Token::Id::Semicolon)) {
+        throw std::runtime_error("Missing semicolon");
+    }
+    return std::make_unique<Nodes::VariableDecl>(
+        var.symbol,
+        type.symbol);
 }
 
 std::unique_ptr<Parser::Nodes::Base> Parser::Parser::parse_end_of_file() {
@@ -41,4 +60,13 @@ std::unique_ptr<Parser::Nodes::Base> Parser::Parser::parse_end_of_file() {
         return std::unique_ptr<Nodes::Base>(nullptr);
     }
     return std::make_unique<Nodes::End>();
+}
+
+std::optional<Lexer::Token> Parser::Parser::parse_token(Lexer::Token::Id id) {
+    auto tok = _lexer.curr_token();
+    if(tok.id != id) {
+        return {};
+    }
+    _lexer.next_token();
+    return {tok};
 }

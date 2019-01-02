@@ -14,6 +14,8 @@ namespace Parser::Nodes {
     class Program: public Base {
     public:
         using Base::Base;
+
+        void accept(Parser::Visitor &v) const override;
     };
 
     class End: public Base {};
@@ -21,7 +23,15 @@ namespace Parser::Nodes {
     class TopLevelDecl: public Base {};
 
     class VarGlobalDecl: public TopLevelDecl {
+    public:
+        void accept(Parser::Visitor &v) const override;
 
+        const std::string& symbol() const;
+        const Types::basic_t& value() const;
+
+    protected:
+        std::string _symbol;
+        Types::basic_t _value;
     };
 
     class FuncDeclaration: public TopLevelDecl {
@@ -30,12 +40,22 @@ namespace Parser::Nodes {
 
     class VariableDecl: public Base {
     public:
+        VariableDecl(const std::string& symbol, const std::string& type_symbol);
+
         enum class Type {
-            int_t, float_t, string_t, char_t, struct_t
+            int_t, bool_t, float_t, string_t, char_t, struct_t
         };
-        std::string symbol; 
-        Type type; 
-        Types::basic_t value; 
+
+        void accept(Parser::Visitor &v) const override;
+
+        const std::string& symbol() const;
+        const std::string& type_symbol() const;
+        const Type& type() const;
+
+    protected:
+        std::string _symbol;
+        std::string _type_symbol;
+        Type _type;
     };
 }
 

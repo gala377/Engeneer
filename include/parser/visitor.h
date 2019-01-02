@@ -12,12 +12,14 @@ namespace Parser {
     namespace Nodes {
         class Base;
         class Program;
+        class VariableDecl;
     }
 
     class Visitor {
     public:
         virtual void visit(const Nodes::Base& node) = 0;
         virtual void visit(const Nodes::Program& node) = 0;
+        virtual void visit(const Nodes::VariableDecl& node) = 0;
     };
 }
 

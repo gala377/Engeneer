@@ -9,7 +9,10 @@
 #include <parser/parser.h>
 
 int main() {
-    Lexer::Source::String s("");
+    Lexer::Source::String s(R"(
+let a int; let c int;
+let d int;
+)");
     Visitor::Stringify v;
 
     Parser::Parser p(s);
