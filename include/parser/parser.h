@@ -13,6 +13,8 @@
 #include <parser/ast.h>
 #include <parser/nodes/base.h>
 #include <parser/nodes/concrete.h>
+#include <parser/functions.hpp>
+
 
 namespace Parser {
 
@@ -47,6 +49,25 @@ namespace Parser {
         // parse_one_many
         // parce_once
 
+        // returns if is one of 
+        template <typename ...Args>
+        std::optional<Lexer::Token> one_of(Args... args) {
+            auto tok = _lexer.curr_token();
+            if((tok.id == args) || ...) {
+                return {tok};
+            }
+            return {};
+        }
+
+        // returns if is none of 
+        template <typename ...Args>
+        std::optional<Lexer::Token> none_of(Args... args) {
+            auto tok = _lexer.curr_token();
+            if((tok.id != args) && ...) {
+                return {tok};
+            }
+            return {};
+        }
     };
 
 }
