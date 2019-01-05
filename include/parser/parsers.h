@@ -21,15 +21,31 @@ namespace Parser {
     using tok_parse_res_t = std::optional<Lexer::Token>;
 
     // Returns parser that returns given node
-    ParserFunc Success(Nodes::Base* ret);
+    auto Success(Nodes::Base* ret) {
+        return [ret](Lexer::Lexer &l) -> parse_res_t {
+            return std::unique_ptr<Nodes::Base>(ret);
+        };
+    }
 
     // Returns parser that always fail
-    ParserFunc Fail(ParserFunc p);
+    template <typename T>
+    auto Fail(const T& p) {
+        return [](Lexer::Lexer &l) -> parse_res_t {
+            return std::unique_ptr<Nodes::Base>{nullptr};
+        };
+    };
 
     // Makes parser that succeeds if encounters a specified token
-    ParserFunc TokenParser(const Lexer::Token::Id& id);
-
-
+    auto TokenParser(const Lexer::Token::Id& id)  {
+        return [&id](Lexer::Lexer &l) -> parse_res_t {
+            auto tok = l.curr_token();
+            if (tok.id != id) {
+                return {nullptr};
+            }
+            l.next_token();
+            return std::make_unique<Nodes::BaseToken>(tok);
+        };
+    }
 
 }
 

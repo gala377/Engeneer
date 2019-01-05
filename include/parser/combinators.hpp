@@ -73,7 +73,7 @@ namespace Parser::Combinators {
             if(auto res = p(l); res) {
                 return f(res, l);
             }
-            return res;
+            return {nullptr};
         };
     }
 

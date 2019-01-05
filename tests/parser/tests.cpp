@@ -7,3 +7,4 @@
 #include <boost/test/unit_test.hpp>
 
 #include "parser_tests.cpp"
+#include "combinators_tests.cpp"
