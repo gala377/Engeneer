@@ -8,8 +8,10 @@
 #include <memory>
 #include <functional>
 
+
 #include <lexer/lexer.h>
 #include <parser/nodes/base.h>
+#include <parser/combinators.hpp>
 
 namespace Parser {
 
@@ -17,8 +19,6 @@ namespace Parser {
     using parse_res_t = std::unique_ptr<Nodes::Base>;
     using ParserFunc = std::function<parse_res_t(parse_input_t)>;
 
-    using node_parse_res_t = std::unique_ptr<Nodes::Base>;
-    using tok_parse_res_t = std::optional<Lexer::Token>;
 
     // Returns parser that returns given node
     auto Success(Nodes::Base* ret) {
@@ -33,7 +33,7 @@ namespace Parser {
         return [](Lexer::Lexer &l) -> parse_res_t {
             return std::unique_ptr<Nodes::Base>{nullptr};
         };
-    };
+    }
 
     // Makes parser that succeeds if encounters a specified token
     auto TokenParser(const Lexer::Token::Id& id)  {
@@ -47,6 +47,23 @@ namespace Parser {
         };
     }
 
+    // parses variable declaration
+    auto VarDeclParser() {
+        return [](Lexer::Lexer& l) {
+            auto res =Combinators::return_left(
+                    Combinators::combine(
+                        Combinators::return_right(
+                            TokenParser(Lexer::Token::Id::Let),
+                            TokenParser(Lexer::Token::Id::Identifier)),
+                        TokenParser(Lexer::Token::Id::Identifier),
+                        [](std::unique_ptr<Nodes::BaseToken> l, std::unique_ptr<Nodes::BaseToken> r) {
+                            return std::make_unique<Nodes::VariableDecl>(
+                                    l->get_token().symbol,
+                                    r->get_token().symbol);
+                        }),
+                    TokenParser(Lexer::Token::Id::Semicolon));
+        };
+    }
 }
 
 #endif //TKOM2_PARSERS_H
