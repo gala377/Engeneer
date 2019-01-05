@@ -52,3 +52,28 @@ void Parser::Nodes::BaseParent::visit_children(Parser::Visitor &v) const {
         ch->accept(v);
     }
 }
+
+std::unique_ptr<Parser::Nodes::Base> Parser::Nodes::BaseParent::take_child(Parser::Nodes::BaseParent::children_t::const_iterator it) {
+    auto res = std::move(_children.at(it - _children.begin()));
+    _children.erase(it);
+    return res;
+}
+
+//
+// BaseToken
+//
+
+
+Parser::Nodes::BaseToken::BaseToken(Lexer::Token tok): Base(0), _tok(std::move(tok)) {}
+
+const Lexer::Token &Parser::Nodes::BaseToken::get_token() const {
+    return _tok;
+}
+
+void Parser::Nodes::BaseToken::set_token(const Lexer::Token &tok) {
+    _tok = tok;
+}
+
+void Parser::Nodes::BaseToken::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}

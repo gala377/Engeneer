@@ -4,7 +4,7 @@ add_library(Parser
         ast.cpp
         parser.cpp
         visitor.cpp
-        )
+        parsers.cpp)
 target_link_libraries(Parser
         Lexer
         )

@@ -7,7 +7,6 @@
 
 #include <variant>
 #include <parser/nodes/base.h>
-#include <parser/types/basic.hpp>
 
 namespace Parser::Nodes {
 
