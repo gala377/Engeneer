@@ -19,3 +19,11 @@ void Visitor::Base::visit(const Parser::Nodes::BaseParent &node) {
 void Visitor::Base::visit(const Parser::Nodes::FunctionDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
+
+void Visitor::Base::visit(const Parser::Nodes::Statement &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::CodeBlock &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}

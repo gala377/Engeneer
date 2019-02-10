@@ -61,8 +61,6 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
 }
 
 std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
-    // todo identifier list
-    // todo rewrite as combining functions
     auto type_res = parse_type();
     if(!type_res) {
         return {nullptr};
@@ -77,18 +75,42 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
     if(!parse_token(Lexer::Token::Id::LeftParenthesis)) {
         throw std::runtime_error("( expected");
     }
-    // todo list but lets make it a functional parser of sorts
+
+    auto arg_list = parse_func_arg_list();
+
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         throw std::runtime_error(") expected");
     }
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         throw std::runtime_error("Missing semicolon");
-    };
+    }
 
     return std::make_unique<Nodes::FunctionDecl>(
             identifier,
             type_symbol,
-            std::vector<Nodes::VariableDecl>{});
+            std::move(arg_list));
+}
+
+Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
+    arg_list_t arg_list{};
+    auto ident = parse_token(Lexer::Token::Id::Identifier);
+    while(ident) {
+        auto type = parse_type();
+        if(!type) {
+            throw std::runtime_error("Expected type identifier");
+        }
+        arg_list.emplace_back(
+                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, type.value()));
+        if(parse_token(Lexer::Token::Id::Comma)) {
+            ident = parse_token(Lexer::Token::Id::Identifier);
+            if(!ident) {
+                throw std::runtime_error("Identifier expected");
+            }
+        } else {
+            ident = std::nullopt;
+        }
+    }
+    return arg_list;
 }
 
 std::unique_ptr<Parser::Nodes::End> Parser::Parser::parse_end_of_file() {

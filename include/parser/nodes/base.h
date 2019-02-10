@@ -35,16 +35,19 @@ namespace Parser::Nodes {
     public:
         using Base::Base;
 
-        using children_t = std::vector<std::unique_ptr<Base>>;
+        using child_t = Nodes::Base;
+        using children_t = std::vector<std::unique_ptr<child_t>>;
 
-        virtual void add_child(Base *child);
-        virtual void add_child(std::unique_ptr<Base> &&child);
-        virtual const children_t& children() const;
+        virtual void add_child(child_t *child);
+        virtual void add_child(std::unique_ptr<child_t> &&child);
 
-        // todo this kinda works, but i doubt it will in the long run
+        virtual const children_t &children() const;
+
         void accept(Parser::Visitor &v) const override;
+
     protected:
         children_t _children;
+
         virtual void visit_children(Parser::Visitor &v) const;
     };
 }

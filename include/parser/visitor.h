@@ -15,6 +15,8 @@ namespace Parser {
         class Program;
         class VariableDecl;
         class FunctionDecl;
+        class Statement;
+        class CodeBlock;
     }
 
     class Visitor {
@@ -24,6 +26,8 @@ namespace Parser {
         virtual void visit(const Nodes::Program& node) = 0;
         virtual void visit(const Nodes::VariableDecl& node) = 0;
         virtual void visit(const Nodes::FunctionDecl& node) = 0;
+        virtual void visit(const Nodes::Statement& node) = 0;
+        virtual void visit(const Nodes::CodeBlock& node) = 0;
     };
 }
 

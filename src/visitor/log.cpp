@@ -25,13 +25,19 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl &node) {
     std::string repr{"FuncDecl: " + node.type_identifier + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
-        repr += arg.type_identifier + " " + arg.identifier + ", ";
+        repr += arg->type_identifier + " " + arg->identifier + ", ";
     }
     repr += ")";
     stringify(node, std::move(repr));
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::Statement &node) {
+    stringify(node, "Unknown statement node");
+}
 
+void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
+    stringify(node, "CodeBlock");
+}
 
 
 std::string Visitor::Stringify::repr() {
@@ -48,4 +54,3 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
         _stream << "--------";
     }
 }
-

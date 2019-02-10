@@ -40,5 +40,17 @@ void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
 Parser::Nodes::FunctionDecl::FunctionDecl(
         const std::string &identifier,
         const std::string &type_identifier,
-        const std::vector<Parser::Nodes::VariableDecl> &arg_list) :
-        identifier(identifier), type_identifier(type_identifier), arg_list(arg_list) {}
+        std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>> &&arg_list) :
+        identifier(identifier), type_identifier(type_identifier), arg_list(std::move(arg_list)) {}
+
+
+
+/*
+ *  CodeBlock
+ */
+
+void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    visit_children(v);
+}
+

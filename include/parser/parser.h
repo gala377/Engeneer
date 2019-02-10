@@ -27,25 +27,18 @@ namespace Parser {
 
         // Syntax parsers
         std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
-        // todo rename
         std::unique_ptr<Nodes::End> parse_end_of_file();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
         std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();
 
+
+        // helper parsers
+        using arg_list_t = std::vector<std::unique_ptr<Nodes::VariableDecl>>;
+        arg_list_t parse_func_arg_list();
+
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
         std::optional<std::string> parse_type();
-
-        // todo maybe later
-//        template <typename T>
-//        T parenthesis_parse(std::function<std::unique_ptr<Nodes::Base>(void)>);
-        // todo combine
-        // combine_two_left_left
-        // combine two left right
-        // combine and pass to the next
-        // parse_many
-        // parse_one_many
-        // parce_once
 
     };
 

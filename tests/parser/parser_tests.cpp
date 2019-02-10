@@ -19,6 +19,14 @@ void check_ast_equal(const std::string& test_string, const std::string& expected
     BOOST_CHECK_EQUAL(v.repr(), expected);
 }
 
+template <typename Exception>
+void ast_assert_throw(const std::string& input) {
+    Lexer::Source::String s{input};
+    Visitor::Stringify v;
+    Parser::Parser p{s};
+    BOOST_CHECK_THROW(p.parse(), Exception);
+}
+
 BOOST_AUTO_TEST_CASE(empty_source_initializes_to_empty_program) {
     Lexer::Source::String s{""};
     Visitor::Stringify v;
@@ -94,5 +102,38 @@ let var_4 char;
 )"};
         check_ast_equal(test_string, expected);
     }
+
+
+    BOOST_AUTO_TEST_CASE(top_level_func_decl_with_single_argument) {
+    std::string test_string{
+        R"(
+int test(a double);
+)"};
+    std::string expected{
+        R"(Program
+--------FuncDecl: int test(double a, )
+)"};
+    check_ast_equal(test_string, expected);
+}
+
+BOOST_AUTO_TEST_CASE(top_level_func_decl_with_multiple_arguments) {
+    std::string test_string{
+        R"(
+int test (a double, b int, c char);
+)"};
+    std::string expected{
+        R"(Program
+--------FuncDecl: int test(double a, int b, char c, )
+)"};
+    check_ast_equal(test_string, expected);
+}
+
+BOOST_AUTO_TEST_CASE(top_level_func_decl_with_single_arg_and_trailing_comma_throws) {
+    std::string test_string{
+        R"(
+    int test (a double,);
+)"};
+    ast_assert_throw<std::runtime_error>(test_string);
+}
 
 BOOST_AUTO_TEST_SUITE_END()
