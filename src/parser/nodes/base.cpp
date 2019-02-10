@@ -29,10 +29,6 @@ void Parser::Nodes::Base::set_depth(std::uint32_t depth) {
 // BaseParent
 //
 
-void Parser::Nodes::BaseParent::add_child(Parser::Nodes::BaseParent::child_t *child) {
-    add_child(std::unique_ptr<Base>(child));
-}
-
 void Parser::Nodes::BaseParent::add_child(std::unique_ptr<Base> &&child) {
     child->set_depth(_depth + 1);
     _children.emplace_back(std::move(child));

@@ -13,10 +13,11 @@ namespace Parser {
         class Base;
         class BaseParent;
         class Program;
-        class VariableDecl;
+        class GlobVariableDecl;
         class FunctionDecl;
         class Statement;
         class CodeBlock;
+        class VariableDecl;
     }
 
     class Visitor {
@@ -24,10 +25,11 @@ namespace Parser {
         virtual void visit(const Nodes::Base& node) = 0;
         virtual void visit(const Nodes::BaseParent& node) = 0;
         virtual void visit(const Nodes::Program& node) = 0;
-        virtual void visit(const Nodes::VariableDecl& node) = 0;
+        virtual void visit(const Nodes::GlobVariableDecl& node) = 0;
         virtual void visit(const Nodes::FunctionDecl& node) = 0;
         virtual void visit(const Nodes::Statement& node) = 0;
         virtual void visit(const Nodes::CodeBlock& node) = 0;
+        virtual void visit(const Nodes::VariableDecl& node) = 0;
     };
 }
 

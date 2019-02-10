@@ -22,7 +22,22 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class VariableDecl: public TopLevelDecl {
+    class Statement: public Base {
+    public:
+        Statement() = default;
+    };
+
+    class GlobVariableDecl: public TopLevelDecl {
+    public:
+        GlobVariableDecl(const std::string& symbol, const std::string& type_symbol);
+
+        std::string identifier;
+        std::string type_identifier;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class VariableDecl: public Statement {
     public:
         VariableDecl(const std::string& symbol, const std::string& type_symbol);
 
@@ -37,18 +52,13 @@ namespace Parser::Nodes {
         FunctionDecl(
                 const std::string &identifier,
                 const std::string &type_identifier,
-                std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
+                std::vector<std::unique_ptr<GlobVariableDecl>> &&arg_list);
 
         std::string identifier;
         std::string type_identifier;
-        std::vector<std::unique_ptr<VariableDecl>> arg_list;
+        std::vector<std::unique_ptr<GlobVariableDecl>> arg_list;
 
         void accept(Parser::Visitor &v) const override;
-    };
-
-    class Statement: public Base {
-    public:
-        Statement() = default;
     };
 
     class CodeBlock: public BaseParent {

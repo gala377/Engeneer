@@ -12,7 +12,7 @@ int main() {
     Lexer::Source::String s(R"(
 let a int; let c int;
 let d int;
-int test(a double, b char, );
+int test(a double, b char);
 )");
     Visitor::Stringify v;
 

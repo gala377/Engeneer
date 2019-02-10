@@ -15,11 +15,11 @@ namespace Visitor {
         void visit(const Parser::Nodes::Base &node) override = 0;
         void visit(const Parser::Nodes::BaseParent& node) override;
         void visit(const Parser::Nodes::Program& node) override;
-        void visit(const Parser::Nodes::VariableDecl& node) override;
+        void visit(const Parser::Nodes::GlobVariableDecl& node) override;
         void visit(const Parser::Nodes::FunctionDecl& node) override;
         void visit(const Parser::Nodes::Statement &node) override;
         void visit(const Parser::Nodes::CodeBlock& node) override;
-
+        void visit(const Parser::Nodes::VariableDecl &node) override;
     };
 
 }

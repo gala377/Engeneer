@@ -38,7 +38,6 @@ namespace Parser::Nodes {
         using child_t = Nodes::Base;
         using children_t = std::vector<std::unique_ptr<child_t>>;
 
-        virtual void add_child(child_t *child);
         virtual void add_child(std::unique_ptr<child_t> &&child);
 
         virtual const children_t &children() const;

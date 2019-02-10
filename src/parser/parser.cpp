@@ -14,21 +14,20 @@ Parser::AST Parser::Parser::parse() {
     AST ast;
     while(true) {
         auto curr_node = parse_top_level_decl();
-        if(curr_node == nullptr) {
+        if(!curr_node) {
             break;
         }
         ast.root().add_child(std::move(curr_node));
     }
     auto curr_node = parse_end_of_file();
-    if(curr_node == nullptr) {
-
+    if(!curr_node) {
         throw std::runtime_error("End of program expected!");
     }
     return std::move(ast);
 }
 
 std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_decl() {
-    if(auto res = parse_var_decl(); res != nullptr) {
+    if(auto res = parse_glob_var_decl(); res != nullptr) {
         return res;
     }
     if(auto res = parse_func_decl(); res != nullptr) {
@@ -37,7 +36,7 @@ std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_dec
     return {nullptr};
 }
 
-std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
+std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_decl() {
     if(!parse_token(Lexer::Token::Id::Let)) {
         return {nullptr};
     }
@@ -57,7 +56,7 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
         throw std::runtime_error("Missing semicolon");
     }
 
-    return std::make_unique<Nodes::VariableDecl>(var.symbol, type_symbol);
+    return std::make_unique<Nodes::GlobVariableDecl>(var.symbol, type_symbol);
 }
 
 std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
@@ -100,7 +99,7 @@ Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
             throw std::runtime_error("Expected type identifier");
         }
         arg_list.emplace_back(
-                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, type.value()));
+                std::make_unique<Nodes::GlobVariableDecl>(ident.value().symbol, type.value()));
         if(parse_token(Lexer::Token::Id::Comma)) {
             ident = parse_token(Lexer::Token::Id::Identifier);
             if(!ident) {
@@ -111,6 +110,34 @@ Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
         }
     }
     return arg_list;
+}
+
+std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
+    auto code_block = std::make_unique<Nodes::CodeBlock>();
+
+    if(!parse_token(Lexer::Token::Id::LeftBrace)) {
+        throw std::runtime_error("Left brace '{' expected");
+    }
+
+    for(auto curr_node = parse_statement(); curr_node; curr_node = parse_statement()) {
+        code_block->add_child(std::move(curr_node));
+    }
+
+    if(!parse_token(Lexer::Token::Id::RightBrace)) {
+        throw std::runtime_error("Right brace '}' expected");
+    }
+
+    return code_block;
+}
+
+std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
+    return parse_var_decl();
+}
+
+std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
+    auto var_decl = parse_glob_var_decl();
+    return std::make_unique<Nodes::VariableDecl>(
+        var_decl->identifier, var_decl->type_identifier);
 }
 
 std::unique_ptr<Parser::Nodes::End> Parser::Parser::parse_end_of_file() {
@@ -134,3 +161,4 @@ std::optional<std::string> Parser::Parser::parse_type() {
     auto res = parse_token(Lexer::Token::Id::Identifier);
     return res ? std::optional{res.value().symbol} : std::nullopt;
 }
+

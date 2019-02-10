@@ -18,7 +18,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
     stringify(node, "Program");
 }
 
-void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
+void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
     stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
@@ -53,4 +53,8 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     for(std::uint32_t i = 0; i < depth; ++i) {
         _stream << "--------";
     }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
+    stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
 }

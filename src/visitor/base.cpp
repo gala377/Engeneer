@@ -8,7 +8,7 @@ void Visitor::Base::visit(const Parser::Nodes::Program &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
-void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
+void Visitor::Base::visit(const Parser::Nodes::GlobVariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
@@ -25,5 +25,9 @@ void Visitor::Base::visit(const Parser::Nodes::Statement &node) {
 }
 
 void Visitor::Base::visit(const Parser::Nodes::CodeBlock &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
