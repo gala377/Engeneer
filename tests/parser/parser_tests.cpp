@@ -152,5 +152,43 @@ void test() {
     check_ast_equal(input, output);
 }
 
+BOOST_AUTO_TEST_SUITE(assignment_operator_on_already_declared_varaible) {
+    std::string input{
+        R"(
+void test() {
+    let a int;
+    a = 5;
+})"};
+    std::string output{
+        R"(Program
+--------FuncDef
+----------------FuncHeader: void test()
+----------------CodeBlock
+------------------------VarDecl: int a
+------------------------Assignment: =
+--------------------------------Identifier: a 
+--------------------------------ConstInt: 5 
+)"};
+    check_ast_equal(input, output);
+}
+
+// BOOST_AUTO_TEST_SUITE(assignment_operator_on_var_decl) {
+//     std::string input{
+//         R"(
+// void test() {
+//     let a int = 5;
+// })"};
+//     std::string output{
+//         R"(Program
+// --------FuncDef
+// ----------------FuncHeader: void test()
+// ----------------CodeBlock
+// ------------------------Assignment: =
+// --------------------------------VarDecl: int a 
+// --------------------------------ConstInt: 5 
+// )"};
+//     check_ast_equal(input, output);
+// }
+
 
 BOOST_AUTO_TEST_SUITE_END()
