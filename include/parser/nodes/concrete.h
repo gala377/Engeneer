@@ -22,6 +22,15 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    class Identifier: public Base {
+    public:
+        Identifier(const std::string& symbol);
+
+        std::string identifier;
+
+        void accept(Parser::Visitor &v) const override; 
+    };
+
     class Statement: public Base {
     public:
         Statement() = default;

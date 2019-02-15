@@ -15,6 +15,14 @@ void Parser::Nodes::Program::accept(Parser::Visitor &v) const {
 }
 
 /*
+*   Identifier
+*/
+
+// todo
+Parser::Nodes::Identifier::Identifier(const string& symbol) : symbol(symbol) {};
+// todo accept
+
+/*
  *  CodeBlock
  */
 
