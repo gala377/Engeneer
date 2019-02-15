@@ -19,11 +19,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
-    stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
+    stringify(node, "GlobVarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
-void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl &node) {
-    std::string repr{"FuncDecl: " + node.type_identifier + " " + node.identifier + "("};
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionHeader &node) {
+    std::string repr{"FuncHeader: " + node.type_identifier + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
         repr += arg->type_identifier + " " + arg->identifier + ", ";
     }
@@ -39,6 +39,17 @@ void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
     stringify(node, "CodeBlock");
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
+    stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
+    stringify(node, "FuncDef");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl& node) {
+    stringify(node, "FuncDecl");
+}
 
 std::string Visitor::Stringify::repr() {
     return _stream.str();
@@ -53,14 +64,4 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     for(std::uint32_t i = 0; i < depth; ++i) {
         _stream << "--------";
     }
-}
-
-void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
-    stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
-}
-
-void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
-    // todo, make this and then
-    // todo make function definition parsing
-    stringify(node, "FuncDef:");
 }

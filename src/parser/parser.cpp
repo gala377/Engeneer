@@ -60,6 +60,22 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
 }
 
 std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
+    auto header = parse_func_header();
+    if(!header) {
+        return {nullptr};
+    }
+    if(parse_token(Lexer::Token::Id::Semicolon)) {
+        return std::move(header);
+    }
+    auto body = parse_code_block();
+    if(!body) {
+        return {nullptr};
+    }
+    return std::make_unique<Nodes::FunctionDef>(
+        std::move(header), std::move(body));
+}
+
+std::unique_ptr<Parser::Nodes::FunctionHeader> Parser::Parser::parse_func_header() {
     auto type_res = parse_type();
     if(!type_res) {
         return {nullptr};
@@ -80,11 +96,8 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         throw std::runtime_error(") expected");
     }
-    if(!parse_token(Lexer::Token::Id::Semicolon)) {
-        throw std::runtime_error("Missing semicolon");
-    }
 
-    return std::make_unique<Nodes::FunctionDecl>(
+    return std::make_unique<Nodes::FunctionHeader>(
             identifier,
             type_symbol,
             std::move(arg_list));
@@ -114,7 +127,7 @@ Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
 
 std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     auto code_block = std::make_unique<Nodes::CodeBlock>();
-
+    
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
         throw std::runtime_error("Left brace '{' expected");
     }
@@ -126,8 +139,7 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
         throw std::runtime_error("Right brace '}' expected");
     }
-
-    return code_block;
+    return std::move(code_block);
 }
 
 std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
@@ -136,6 +148,9 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
 
 std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     auto var_decl = parse_glob_var_decl();
+    if(!var_decl) {
+        return {nullptr};
+    }
     return std::make_unique<Nodes::VariableDecl>(
         var_decl->identifier, var_decl->type_identifier);
 }
@@ -161,4 +176,3 @@ std::optional<std::string> Parser::Parser::parse_type() {
     auto res = parse_token(Lexer::Token::Id::Identifier);
     return res ? std::optional{res.value().symbol} : std::nullopt;
 }
-

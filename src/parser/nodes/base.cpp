@@ -38,6 +38,13 @@ const Parser::Nodes::BaseParent::children_t& Parser::Nodes::BaseParent::children
     return _children;
 }
 
+void Parser::Nodes::BaseParent::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    for(auto& ch: _children) {
+        ch->set_depth(_depth +1);
+    }
+}
+
 void Parser::Nodes::BaseParent::accept(Parser::Visitor &v) const {
     v.visit(*this);
     visit_children(v);

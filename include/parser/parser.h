@@ -29,10 +29,14 @@ namespace Parser {
         std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
         std::unique_ptr<Nodes::End> parse_end_of_file();
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
+        
         std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();
+        std::unique_ptr<Nodes::FunctionHeader> parse_func_header();
+
         std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::Statement> parse_statement();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
+
 
         // helper parsers
         using arg_list_t = std::vector<std::unique_ptr<Nodes::GlobVariableDecl>>;

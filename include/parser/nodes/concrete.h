@@ -47,9 +47,11 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class FunctionDecl: public TopLevelDecl {
+    class FunctionDecl: public TopLevelDecl {};
+
+    class FunctionHeader: public FunctionDecl {
     public:
-        FunctionDecl(
+        FunctionHeader(
                 const std::string &identifier,
                 const std::string &type_identifier,
                 std::vector<std::unique_ptr<GlobVariableDecl>> &&arg_list);
@@ -68,13 +70,14 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class FunctionDef: public TopLevelDecl {
+    class FunctionDef: public FunctionDecl {
     public:
-        FunctionDef(std::unique_ptr<FunctionDecl>&& decl, std::unique_ptr<CodeBlock>&& body);
+        FunctionDef(std::unique_ptr<FunctionHeader>&& decl, std::unique_ptr<CodeBlock>&& body);
 
-        std::unique_ptr<FunctionDecl> declaration;
+        std::unique_ptr<FunctionHeader> declaration;
         std::unique_ptr<CodeBlock> body;
 
+        void set_depth(std::uint32_t depth) override;
         void accept(Parser::Visitor &v) const override;
     };
 }

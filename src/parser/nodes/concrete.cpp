@@ -3,13 +3,22 @@
 //
 
 #include <parser/nodes/concrete.h>
-
+#include <iostream>
 
 /*
  *  Program
  */
 
 void Parser::Nodes::Program::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    visit_children(v);
+}
+
+/*
+ *  CodeBlock
+ */
+
+void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
     v.visit(*this);
     visit_children(v);
 }
@@ -45,26 +54,15 @@ void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
  *  FunctionDecl
  */
 
-void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
+void Parser::Nodes::FunctionHeader::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
-Parser::Nodes::FunctionDecl::FunctionDecl(
+Parser::Nodes::FunctionHeader::FunctionHeader(
         const std::string &identifier,
         const std::string &type_identifier,
         std::vector<std::unique_ptr<Parser::Nodes::GlobVariableDecl>> &&arg_list) :
         identifier(identifier), type_identifier(type_identifier), arg_list(std::move(arg_list)) {}
-
-
-
-/*
- *  CodeBlock
- */
-
-void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
-    v.visit(*this);
-    visit_children(v);
-}
 
 
 /*
@@ -72,14 +70,21 @@ void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
  */
 
 Parser::Nodes::FunctionDef::FunctionDef(
-        std::unique_ptr<Parser::Nodes::FunctionDecl> &&decl,
+        std::unique_ptr<Parser::Nodes::FunctionHeader> &&decl,
         std::unique_ptr<Parser::Nodes::CodeBlock> &&body) :
-        declaration(std::move(decl)), body(std::move(body)) {}
+        declaration(std::move(decl)), body(std::move(body)) {
+    this->declaration->set_depth(_depth+1);
+    this->body->set_depth(_depth+1);
+}
+
+void Parser::Nodes::FunctionDef::set_depth(std::uint32_t depth) {
+    FunctionDecl::set_depth(depth);
+    declaration->set_depth(_depth+1);
+    body->set_depth(_depth+1);
+}
 
 void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
     v.visit(*this);
-    // todo: should I also visit FuncDecl and CodeBlock
-    // todo: or should visitor deal with it itself
-    v.visit(*declaration);
-    v.visit(*body);
+    declaration->accept(v);
+    body->accept(v);
 }
