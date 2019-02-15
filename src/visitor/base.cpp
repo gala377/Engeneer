@@ -31,3 +31,7 @@ void Visitor::Base::visit(const Parser::Nodes::CodeBlock &node) {
 void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
+
+void Visitor::Base::visit(const Parser::Nodes::FunctionDef& node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}

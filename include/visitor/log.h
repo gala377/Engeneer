@@ -22,6 +22,7 @@ namespace Visitor {
         void visit(const Parser::Nodes::Statement &node) override;
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
+        void visit(const Parser::Nodes::FunctionDef &node) override;
 
         std::string repr();
 

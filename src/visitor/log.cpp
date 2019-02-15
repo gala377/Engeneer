@@ -58,3 +58,9 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
 void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
     stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
 }
+
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
+    // todo, make this and then
+    // todo make function definition parsing
+    stringify(node, "FuncDef:");
+}

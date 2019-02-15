@@ -67,6 +67,16 @@ namespace Parser::Nodes {
 
         void accept(Parser::Visitor &v) const override;
     };
+
+    class FunctionDef: public TopLevelDecl {
+    public:
+        FunctionDef(std::unique_ptr<FunctionDecl>&& decl, std::unique_ptr<CodeBlock>&& body);
+
+        std::unique_ptr<FunctionDecl> declaration;
+        std::unique_ptr<CodeBlock> body;
+
+        void accept(Parser::Visitor &v) const override;
+    };
 }
 
 #endif //TKOM2_CONCRETE_H

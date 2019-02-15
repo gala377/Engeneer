@@ -66,3 +66,20 @@ void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
     visit_children(v);
 }
 
+
+/*
+ * FunctionDef
+ */
+
+Parser::Nodes::FunctionDef::FunctionDef(
+        std::unique_ptr<Parser::Nodes::FunctionDecl> &&decl,
+        std::unique_ptr<Parser::Nodes::CodeBlock> &&body) :
+        declaration(std::move(decl)), body(std::move(body)) {}
+
+void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    // todo: should I also visit FuncDecl and CodeBlock
+    // todo: or should visitor deal with it itself
+    v.visit(*declaration);
+    v.visit(*body);
+}
