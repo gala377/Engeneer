@@ -20,6 +20,7 @@ namespace Parser {
         class FunctionDecl;
         class FunctionDef;
         class FunctionHeader;
+        class Identifier;
     }
 
     class Visitor {
@@ -34,6 +35,7 @@ namespace Parser {
         virtual void visit(const Nodes::VariableDecl& node) = 0;
         virtual void visit(const Nodes::FunctionDecl& node) = 0;
         virtual void visit(const Nodes::FunctionDef& node) = 0;
+        virtual void visit(const Nodes::Identifier& node) = 0;
     };
 }
 

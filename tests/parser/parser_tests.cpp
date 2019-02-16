@@ -152,7 +152,7 @@ void test() {
     check_ast_equal(input, output);
 }
 
-BOOST_AUTO_TEST_SUITE(assignment_operator_on_already_declared_varaible) {
+BOOST_AUTO_TEST_CASE(assignment_operator_on_already_declared_varaible) {
     std::string input{
         R"(
 void test() {

@@ -26,7 +26,7 @@ namespace Parser::Nodes {
     public:
         Identifier(const std::string& symbol);
 
-        std::string identifier;
+        std::string symbol;
 
         void accept(Parser::Visitor &v) const override; 
     };

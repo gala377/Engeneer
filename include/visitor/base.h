@@ -22,6 +22,8 @@ namespace Visitor {
         void visit(const Parser::Nodes::VariableDecl &node) override;
         void visit(const Parser::Nodes::FunctionDecl& node) override;
         void visit(const Parser::Nodes::FunctionDef& node) override;
+
+        void visit(const Parser::Nodes::Identifier &node) override;
     };
 
 }
