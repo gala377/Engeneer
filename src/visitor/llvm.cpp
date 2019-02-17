@@ -9,21 +9,21 @@ void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
     throw std::runtime_error("Cannot compile base node!");
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
-    // todo for now 64 bits
-    // todo isSigned = true when signed values are there
-    auto value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
-    // return value
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
-    // lookup variable
-    llvm::Value *v = _named_values[node.symbol];
-    if(!v) {
-        throw std::runtime_error("Use of undeclared variable! " + node.symbol);
-    }
-    // return value
-}
+//void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
+//    // todo for now 64 bits
+//    // todo isSigned = true when signed values are there
+//    auto value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
+//    // return value
+//}
+//
+//void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
+//    // lookup variable
+//    llvm::Value *v = _named_values[node.symbol];
+//    if(!v) {
+//        throw std::runtime_error("Use of undeclared variable! " + node.symbol);
+//    }
+//    // return value
+//}
 
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     llvm::Value *v = _named_values[node.identifier];
@@ -39,3 +39,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
 }
 
 
+void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
+    // todo what do i do with it now?
+}
