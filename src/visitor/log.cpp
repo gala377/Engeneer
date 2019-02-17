@@ -13,10 +13,12 @@ void Visitor::Stringify::visit(const Parser::Nodes::Base& node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::BaseParent& node) {
     stringify(node, "Unknown parent node");
+    node.accept_children(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
     stringify(node, "Program");
+    node.accept_children(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
@@ -38,6 +40,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::Statement &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
     stringify(node, "CodeBlock");
+    node.accept_children(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
@@ -46,6 +49,8 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
     stringify(node, "FuncDef");
+    node.declaration->accept(*this);
+    node.body->accept(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl& node) {
@@ -73,6 +78,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::Expression &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::BinaryExpr &node) {
     stringify(node, "BinExpr");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::AssignmentExpr &node) {
@@ -83,6 +92,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::AssignmentExpr &node) {
         mess += "None";
     }
     stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::AdditiveExpr &node) {
@@ -95,6 +108,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::AdditiveExpr &node) {
         mess += "None";
     }
     stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
@@ -107,10 +124,15 @@ void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
         mess += "None";
     }
     stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::UnaryExpr &node) {
     stringify(node, "UnaryExpr");
+    node.rhs->accept(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::PrimaryExpr &node) {
@@ -132,6 +154,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::Identifier &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::ParenthesisExpr &node) {
     stringify(node, "Parenthesis: ()");
+    node.expr->accept(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::StringConstant &node) {

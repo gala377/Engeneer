@@ -45,10 +45,10 @@ namespace Parser::Nodes {
         void set_depth(std::uint32_t depth) override;
         void accept(Parser::Visitor &v) const override;
 
+        virtual void accept_children(Parser::Visitor &v) const;
     protected:
         children_t _children;
 
-        virtual void visit_children(Parser::Visitor &v) const;
     };
 }
 
