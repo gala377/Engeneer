@@ -25,6 +25,21 @@ namespace Visitor {
         void visit(const Parser::Nodes::FunctionDef &node) override;
         void visit(const Parser::Nodes::FunctionDecl &node) override;
 
+        void visit(const Parser::Nodes::Expression &node) override;
+        void visit(const Parser::Nodes::BinaryExpr &node) override;
+        void visit(const Parser::Nodes::AssignmentExpr &node) override;
+        void visit(const Parser::Nodes::AdditiveExpr &node) override;
+        void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
+        void visit(const Parser::Nodes::UnaryExpr &node) override;
+        void visit(const Parser::Nodes::PrimaryExpr &node) override;
+        void visit(const Parser::Nodes::Constant &node) override;
+        void visit(const Parser::Nodes::IntConstant &node) override;
+        void visit(const Parser::Nodes::Identifier &node) override;
+
+        void visit(const Parser::Nodes::StringConstant &node) override;
+
+        void visit(const Parser::Nodes::ParenthesisExpr &node) override;
+
         std::string repr();
 
     protected:

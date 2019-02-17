@@ -131,4 +131,13 @@ BOOST_AUTO_TEST_SUITE()
         BOOST_CHECK_EQUAL(tok.symbol, "return");
     }
 
+    BOOST_AUTO_TEST_CASE(strings_consts_are_handled_correctly) {
+        Lexer::Source::String s("\"hello\"");
+        Lexer::Lexer l(s);
+
+        auto tok = l.curr_token();
+        BOOST_CHECK_EQUAL(tok.id, Lexer::Token::Id::String);
+        BOOST_CHECK_EQUAL(tok.symbol, "hello");
+    }
+
 BOOST_AUTO_TEST_SUITE_END()

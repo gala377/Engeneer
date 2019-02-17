@@ -200,7 +200,9 @@ std::string Lexer::Lexer::_assemble_string(char current) {
             throw std::runtime_error("Expected end of string got eof");
         }
         symbol += current;
+        current = _source.next_char();
     }
+    _source.next_char();
     return symbol;
 }
 

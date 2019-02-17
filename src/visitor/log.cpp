@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include <visitor/log.h>
+#include <lexer/lexer.h>
 
 void Visitor::Stringify::visit(const Parser::Nodes::Base& node) {
     stringify(node, "Unknown node");
@@ -64,4 +65,75 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     for(std::uint32_t i = 0; i < depth; ++i) {
         _stream << "--------";
     }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::Expression &node) {
+    stringify(node, "Expression");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::BinaryExpr &node) {
+    stringify(node, "BinExpr");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::AssignmentExpr &node) {
+    std::string mess = "AssignmentExpr: ";
+    if(node.op.id == Lexer::Token::Id::Assignment) {
+        mess += "=";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::AdditiveExpr &node) {
+    std::string mess = "AdditiveExpr: ";
+    if(node.op.id == Lexer::Token::Id::Plus) {
+        mess += "+";
+    } else if(node.op.id == Lexer::Token::Id::Minus) {
+        mess += "-";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
+    std::string mess = "MultiplicativeExpr: ";
+    if(node.op.id == Lexer::Token::Id::Multiplication) {
+        mess += "*";
+    } else if(node.op.id == Lexer::Token::Id::Division) {
+        mess += "/";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::UnaryExpr &node) {
+    stringify(node, "UnaryExpr");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::PrimaryExpr &node) {
+    stringify(node, "PrimaryExpr");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::Constant &node) {
+    stringify(node, "Constant");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::IntConstant &node) {
+    std::string mess = "IntConst: " + std::to_string(node.value);
+    stringify(node, std::move(mess));
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::Identifier &node) {
+    stringify(node, "Identifier: " + node.symbol);
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::ParenthesisExpr &node) {
+    stringify(node, "Parenthesis: ()");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::StringConstant &node) {
+    stringify(node, "StringConst: " + node.value);
 }

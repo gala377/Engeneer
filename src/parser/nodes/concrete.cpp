@@ -99,3 +99,112 @@ void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
     declaration->accept(v);
     body->accept(v);
 }
+
+
+/*
+ *
+ * Expressions in general
+ *
+ */
+
+void Parser::Nodes::Expression::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+Parser::Nodes::BinaryExpr::BinaryExpr(
+        std::unique_ptr<Parser::Nodes::Expression> &&lhs,
+        const Lexer::Token& op,
+        std::unique_ptr<Parser::Nodes::Expression> &&rhs):
+        lhs(std::move(lhs)), op(op), rhs(std::move(rhs)) {}
+
+void Parser::Nodes::BinaryExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    lhs->set_depth(_depth+1);
+    if(rhs) {
+        rhs->set_depth(_depth+1);
+    }
+}
+
+void Parser::Nodes::BinaryExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    lhs->accept(v);
+    if (rhs) {
+        rhs->accept(v);
+    }
+}
+
+void Parser::Nodes::AssignmentExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    lhs->accept(v);
+    if (rhs) {
+        rhs->accept(v);
+    }
+}
+
+void Parser::Nodes::AdditiveExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    lhs->accept(v);
+    if (rhs) {
+        rhs->accept(v);
+    }
+}
+
+
+void Parser::Nodes::MultiplicativeExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    lhs->accept(v);
+    if (rhs) {
+        rhs->accept(v);
+    }
+}
+
+Parser::Nodes::UnaryExpr::UnaryExpr(
+        const Lexer::Token& op,
+        std::unique_ptr<Parser::Nodes::Expression> &&rhs):
+        op(op), rhs(std::move(rhs)) {}
+
+void Parser::Nodes::UnaryExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    rhs->set_depth(_depth + 1);
+}
+
+void Parser::Nodes::UnaryExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    rhs->accept(v);
+}
+
+void Parser::Nodes::PrimaryExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::Constant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+Parser::Nodes::IntConstant::IntConstant(int value): value(value) {}
+
+void Parser::Nodes::IntConstant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::ParenthesisExpr::ParenthesisExpr(std::unique_ptr<Parser::Nodes::Expression> &&expr):
+    expr(std::move(expr)) {
+    this->expr->set_depth(_depth + 1);
+}
+
+void Parser::Nodes::ParenthesisExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+    expr->accept(v);
+}
+
+void Parser::Nodes::ParenthesisExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    expr->set_depth(_depth+1);
+}
+
+Parser::Nodes::StringConstant::StringConstant(const std::string& value): value(value) {}
+
+void Parser::Nodes::StringConstant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}

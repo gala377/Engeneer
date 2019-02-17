@@ -165,9 +165,79 @@ void test() {
 ----------------FuncHeader: void test()
 ----------------CodeBlock
 ------------------------VarDecl: int a
-------------------------Assignment: =
---------------------------------Identifier: a 
---------------------------------ConstInt: 5 
+------------------------AssignmentExpr: =
+--------------------------------AdditiveExpr: None
+----------------------------------------MultiplicativeExpr: None
+------------------------------------------------Identifier: a
+--------------------------------AdditiveExpr: None
+----------------------------------------MultiplicativeExpr: None
+------------------------------------------------IntConst: 5
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(check_expression_operator_precedess) {
+    std::string input{
+        R"(
+void test() {
+    2+2*2;
+})"};
+    std::string output{
+        R"(Program
+--------FuncDef
+----------------FuncHeader: void test()
+----------------CodeBlock
+------------------------AssignmentExpr: None
+--------------------------------AdditiveExpr: +
+----------------------------------------MultiplicativeExpr: None
+------------------------------------------------IntConst: 2
+----------------------------------------MultiplicativeExpr: *
+------------------------------------------------IntConst: 2
+------------------------------------------------IntConst: 2
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(check_expression_operator_precedess_parenthesis) {
+    std::string input{
+        R"(
+void test() {
+    (2+2)*2;
+})"};
+    std::string output{
+        R"(Program
+--------FuncDef
+----------------FuncHeader: void test()
+----------------CodeBlock
+------------------------AssignmentExpr: None
+--------------------------------AdditiveExpr: None
+----------------------------------------MultiplicativeExpr: *
+------------------------------------------------Parenthesis: ()
+--------------------------------------------------------AssignmentExpr: None
+----------------------------------------------------------------AdditiveExpr: +
+------------------------------------------------------------------------MultiplicativeExpr: None
+--------------------------------------------------------------------------------IntConst: 2
+------------------------------------------------------------------------MultiplicativeExpr: None
+--------------------------------------------------------------------------------IntConst: 2
+------------------------------------------------IntConst: 2
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(parsing_string_consts) {
+    std::string input{
+        R"(
+void test() {
+    "Hello World";
+})"};
+    std::string output{R"(Program
+--------FuncDef
+----------------FuncHeader: void test()
+----------------CodeBlock
+------------------------AssignmentExpr: None
+--------------------------------AdditiveExpr: None
+----------------------------------------MultiplicativeExpr: None
+------------------------------------------------StringConst: Hello World
 )"};
     check_ast_equal(input, output);
 }

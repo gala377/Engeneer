@@ -77,6 +77,8 @@ namespace Lexer {
             // Other
             NewLine=300,
             Space,
+
+            None,
             End,
         };
 
