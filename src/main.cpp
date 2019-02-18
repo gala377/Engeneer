@@ -11,7 +11,9 @@
 
 int main() {
     Lexer::Source::String s(R"(
-int test(a int, b int);
+int test(a int, b int) {
+    5+5;
+}
 )");
     Visitor::Stringify v;
     Visitor::LLVM comp;

@@ -115,6 +115,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
     _ret_value = v;
 }
 
+void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
+    node.expr->accept(*this);
+}
 
 //
 // Function generation
@@ -197,7 +200,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
 
 
     if(_ret_value) {
-        _builder.CreateRet(_ret_value);
+        //_builder.CreateRet(_ret_value);
+        // no return here
         llvm::verifyFunction(*func);
         _ret_func = func;
     } else {
@@ -207,3 +211,17 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     }
     func->print(llvm::errs());
 }
+
+void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
+    _ret_value = nullptr;
+    for(auto& ch: node.children()) {
+        ch->accept(*this);
+        if (_ret_value) {
+            // does it work?
+            // todo change it but we have no variables yet
+            _builder.CreateRet(_ret_value);
+        }
+    }
+}
+
+

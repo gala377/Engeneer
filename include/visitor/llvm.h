@@ -25,13 +25,15 @@ namespace Visitor {
 //        void visit(const Parser::Nodes::UnaryExpr &node) override;
 //        void visit(const Parser::Nodes::PrimaryExpr &node) override;
 //        void visit(const Parser::Nodes::Constant &node) override;
-//        void visit(const Parser::Nodes::ParenthesisExpr &node) override;
+        void visit(const Parser::Nodes::ParenthesisExpr &node) override;
 //        void visit(const Parser::Nodes::StringConstant &node) override;
         void visit(const Parser::Nodes::Identifier &node) override;
         void visit(const Parser::Nodes::IntConstant &node) override;
 
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
+
+        void visit(const Parser::Nodes::CodeBlock &node) override;
 
     private:
         llvm::LLVMContext _context;
