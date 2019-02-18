@@ -16,7 +16,7 @@ void Visitor::Base::visit(const Parser::Nodes::BaseParent &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
-void Visitor::Base::visit(const Parser::Nodes::FunctionHeader &node) {
+void Visitor::Base::visit(const Parser::Nodes::FunctionProt &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 

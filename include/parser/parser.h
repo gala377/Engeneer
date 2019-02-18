@@ -31,7 +31,7 @@ namespace Parser {
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
         
         std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();
-        std::unique_ptr<Nodes::FunctionHeader> parse_func_header();
+        std::unique_ptr<Nodes::FunctionProt> parse_func_header();
 
         std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::Statement> parse_statement();

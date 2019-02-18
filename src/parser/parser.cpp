@@ -75,7 +75,7 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
         std::move(header), std::move(body));
 }
 
-std::unique_ptr<Parser::Nodes::FunctionHeader> Parser::Parser::parse_func_header() {
+std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header() {
     auto type_res = parse_type();
     if(!type_res) {
         return {nullptr};
@@ -97,7 +97,7 @@ std::unique_ptr<Parser::Nodes::FunctionHeader> Parser::Parser::parse_func_header
         throw std::runtime_error(") expected");
     }
 
-    return std::make_unique<Nodes::FunctionHeader>(
+    return std::make_unique<Nodes::FunctionProt>(
             identifier,
             type_symbol,
             std::move(arg_list));

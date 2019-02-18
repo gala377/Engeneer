@@ -18,7 +18,7 @@ namespace Visitor {
         void visit(const Parser::Nodes::BaseParent& node) override;
         void visit(const Parser::Nodes::Program& node) override;
         void visit(const Parser::Nodes::GlobVariableDecl& node) override;
-        void visit(const Parser::Nodes::FunctionHeader &node) override;
+        void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::Statement &node) override;
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;

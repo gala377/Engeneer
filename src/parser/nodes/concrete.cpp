@@ -65,11 +65,11 @@ void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
  *  FunctionDecl
  */
 
-void Parser::Nodes::FunctionHeader::accept(Parser::Visitor &v) const {
+void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
-Parser::Nodes::FunctionHeader::FunctionHeader(
+Parser::Nodes::FunctionProt::FunctionProt(
         const std::string &identifier,
         const std::string &type_identifier,
         std::vector<std::unique_ptr<Parser::Nodes::GlobVariableDecl>> &&arg_list) :
@@ -81,7 +81,7 @@ Parser::Nodes::FunctionHeader::FunctionHeader(
  */
 
 Parser::Nodes::FunctionDef::FunctionDef(
-        std::unique_ptr<Parser::Nodes::FunctionHeader> &&decl,
+        std::unique_ptr<Parser::Nodes::FunctionProt> &&decl,
         std::unique_ptr<Parser::Nodes::CodeBlock> &&body) :
         declaration(std::move(decl)), body(std::move(body)) {
     this->declaration->set_depth(_depth+1);

@@ -19,7 +19,7 @@ namespace Parser {
         class VariableDecl;
         class FunctionDecl;
         class FunctionDef;
-        class FunctionHeader;
+        class FunctionProt;
 
         // Expressions
 
@@ -43,7 +43,7 @@ namespace Parser {
         virtual void visit(const Nodes::BaseParent& node) = 0;
         virtual void visit(const Nodes::Program& node) = 0;
         virtual void visit(const Nodes::GlobVariableDecl& node) = 0;
-        virtual void visit(const Nodes::FunctionHeader& node) = 0;
+        virtual void visit(const Nodes::FunctionProt& node) = 0;
         virtual void visit(const Nodes::Statement& node) = 0;
         virtual void visit(const Nodes::CodeBlock& node) = 0;
         virtual void visit(const Nodes::VariableDecl& node) = 0;

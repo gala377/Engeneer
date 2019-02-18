@@ -25,7 +25,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
     stringify(node, "GlobVarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
-void Visitor::Stringify::visit(const Parser::Nodes::FunctionHeader &node) {
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
     std::string repr{"FuncHeader: " + node.type_identifier + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
         repr += arg->type_identifier + " " + arg->identifier + ", ";
