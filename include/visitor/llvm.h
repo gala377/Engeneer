@@ -36,7 +36,8 @@ namespace Visitor {
     private:
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder{_context};
-        std::unique_ptr<llvm::Module> _module;
+        std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("TestJit", _context);
+
         std::map<std::string, llvm::Value*> _named_values;
 
         llvm::Value* _ret_value;

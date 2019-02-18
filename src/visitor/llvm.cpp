@@ -157,7 +157,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "Setting func arg names\n";
     unsigned int i = 0;
     for(auto& arg: func->args()) {
-        std::cout << "Setting name of arg: " << i << "\n";
+        std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier << "\n";
         arg.setName(node.arg_list[i++]->identifier);
     }
     std::cout << "Printing func IR\n";
