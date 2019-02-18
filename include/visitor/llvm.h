@@ -8,12 +8,15 @@
 #include <parser/visitor.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
+#include "base.h"
 
 namespace Visitor {
 
-    class LLVM: public Parser::Visitor {
+    class LLVM: public Visitor::Base {
     public:
         void visit(const Parser::Nodes::Base &node) override;
+        void visit(const Parser::Nodes::Program &node) override;
+
         void visit(const Parser::Nodes::VariableDecl &node) override;
 
         void visit(const Parser::Nodes::AssignmentExpr &node) override;
@@ -37,6 +40,7 @@ namespace Visitor {
         std::map<std::string, llvm::Value*> _named_values;
 
         llvm::Value* _ret_value;
+        llvm::Function* _ret_func;
 
     };
 }

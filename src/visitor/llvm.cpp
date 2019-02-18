@@ -5,11 +5,27 @@
 #include <visitor/llvm.h>
 #include <parser/nodes/concrete.h>
 
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+
+#include <llvm/IR/Verifier.h>
+#include <llvm/ADT/STLExtras.h>
+
 void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
     throw std::runtime_error("Cannot compile base node!");
 }
 
+void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
+    // todo maybe init module here ?
+    std::cout << "Program node\n";
+    std::cout << "Program compilation started\n";
+
+    node.accept_children(*this);
+}
+
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
+    std::cout << "Var decl\n";
     llvm::Value *v = _named_values[node.identifier];
     if(v) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier);
@@ -24,6 +40,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
 
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
+    std::cout << "Assig expr\n";
     // Compute left and right if needed
     node.lhs->accept(*this); auto lhs = _ret_value;
     //llvm::Value* rhs = nullptr;
@@ -31,11 +48,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
         throw std::runtime_error("Assignment not supported");
         //node.rhs->accept(*this); rhs = _ret_value;
     }
+    // todo temporary
     _ret_value = lhs;
+    lhs->print(llvm::errs());
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
     // Compute left and right if needed
+    std::cout << "Add expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     llvm::Value* rhs = nullptr;
     if(node.rhs) {
@@ -57,6 +77,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
+    std::cout << "Mult expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     llvm::Value* rhs = nullptr;
     if(node.rhs) {
@@ -80,10 +101,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
+    std::cout << "ConstInt\n";
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
+    std::cout << "IdentifierExpr\n";
     // lookup variable
     llvm::Value *v = _named_values[node.symbol];
     if(!v) {
@@ -98,10 +121,13 @@ void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
 //
 
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
+    std::cout << "FunctionProt\n";
     if(node.type_identifier != "int") {
         throw std::runtime_error("Usage of unsupported return type " + node.type_identifier);
     }
-    std::vector<llvm::Type*> args_types(node.arg_list.size());
+    std::cout << "Compiling arg list\n";
+    std::cout << "Arg list size is " << node.arg_list.size() << "\n";
+    std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
         if(arg->type_identifier != "int") {
             throw std::runtime_error("Usage of undeclared type " + arg->type_identifier);
@@ -110,17 +136,74 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
         args_types.push_back(llvm::Type::getInt64Ty(_context));
     }
     // return type is int. todo Later needs to use more than one type
+    std::cout << "Func arg types size: " << args_types.size() << "\n";
+    std::cout << "Compiling func type\n";
     llvm::FunctionType* func_t = llvm::FunctionType::get(
             llvm::Type::getInt64Ty(_context),
             args_types,
             false);
+    std::cout << "Compiling func header\n";
     llvm::Function* func = llvm::Function::Create(
             func_t,
             llvm::Function::ExternalLinkage,
             node.identifier,
             _module.get());
+
+    if(!func) {
+        throw std::runtime_error("Could not compile function!");
+    }
+
+    // todo its ugly, lets make it enumerate
+    std::cout << "Setting func arg names\n";
+    unsigned int i = 0;
+    for(auto& arg: func->args()) {
+        std::cout << "Setting name of arg: " << i << "\n";
+        arg.setName(node.arg_list[i++]->identifier);
+    }
+    std::cout << "Printing func IR\n";
+    // todo its just temporary
+    _ret_func = func;
+    func->print(llvm::outs());
+    std::cout << "\n";
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
+    std::cout << "FuncDef\n";
+    // todo there is a bug with redefining function with different arg names
 
+    auto func = _module->getFunction(node.declaration->identifier);
+    if(!func) {
+        node.declaration->accept(*this); func = _ret_func;
+    }
+    if(!func) {
+        throw std::runtime_error("Could not compile func prototype! " + node.declaration->identifier);
+    }
+    if(!func->empty()) {
+        throw std::runtime_error("Redefinition of func " + node.declaration->identifier);
+    }
+    auto basic_block = llvm::BasicBlock::Create(_context, "entry", func);
+    _builder.SetInsertPoint(basic_block);
+
+    // todo why do we clear it?
+    _named_values.clear();
+    for(auto& arg: func->args()) {
+        _named_values[arg.getName()] = &arg;
+    }
+
+    // visit the body
+    // todo actually should subclass codeblock to function body
+    // todo no func body parsing for now
+    node.body->accept(*this);
+
+
+    if(_ret_value) {
+        _builder.CreateRet(_ret_value);
+        llvm::verifyFunction(*func);
+        _ret_func = func;
+    } else {
+        // error on body, remove function
+        func->eraseFromParent();
+        _ret_func = nullptr;
+    }
+    func->print(llvm::errs());
 }
