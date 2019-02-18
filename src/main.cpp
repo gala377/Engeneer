@@ -12,7 +12,7 @@
 int main() {
     Lexer::Source::String s(R"(
 int test(a int, b int) {
-    5+5;
+    (a+b)*2;
 }
 )");
     Visitor::Stringify v;

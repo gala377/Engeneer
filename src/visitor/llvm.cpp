@@ -50,7 +50,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     }
     // todo temporary
     _ret_value = lhs;
-    lhs->print(llvm::errs());
+//    lhs->print(llvm::errs());
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
@@ -209,7 +209,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
         func->eraseFromParent();
         _ret_func = nullptr;
     }
-    func->print(llvm::errs());
+    func->print(llvm::outs());
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
