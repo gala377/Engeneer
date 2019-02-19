@@ -15,11 +15,6 @@ void Visitor::Stringify::visit(const Parser::Nodes::Base& node) {
     stringify(node, "Unknown node");
 }
 
-void Visitor::Stringify::visit(const Parser::Nodes::BaseParent& node) {
-    stringify(node, "Unknown parent node");
-    node.accept_children(*this);
-}
-
 
 // End
 
@@ -59,10 +54,6 @@ void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
 
 
 // Statement
-void Visitor::Stringify::visit(const Parser::Nodes::Statement &node) {
-    stringify(node, "Unknown statement node");
-}
-
 void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
     stringify(node, "CodeBlock");
     node.accept_children(*this);
@@ -74,9 +65,6 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
 
 
 // Expression
-void Visitor::Stringify::visit(const Parser::Nodes::Expression &node) {
-    stringify(node, "Expression");
-}
 
 
 // Binary
@@ -136,20 +124,29 @@ void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 
 
 // Unary
-void Visitor::Stringify::visit(const Parser::Nodes::UnaryExpr &node) {
-    stringify(node, "UnaryExpr");
+void Visitor::Stringify::visit(const Parser::Nodes::NegativeExpr &node) {
+    stringify(node, "Negative: -" );
     node.rhs->accept(*this);
 }
 
 
 // Postfix
+void Visitor::Stringify::visit(const Parser::Nodes::CallExpr &node) {
+    // todo
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::IndexExpr &node) {
+    // todo
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::AccessExpr &node) {
+    stringify(node, "AccessExpr: .");
+    node.lhs->accept(*this);
+    node.rhs->accept(*this);
+}
 
 
 // Primary
-void Visitor::Stringify::visit(const Parser::Nodes::PrimaryExpr &node) {
-    stringify(node, "PrimaryExpr");
-}
-
 void Visitor::Stringify::visit(const Parser::Nodes::Identifier &node) {
     stringify(node, "Identifier: " + node.symbol);
 }
@@ -161,11 +158,6 @@ void Visitor::Stringify::visit(const Parser::Nodes::ParenthesisExpr &node) {
 
 
 // Const
-
-void Visitor::Stringify::visit(const Parser::Nodes::Constant &node) {
-    stringify(node, "Constant");
-}
-
 void Visitor::Stringify::visit(const Parser::Nodes::IntConstant &node) {
     std::string mess = "IntConst: " + std::to_string(node.value);
     stringify(node, std::move(mess));
@@ -178,7 +170,6 @@ void Visitor::Stringify::visit(const Parser::Nodes::StringConstant &node) {
 
 
 // Class Interface
-
 std::string Visitor::Stringify::repr() {
     return _stream.str();
 }
@@ -193,6 +184,11 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
         _stream << "--------";
     }
 }
+
+
+
+
+
 
 
 

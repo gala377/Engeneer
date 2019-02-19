@@ -51,9 +51,15 @@ namespace Parser {
         std::unique_ptr<Nodes::AdditiveExpr> parse_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_mult_expr();
 
-        // todo parse unary
-        // todo parse postfix
-        // todo parse access
+        // Unary
+        std::unique_ptr<Nodes::UnaryExpr> parse_unary_expr();
+        std::unique_ptr<Nodes::NegativeExpr> parse_negative_expr();
+
+        // Postfix
+        std::unique_ptr<Nodes::PostfixExpr> parse_postfix_expr();
+        std::unique_ptr<Nodes::CallExpr> parse_call_expr();
+        std::unique_ptr<Nodes::IndexExpr> parse_index_expr();
+        std::unique_ptr<Nodes::AccessExpr> parse_access_expr();
 
         // Primary
         std::unique_ptr<Nodes::PrimaryExpr> parse_prim_expr();

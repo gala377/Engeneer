@@ -18,7 +18,6 @@ namespace Visitor {
 
         // Base
         void visit(const Parser::Nodes::Base &node) override;
-        void visit(const Parser::Nodes::BaseParent& node) override;
 
         // End
 
@@ -32,14 +31,12 @@ namespace Visitor {
         void visit(const Parser::Nodes::FunctionProt &node) override;
 
         // Statement
-        void visit(const Parser::Nodes::Statement &node) override;
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
         void visit(const Parser::Nodes::FunctionDecl &node) override;
 
         // Expression
-        void visit(const Parser::Nodes::Expression &node) override;
 
         // Binary
         void visit(const Parser::Nodes::BinaryExpr &node) override;
@@ -48,17 +45,18 @@ namespace Visitor {
         void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
 
         // Unary
-        void visit(const Parser::Nodes::UnaryExpr &node) override;
+        void visit(const Parser::Nodes::NegativeExpr &node) override;
 
         // Postfix
+        void visit(const Parser::Nodes::CallExpr &node) override;
+        void visit(const Parser::Nodes::IndexExpr &node) override;
+        void visit(const Parser::Nodes::AccessExpr &node) override;
 
         // Primary
-        void visit(const Parser::Nodes::PrimaryExpr &node) override;
         void visit(const Parser::Nodes::Identifier &node) override;
         void visit(const Parser::Nodes::ParenthesisExpr &node) override;
 
         // Consts
-        void visit(const Parser::Nodes::Constant &node) override;
         void visit(const Parser::Nodes::IntConstant &node) override;
         void visit(const Parser::Nodes::StringConstant &node) override;
 

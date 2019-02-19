@@ -69,9 +69,9 @@ unary_op = & | * | + | - | ~ | !
 # zmeczylo mnie pisane tego w rozsadnym ebnefie, przepisuje jak leci i zrozumiem potem
 postfix_expr = primary_expr |
 				postfix_expr [ expr ] |
-				postfix_expr ( {assignment_expr} ) |
-				postfix_espr . identifier |
-				postfix_expr -> identifier |
+				postfix_expr ( {expr} ) |
+				postfix_expr . postfix_expr |
+				postfix_expr -> postifx_expr |
 				postfix_expr ++ |
 				postfix_expr -- |
 

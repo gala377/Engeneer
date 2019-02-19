@@ -160,11 +160,6 @@ void Parser::Nodes::MultiplicativeExpr::accept(Parser::Visitor &v) const {
 }
 
 
-void Parser::Nodes::AccessExpr::accept(Parser::Visitor &v) const {
-    v.visit(*this);
-}
-
-
 
 // Unary
 Parser::Nodes::UnaryExpr::UnaryExpr(
@@ -198,20 +193,53 @@ void Parser::Nodes::PostfixExpr::accept(Parser::Visitor &v) const {
 }
 
 
-Parser::Nodes::CallExpr::CallExpr(std::vector<std::unique_ptr<Parser::Nodes::Expression>> &&args):
-        args(std::move(args)) {}
+Parser::Nodes::CallExpr::CallExpr(std::unique_ptr<Parser::Nodes::PostfixExpr> &&lhs,
+                                  std::vector<std::unique_ptr<Parser::Nodes::Expression>> &&args):
+                                  lhs(std::move(lhs)), args(std::move(args)){}
+
+
+void Parser::Nodes::CallExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    for(auto& ch: args) {
+        ch->set_depth(_depth+1);
+    }
+}
 
 void Parser::Nodes::CallExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
 
-Parser::Nodes::IndexExpr::IndexExpr(std::unique_ptr<Parser::Nodes::Expression> &&index_expr):
-        index_expr(std::move(index_expr)) {}
+Parser::Nodes::IndexExpr::IndexExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
+                                    std::unique_ptr<Parser::Nodes::Expression> &&index_expr):
+                                    lhs(std::move(lhs)), index_expr(std::move(index_expr)) {}
 
 void Parser::Nodes::IndexExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
+
+void Parser::Nodes::IndexExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    lhs->set_depth(_depth+1);
+    index_expr->set_depth(_depth+1);
+}
+
+
+Parser::Nodes::AccessExpr::AccessExpr(std::unique_ptr<Parser::Nodes::PostfixExpr> &&lhs,
+                                      std::unique_ptr<Parser::Nodes::PostfixExpr> &&rhs):
+                                      lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+
+void Parser::Nodes::AccessExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::AccessExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    lhs->set_depth(_depth+1);
+    rhs->set_depth(_depth+1);
+}
+
+
 
 
 // Primary

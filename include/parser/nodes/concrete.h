@@ -152,16 +152,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo should it be like that
-    // and compiler says if something is wrong
-    // or should we catch this on parsing stage?
-    class AccessExpr: public BinaryExpr {
-    public:
-        using BinaryExpr::BinaryExpr;
-
-        void accept(Parser::Visitor &v) const override;
-    };
-
 
     // Unary Expr
     // todo each unary its own class?
@@ -193,22 +183,49 @@ namespace Parser::Nodes {
 
     class IndexExpr: public PostfixExpr {
     public:
-        IndexExpr(std::unique_ptr<Expression>&& index_expr);
+        IndexExpr(
+                std::unique_ptr<Expression>&& lhs,
+                std::unique_ptr<Expression>&& index_expr);
 
+        std::unique_ptr<Expression> lhs;
         std::unique_ptr<Expression> index_expr;
+
+        void set_depth(std::uint32_t depth) override;
 
         void accept(Parser::Visitor &v) const override;
     };
 
     class CallExpr: public PostfixExpr {
     public:
-        CallExpr(std::vector<std::unique_ptr<Expression>>&& args);
+        CallExpr(
+                std::unique_ptr<PostfixExpr>&& lhs,
+                std::vector<std::unique_ptr<Expression>>&& args);
 
+        std::unique_ptr<PostfixExpr> lhs;
         std::vector<std::unique_ptr<Expression>> args;
+
+        void set_depth(std::uint32_t depth) override;
 
         void accept(Parser::Visitor &v) const override;
     };
 
+    // todo should it be like that
+    // and compiler says if something is wrong
+    // or should we catch this on parsing stage?
+    // Or should access be postfix like in c?
+    class AccessExpr: public PostfixExpr {
+    public:
+        AccessExpr(
+                std::unique_ptr<PostfixExpr>&& lhs,
+                std::unique_ptr<PostfixExpr>&& rhs);
+
+        std::unique_ptr<PostfixExpr> lhs;
+        std::unique_ptr<PostfixExpr> rhs;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor &v) const override;
+    };
 
     // Primary
     class PrimaryExpr: public Expression {

@@ -42,7 +42,6 @@ namespace Parser {
         class AssignmentExpr;
         class AdditiveExpr;
         class MultiplicativeExpr;
-        class AccessExpr;
 
         // Unary
         class UnaryExpr;
@@ -52,6 +51,7 @@ namespace Parser {
         class PostfixExpr;
         class IndexExpr;
         class CallExpr;
+        class AccessExpr;
 
         // Primary
         class PrimaryExpr;
@@ -96,7 +96,6 @@ namespace Parser {
         virtual void visit(const Nodes::AssignmentExpr& node) = 0;
         virtual void visit(const Nodes::AdditiveExpr& node) = 0;
         virtual void visit(const Nodes::MultiplicativeExpr& node) = 0;
-        virtual void visit(const Nodes::AccessExpr& node) = 0;
 
         // Unary
         virtual void visit(const Nodes::UnaryExpr& node) = 0;
@@ -106,6 +105,7 @@ namespace Parser {
         virtual void visit(const Nodes::PostfixExpr& node) = 0;
         virtual void visit(const Nodes::CallExpr& node) = 0;
         virtual void visit(const Nodes::IndexExpr& node) = 0;
+        virtual void visit(const Nodes::AccessExpr& node) = 0;
 
         // Primary
         virtual void visit(const Nodes::PrimaryExpr& node) = 0;

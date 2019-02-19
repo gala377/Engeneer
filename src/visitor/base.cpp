@@ -84,10 +84,6 @@ void Visitor::Base::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
-void Visitor::Base::visit(const Parser::Nodes::AccessExpr &node) {
-    visit(static_cast<const Parser::Nodes::Base&>(node));
-}
-
 
 // Unary
 void Visitor::Base::visit(const Parser::Nodes::UnaryExpr &node) {
@@ -113,6 +109,9 @@ void Visitor::Base::visit(const Parser::Nodes::IndexExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::AccessExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
 
 
 // Primary
