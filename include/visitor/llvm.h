@@ -14,27 +14,41 @@ namespace Visitor {
 
     class LLVM: public Visitor::Base {
     public:
+        // Visitor
+        // Base
         void visit(const Parser::Nodes::Base &node) override;
+
+        // End
+
+        // Program
         void visit(const Parser::Nodes::Program &node) override;
 
-        void visit(const Parser::Nodes::VariableDecl &node) override;
-
-        void visit(const Parser::Nodes::AssignmentExpr &node) override;
-        void visit(const Parser::Nodes::AdditiveExpr &node) override;
-        void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
-//        void visit(const Parser::Nodes::UnaryExpr &node) override;
-//        void visit(const Parser::Nodes::PrimaryExpr &node) override;
-//        void visit(const Parser::Nodes::Constant &node) override;
-        void visit(const Parser::Nodes::ParenthesisExpr &node) override;
-//        void visit(const Parser::Nodes::StringConstant &node) override;
-        void visit(const Parser::Nodes::Identifier &node) override;
-        void visit(const Parser::Nodes::IntConstant &node) override;
-
+        // Top Level
+        // Function
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
 
+        // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
+        void visit(const Parser::Nodes::VariableDecl &node) override;
 
+        // Expression
+        // Binary
+        void visit(const Parser::Nodes::AssignmentExpr &node) override;
+        void visit(const Parser::Nodes::AdditiveExpr &node) override;
+        void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
+
+        // Unary
+        // Postfix
+        // Primary
+        void visit(const Parser::Nodes::Identifier &node) override;
+        void visit(const Parser::Nodes::ParenthesisExpr &node) override;
+
+        // Consts
+        void visit(const Parser::Nodes::IntConstant &node) override;
+
+
+        // Class Interface
     private:
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder{_context};

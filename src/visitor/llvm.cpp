@@ -12,10 +12,14 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
 
+// Base
 void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
     throw std::runtime_error("Cannot compile base node!");
 }
 
+
+// End
+// Program
 void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
     std::cout << "Program node\n";
@@ -24,105 +28,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     node.accept_children(*this);
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
-    std::cout << "Var decl\n";
-    llvm::Value *v = _named_values[node.identifier];
-    if(v) {
-        throw std::runtime_error("Redeclaration of a variable! " + node.identifier);
-    }
-    if(node.type_identifier != "int") {
-        throw std::runtime_error("Use of undeclared type " + node.type_identifier);
-    }
-    // add variable with default value
-    // _named_values[node.identifier] = llvm::?
-    // return it
-}
 
-
-void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
-    std::cout << "Assig expr\n";
-    // Compute left and right if needed
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    //llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        throw std::runtime_error("Assignment not supported");
-        //node.rhs->accept(*this); rhs = _ret_value;
-    }
-    // todo temporary
-    _ret_value = lhs;
-//    lhs->print(llvm::errs());
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
-    // Compute left and right if needed
-    std::cout << "Add expr\n";
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        node.rhs->accept(*this); rhs = _ret_value;
-    }
-    switch(node.op.id) {
-        case Lexer::Token::Id::Plus:
-            _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
-            break;
-        case Lexer::Token::Id::Minus:
-            _ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
-            break;
-        case Lexer::Token::Id::None:
-            _ret_value = lhs;
-            break;
-        default:
-            throw std::runtime_error("Unexpected operator during addition operator");
-    }
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    std::cout << "Mult expr\n";
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        node.rhs->accept(*this); rhs = _ret_value;
-    }
-    switch(node.op.id) {
-        case Lexer::Token::Id::Multiplication:
-            _ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
-            break;
-        case Lexer::Token::Id::Division:
-            // todo for now its unsigned division, we can do signed division
-            // but its kinda more comlpicated
-            _ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
-            break;
-        case Lexer::Token::Id::None:
-            _ret_value = lhs;
-            break;
-        default:
-            throw std::runtime_error("Unexpected operator during addition operator");
-    }
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
-    std::cout << "ConstInt\n";
-    _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
-    std::cout << "IdentifierExpr\n";
-    // lookup variable
-    llvm::Value *v = _named_values[node.symbol];
-    if(!v) {
-        throw std::runtime_error("Use of undeclared variable! " + node.symbol);
-    }
-    _ret_value = v;
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
-    node.expr->accept(*this);
-}
-
-//
-// Function generation
-//
-
+// Top Level
+// Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "FunctionProt\n";
     if(node.type_identifier != "int") {
@@ -212,6 +120,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     func->print(llvm::outs());
 }
 
+
+// Statement
 void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
     _ret_value = nullptr;
     for(auto& ch: node.children()) {
@@ -224,4 +134,105 @@ void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
     }
 }
 
+void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
+    std::cout << "Var decl\n";
+    llvm::Value *v = _named_values[node.identifier];
+    if(v) {
+        throw std::runtime_error("Redeclaration of a variable! " + node.identifier);
+    }
+    if(node.type_identifier != "int") {
+        throw std::runtime_error("Use of undeclared type " + node.type_identifier);
+    }
+    // add variable with default value
+    // _named_values[node.identifier] = llvm::?
+    // return it
+}
 
+
+// Expression
+// Binary
+void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
+    std::cout << "Assig expr\n";
+    // Compute left and right if needed
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    //llvm::Value* rhs = nullptr;
+    if(node.rhs) {
+        throw std::runtime_error("Assignment not supported");
+        //node.rhs->accept(*this); rhs = _ret_value;
+    }
+    // todo temporary
+    _ret_value = lhs;
+//    lhs->print(llvm::errs());
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
+    // Compute left and right if needed
+    std::cout << "Add expr\n";
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    llvm::Value* rhs = nullptr;
+    if(node.rhs) {
+        node.rhs->accept(*this); rhs = _ret_value;
+    }
+    switch(node.op.id) {
+        case Lexer::Token::Id::Plus:
+            _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
+            break;
+        case Lexer::Token::Id::Minus:
+            _ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
+            break;
+        case Lexer::Token::Id::None:
+            _ret_value = lhs;
+            break;
+        default:
+            throw std::runtime_error("Unexpected operator during addition operator");
+    }
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
+    std::cout << "Mult expr\n";
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    llvm::Value* rhs = nullptr;
+    if(node.rhs) {
+        node.rhs->accept(*this); rhs = _ret_value;
+    }
+    switch(node.op.id) {
+        case Lexer::Token::Id::Multiplication:
+            _ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
+            break;
+        case Lexer::Token::Id::Division:
+            // todo for now its unsigned division, we can do signed division
+            // but its kinda more comlpicated
+            _ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
+            break;
+        case Lexer::Token::Id::None:
+            _ret_value = lhs;
+            break;
+        default:
+            throw std::runtime_error("Unexpected operator during addition operator");
+    }
+}
+
+
+// Unary
+// Postfix
+// Primary
+void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
+    std::cout << "IdentifierExpr\n";
+    // lookup variable
+    llvm::Value *v = _named_values[node.symbol];
+    if(!v) {
+        throw std::runtime_error("Use of undeclared variable! " + node.symbol);
+    }
+    _ret_value = v;
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
+    node.expr->accept(*this);
+}
+
+
+// Consts
+void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
+    std::cout << "ConstInt\n";
+    _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
+}
