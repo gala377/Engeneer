@@ -188,14 +188,22 @@ void Parser::Nodes::NegativeExpr::accept(Parser::Visitor &v) const {
 
 
 // Postfix
+Parser::Nodes::PostfixExpr::PostfixExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs):
+    lhs(std::move(lhs)) {}
+
+void Parser::Nodes::PostfixExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    lhs->set_depth(_depth+1);
+}
+
 void Parser::Nodes::PostfixExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
 
-Parser::Nodes::CallExpr::CallExpr(std::unique_ptr<Parser::Nodes::PostfixExpr> &&lhs,
+Parser::Nodes::CallExpr::CallExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
                                   std::vector<std::unique_ptr<Parser::Nodes::Expression>> &&args):
-                                  lhs(std::move(lhs)), args(std::move(args)){}
+                                  PostfixExpr(std::move(lhs)), args(std::move(args)){}
 
 
 void Parser::Nodes::CallExpr::set_depth(std::uint32_t depth) {
@@ -212,7 +220,7 @@ void Parser::Nodes::CallExpr::accept(Parser::Visitor &v) const {
 
 Parser::Nodes::IndexExpr::IndexExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
                                     std::unique_ptr<Parser::Nodes::Expression> &&index_expr):
-                                    lhs(std::move(lhs)), index_expr(std::move(index_expr)) {}
+                                   PostfixExpr(std::move(lhs)), index_expr(std::move(index_expr)) {}
 
 void Parser::Nodes::IndexExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -225,9 +233,9 @@ void Parser::Nodes::IndexExpr::set_depth(std::uint32_t depth) {
 }
 
 
-Parser::Nodes::AccessExpr::AccessExpr(std::unique_ptr<Parser::Nodes::PostfixExpr> &&lhs,
-                                      std::unique_ptr<Parser::Nodes::PostfixExpr> &&rhs):
-                                      lhs(std::move(lhs)), rhs(std::move(rhs)) {}
+Parser::Nodes::AccessExpr::AccessExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
+                                      std::unique_ptr<Parser::Nodes::Expression> &&rhs):
+                                      PostfixExpr(std::move(lhs)), rhs(std::move(rhs)) {}
 
 void Parser::Nodes::AccessExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);

@@ -241,13 +241,51 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_ex
     Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
     if(auto tok = parse_token(Lexer::Token::Id::Multiplication); tok) {
         op = tok.value();
-        rhs = parse_prim_expr();
+        rhs = parse_unary_expr();
     } else if (auto tok = parse_token(Lexer::Token::Id::Division); tok) {
         op = tok.value();
-        rhs = parse_prim_expr();
+        rhs = parse_unary_expr();
     }
     return std::make_unique<Nodes::MultiplicativeExpr>(
             std::move(lhs), op, std::move(rhs));
+}
+
+
+// Unary
+std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_unary_expr() {
+    return one_of<Nodes::UnaryExpr>(
+            &Parser::parse_negative_expr,
+            &Parser::parse_postfix_expr);
+}
+
+std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr() {
+    if(_lexer.curr_token().id != Lexer::Token::Id::Minus) {
+        return {nullptr};
+    }
+    auto rhs = parse_unary_expr();
+    if(!rhs) {
+        throw std::runtime_error("Expression expected after unary - operator");
+    }
+    return std::make_unique<Nodes::NegativeExpr>(std::move(rhs));
+}
+
+
+// Postfix
+std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr() {
+    auto lhs = parse_prim_expr();
+    switch (_lexer.curr_token().id) {
+        case Lexer::Token::Id::LeftSquareBracket:
+            break;
+
+        case Lexer::Token::Id::LeftParenthesis:
+            break;
+
+        case Lexer::Token::Id::Dot:
+            break;
+
+        default:
+            return std::make_unique<Nodes::AccessExpr>();
+    }
 }
 
 

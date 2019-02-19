@@ -132,11 +132,16 @@ void Visitor::Stringify::visit(const Parser::Nodes::NegativeExpr &node) {
 
 // Postfix
 void Visitor::Stringify::visit(const Parser::Nodes::CallExpr &node) {
-    // todo
+    stringify(node, "CallExpr: ()");
+    node.lhs->accept(*this);
+    for(auto& arg: node.args) {
+        arg->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::IndexExpr &node) {
-    // todo
+    stringify(node, "Index Expr: []");
+    node.lhs->accept(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::AccessExpr &node) {

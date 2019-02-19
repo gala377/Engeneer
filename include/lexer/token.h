@@ -64,6 +64,7 @@ namespace Lexer {
             Comma,
             Semicolon,
             Colon,
+            Dot,
 
             DoubleMinus,
             DoublePlus,

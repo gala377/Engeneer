@@ -177,7 +177,14 @@ namespace Parser::Nodes {
 
     // Postfix
     class PostfixExpr: public Expression {
+        // todo finish postfix parsing and refactoring
     public:
+        PostfixExpr(std::unique_ptr<Expression>&& lhs);
+
+        std::unique_ptr<Expression> lhs;
+
+        void set_depth(std::uint32_t depth) override;
+
         void accept(Parser::Visitor &v) const override;
     };
 
@@ -187,7 +194,6 @@ namespace Parser::Nodes {
                 std::unique_ptr<Expression>&& lhs,
                 std::unique_ptr<Expression>&& index_expr);
 
-        std::unique_ptr<Expression> lhs;
         std::unique_ptr<Expression> index_expr;
 
         void set_depth(std::uint32_t depth) override;
@@ -198,10 +204,9 @@ namespace Parser::Nodes {
     class CallExpr: public PostfixExpr {
     public:
         CallExpr(
-                std::unique_ptr<PostfixExpr>&& lhs,
+                std::unique_ptr<Expression>&& lhs,
                 std::vector<std::unique_ptr<Expression>>&& args);
 
-        std::unique_ptr<PostfixExpr> lhs;
         std::vector<std::unique_ptr<Expression>> args;
 
         void set_depth(std::uint32_t depth) override;
@@ -216,11 +221,10 @@ namespace Parser::Nodes {
     class AccessExpr: public PostfixExpr {
     public:
         AccessExpr(
-                std::unique_ptr<PostfixExpr>&& lhs,
-                std::unique_ptr<PostfixExpr>&& rhs);
+                std::unique_ptr<Expression>&& lhs,
+                std::unique_ptr<Expression>&& rhs);
 
-        std::unique_ptr<PostfixExpr> lhs;
-        std::unique_ptr<PostfixExpr> rhs;
+        std::unique_ptr<Expression> rhs;
 
         void set_depth(std::uint32_t depth) override;
 
