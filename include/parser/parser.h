@@ -22,24 +22,31 @@ namespace Parser {
         explicit Parser(Lexer::Source::Base& s);
 
         AST parse();
-    private:
+    protected:
         Lexer::Lexer _lexer;
 
-        // Syntax parsers
-        std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
+        // Parsers
+
+        // End
         std::unique_ptr<Nodes::End> parse_end_of_file();
+
+        // Top Level
+        std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
-        
+
+        // Function
         std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();
         std::unique_ptr<Nodes::FunctionProt> parse_func_header();
 
-        std::unique_ptr<Nodes::CodeBlock> parse_code_block();
+        // Statement
         std::unique_ptr<Nodes::Statement> parse_statement();
+        std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
-
 
         // Expressions
         std::unique_ptr<Nodes::Expression> parse_expr();
+
+        // Binary
         std::unique_ptr<Nodes::AssignmentExpr> parse_assig_expr();
         std::unique_ptr<Nodes::AdditiveExpr> parse_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_mult_expr();
@@ -48,17 +55,20 @@ namespace Parser {
         // todo parse postfix
         // todo parse access
 
+        // Primary
         std::unique_ptr<Nodes::PrimaryExpr> parse_prim_expr();
         std::unique_ptr<Nodes::Identifier> parse_ident();
+        std::unique_ptr<Nodes::ParenthesisExpr> parse_parenthesis();
+
+        // Const
         std::unique_ptr<Nodes::Constant> parse_const();
         std::unique_ptr<Nodes::IntConstant> parse_int();
         std::unique_ptr<Nodes::StringConstant> parse_string();
-        std::unique_ptr<Nodes::ParenthesisExpr> parse_parenthesis();
+
 
         // helper parsers
         using arg_list_t = std::vector<std::unique_ptr<Nodes::GlobVariableDecl>>;
         arg_list_t parse_func_arg_list();
-
 
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
