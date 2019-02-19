@@ -39,6 +39,21 @@ namespace Visitor {
         void visit(const Parser::Nodes::Identifier &node) override;
         void visit(const Parser::Nodes::ParenthesisExpr &node) override;
         void visit(const Parser::Nodes::StringConstant &node) override;
+
+        void visit(const Parser::Nodes::End &node) override;
+
+        void visit(const Parser::Nodes::TopLevelDecl &node) override;
+
+        void visit(const Parser::Nodes::AccessExpr &node) override;
+
+        void visit(const Parser::Nodes::NegativeExpr &node) override;
+
+        void visit(const Parser::Nodes::PostfixExpr &node) override;
+
+        void visit(const Parser::Nodes::CallExpr &node) override;
+
+        void visit(const Parser::Nodes::IndexExpr &node) override;
+
     };
 
 }

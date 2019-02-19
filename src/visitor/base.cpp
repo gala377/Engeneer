@@ -87,3 +87,32 @@ void Visitor::Base::visit(const Parser::Nodes::ParenthesisExpr &node) {
 void Visitor::Base::visit(const Parser::Nodes::StringConstant &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
+
+void Visitor::Base::visit(const Parser::Nodes::End &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::TopLevelDecl &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::AccessExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::NegativeExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::PostfixExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::CallExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+
+}
+
+void Visitor::Base::visit(const Parser::Nodes::IndexExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}

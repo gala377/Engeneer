@@ -2,72 +2,49 @@
 // Created by igor on 30.12.18.
 //
 
-#include <parser/nodes/concrete.h>
 #include <iostream>
 
-/*
- *  Program
- */
+#include <parser/nodes/concrete.h>
 
+
+// End
+void Parser::Nodes::End::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+
+// Program
 void Parser::Nodes::Program::accept(Parser::Visitor &v) const {
     v.visit(*this);
 //    accept_children(v);
 }
 
-/*
-*   Identifier
-*/
 
 
-Parser::Nodes::Identifier::Identifier(const std::string& symbol) : symbol(symbol) {};
-
-void Parser::Nodes::Identifier::accept(Parser::Visitor &v) const {
+// Top Level
+void Parser::Nodes::TopLevelDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
-/*
- *  CodeBlock
- */
 
-void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
-    v.visit(*this);
-//    accept_children(v);
-}
-
-
-/*
- * GlobVariableDecl
- */
-
-void Parser::Nodes::GlobVariableDecl::accept(Parser::Visitor &v) const {
-    v.visit(*this);
-}
-
+// GlobVarDecl
 Parser::Nodes::GlobVariableDecl::GlobVariableDecl(
         const std::string& symbol,
         const std::string& type_symbol):
         identifier(symbol), type_identifier(type_symbol) {}
 
-/*
- * VariableDecl
- */
-
-Parser::Nodes::VariableDecl::VariableDecl(
-        const std::string& symbol,
-        const std::string& type_symbol):
-        identifier(symbol), type_identifier(type_symbol) {}
-
-void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
+void Parser::Nodes::GlobVariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
-/*
- *  FunctionDecl
- */
 
-void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
+
+// Functions
+void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
+
 
 Parser::Nodes::FunctionProt::FunctionProt(
         const std::string &identifier,
@@ -75,10 +52,10 @@ Parser::Nodes::FunctionProt::FunctionProt(
         std::vector<std::unique_ptr<Parser::Nodes::GlobVariableDecl>> &&arg_list) :
         identifier(identifier), type_identifier(type_identifier), arg_list(std::move(arg_list)) {}
 
+void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
 
-/*
- * FunctionDef
- */
 
 Parser::Nodes::FunctionDef::FunctionDef(
         std::unique_ptr<Parser::Nodes::FunctionProt> &&decl,
@@ -101,16 +78,38 @@ void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
 }
 
 
-/*
- *
- * Expressions in general
- *
- */
 
+// Statement
+void Parser::Nodes::Statement::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+//    accept_children(v);
+}
+
+
+Parser::Nodes::VariableDecl::VariableDecl(
+        const std::string& symbol,
+        const std::string& type_symbol):
+        identifier(symbol), type_identifier(type_symbol) {}
+
+void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+
+// Expressions
 void Parser::Nodes::Expression::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+
+
+// Binary
 Parser::Nodes::BinaryExpr::BinaryExpr(
         std::unique_ptr<Parser::Nodes::Expression> &&lhs,
         const Lexer::Token& op,
@@ -133,6 +132,7 @@ void Parser::Nodes::BinaryExpr::accept(Parser::Visitor &v) const {
 //    }
 }
 
+
 void Parser::Nodes::AssignmentExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 //    lhs->accept(v);
@@ -140,6 +140,7 @@ void Parser::Nodes::AssignmentExpr::accept(Parser::Visitor &v) const {
 //        rhs->accept(v);
 //    }
 }
+
 
 void Parser::Nodes::AdditiveExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -158,6 +159,14 @@ void Parser::Nodes::MultiplicativeExpr::accept(Parser::Visitor &v) const {
 //    }
 }
 
+
+void Parser::Nodes::AccessExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+
+// Unary
 Parser::Nodes::UnaryExpr::UnaryExpr(
         const Lexer::Token& op,
         std::unique_ptr<Parser::Nodes::Expression> &&rhs):
@@ -173,24 +182,59 @@ void Parser::Nodes::UnaryExpr::accept(Parser::Visitor &v) const {
 //    rhs->accept(v);
 }
 
+
+Parser::Nodes::NegativeExpr::NegativeExpr(std::unique_ptr<Parser::Nodes::Expression> &&rhs):
+        UnaryExpr(Lexer::Token{Lexer::Token::Id::Minus, "-"}, std::move(rhs)){}
+
+void Parser::Nodes::NegativeExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+
+// Postfix
+void Parser::Nodes::PostfixExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::CallExpr::CallExpr(std::vector<std::unique_ptr<Parser::Nodes::Expression>> &&args):
+        args(std::move(args)) {}
+
+void Parser::Nodes::CallExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::IndexExpr::IndexExpr(std::unique_ptr<Parser::Nodes::Expression> &&index_expr):
+        index_expr(std::move(index_expr)) {}
+
+void Parser::Nodes::IndexExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+// Primary
 void Parser::Nodes::PrimaryExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
-void Parser::Nodes::Constant::accept(Parser::Visitor &v) const {
-    v.visit(*this);
-}
 
-Parser::Nodes::IntConstant::IntConstant(int value): value(value) {}
+Parser::Nodes::Identifier::Identifier(const std::string& symbol) : symbol(symbol) {};
 
-void Parser::Nodes::IntConstant::accept(Parser::Visitor &v) const {
+void Parser::Nodes::Identifier::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
 
 Parser::Nodes::ParenthesisExpr::ParenthesisExpr(std::unique_ptr<Parser::Nodes::Expression> &&expr):
-    expr(std::move(expr)) {
+        expr(std::move(expr)) {
     this->expr->set_depth(_depth + 1);
+}
+
+void Parser::Nodes::ParenthesisExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    expr->set_depth(_depth+1);
 }
 
 void Parser::Nodes::ParenthesisExpr::accept(Parser::Visitor &v) const {
@@ -198,10 +242,20 @@ void Parser::Nodes::ParenthesisExpr::accept(Parser::Visitor &v) const {
 //    expr->accept(v);
 }
 
-void Parser::Nodes::ParenthesisExpr::set_depth(std::uint32_t depth) {
-    Base::set_depth(depth);
-    expr->set_depth(_depth+1);
+
+
+// Consts
+void Parser::Nodes::Constant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
 }
+
+
+Parser::Nodes::IntConstant::IntConstant(int value): value(value) {}
+
+void Parser::Nodes::IntConstant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
 
 Parser::Nodes::StringConstant::StringConstant(const std::string& value): value(value) {}
 

@@ -12,10 +12,14 @@
 
 namespace Parser::Nodes {
 
-    class TopLevelDecl: public Base {};
+    // End
+    class End: public Base {
+    public:
+        void accept(Parser::Visitor &v) const override;
+    };
 
-    class End: public Base {};
 
+    // Program
     class Program: public BaseParent {
     public:
         using BaseParent::BaseParent;
@@ -23,9 +27,11 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class Statement: public Base {
+
+    // Top Level
+    class TopLevelDecl: public Base {
     public:
-        Statement() = default;
+        void accept(Parser::Visitor &v) const override;
     };
 
     class GlobVariableDecl: public TopLevelDecl {
@@ -38,17 +44,12 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class VariableDecl: public Statement {
+
+    // Function
+    class FunctionDecl: public TopLevelDecl {
     public:
-        VariableDecl(const std::string& symbol, const std::string& type_symbol);
-
-        std::string identifier;
-        std::string type_identifier;
-
         void accept(Parser::Visitor &v) const override;
     };
-
-    class FunctionDecl: public TopLevelDecl {};
 
     class FunctionProt: public FunctionDecl {
     public:
@@ -65,13 +66,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    class CodeBlock: public BaseParent {
-    public:
-        using BaseParent::BaseParent;
-
-        void accept(Parser::Visitor &v) const override;
-    };
-
     class FunctionDef: public FunctionDecl {
     public:
         FunctionDef(std::unique_ptr<FunctionProt>&& decl, std::unique_ptr<CodeBlock>&& body);
@@ -83,15 +77,39 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    //
-    // Expressions
-    //
 
+    // Statement
+    class Statement: public Base {
+    public:
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class CodeBlock: public BaseParent {
+    public:
+        using BaseParent::BaseParent;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class VariableDecl: public Statement {
+    public:
+        VariableDecl(const std::string& symbol, const std::string& type_symbol);
+
+        std::string identifier;
+        std::string type_identifier;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+
+    // Expressions
     class Expression: public Statement {
     public:
         void accept(Parser::Visitor &v) const override;
     };
 
+
+    //Binary
     class BinaryExpr: public Expression {
     public:
         BinaryExpr(
@@ -108,6 +126,8 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    // todo make constructors for binary
+    // expr so they pass the operator by themselves
     class AssignmentExpr: public BinaryExpr {
     public:
         using BinaryExpr::BinaryExpr;
@@ -132,6 +152,18 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    // todo should it be like that
+    // and compiler says if something is wrong
+    // or should we catch this on parsing stage?
+    class AccessExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+
+    // Unary Expr
     // todo each unary its own class?
     class UnaryExpr: public Expression {
     public:
@@ -145,16 +177,40 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo
-    // A postfix can be a function call ()
-    // or a ++ -- [] (indexing)
-    // or access (. ->) so more though is needed here
-    // for now no postfix
-    //    class PostfixExpr: public Expression{
-    //    public:
-    //        void accept(Parser::Visitor &v) const override;
-    //    };
+    class NegativeExpr: public UnaryExpr {
+    public:
+        NegativeExpr(std::unique_ptr<Expression>&& rhs);
 
+        void accept(Parser::Visitor &v) const override;
+    };
+
+
+    // Postfix
+    class PostfixExpr: public Expression {
+    public:
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class IndexExpr: public PostfixExpr {
+    public:
+        IndexExpr(std::unique_ptr<Expression>&& index_expr);
+
+        std::unique_ptr<Expression> index_expr;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class CallExpr: public PostfixExpr {
+    public:
+        CallExpr(std::vector<std::unique_ptr<Expression>>&& args);
+
+        std::vector<std::unique_ptr<Expression>> args;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+
+    // Primary
     class PrimaryExpr: public Expression {
     public:
         void accept(Parser::Visitor &v) const override;
@@ -169,6 +225,18 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    class ParenthesisExpr: public PrimaryExpr {
+    public:
+        explicit ParenthesisExpr(std::unique_ptr<Expression>&& expr);
+
+        std::unique_ptr<Expression> expr;
+
+        void set_depth(std::uint32_t depth) override;
+        void accept(Parser::Visitor &v) const override;
+    };
+
+
+    // Consts
     class Constant: public PrimaryExpr {
     public:
         void accept(Parser::Visitor &v) const override;
@@ -191,16 +259,6 @@ namespace Parser::Nodes {
 
         std::string value;
 
-        void accept(Parser::Visitor &v) const override;
-    };
-
-    class ParenthesisExpr: public PrimaryExpr {
-    public:
-        explicit ParenthesisExpr(std::unique_ptr<Expression>&& expr);
-
-        std::unique_ptr<Expression> expr;
-
-        void set_depth(std::uint32_t depth) override;
         void accept(Parser::Visitor &v) const override;
     };
 
