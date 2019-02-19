@@ -7,6 +7,10 @@
 #include <visitor/log.h>
 #include <lexer/lexer.h>
 
+
+// Visitor Interface
+
+// Base
 void Visitor::Stringify::visit(const Parser::Nodes::Base& node) {
     stringify(node, "Unknown node");
 }
@@ -16,15 +20,24 @@ void Visitor::Stringify::visit(const Parser::Nodes::BaseParent& node) {
     node.accept_children(*this);
 }
 
+
+// End
+
+
+// Program
 void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
     stringify(node, "Program");
     node.accept_children(*this);
 }
 
+
+// Top Level
 void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
     stringify(node, "GlobVarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
+
+// Function
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
     std::string repr{"FuncHeader: " + node.type_identifier + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
@@ -34,6 +47,18 @@ void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
     stringify(node, std::move(repr));
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl& node) {
+    stringify(node, "FuncDecl");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
+    stringify(node, "FuncDef");
+    node.declaration->accept(*this);
+    node.body->accept(*this);
+}
+
+
+// Statement
 void Visitor::Stringify::visit(const Parser::Nodes::Statement &node) {
     stringify(node, "Unknown statement node");
 }
@@ -47,35 +72,14 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
     stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
-void Visitor::Stringify::visit(const Parser::Nodes::FunctionDef &node) {
-    stringify(node, "FuncDef");
-    node.declaration->accept(*this);
-    node.body->accept(*this);
-}
 
-void Visitor::Stringify::visit(const Parser::Nodes::FunctionDecl& node) {
-    stringify(node, "FuncDecl");
-}
-
-std::string Visitor::Stringify::repr() {
-    return _stream.str();
-}
-
-void Visitor::Stringify::stringify(const Parser::Nodes::Base &node, std::string &&as) {
-    add_margin(node.depth());
-    _stream << as << "\n";
-}
-
-void Visitor::Stringify::add_margin(std::uint32_t depth) {
-    for(std::uint32_t i = 0; i < depth; ++i) {
-        _stream << "--------";
-    }
-}
-
+// Expression
 void Visitor::Stringify::visit(const Parser::Nodes::Expression &node) {
     stringify(node, "Expression");
 }
 
+
+// Binary
 void Visitor::Stringify::visit(const Parser::Nodes::BinaryExpr &node) {
     stringify(node, "BinExpr");
     node.lhs->accept(*this);
@@ -130,22 +134,20 @@ void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     }
 }
 
+
+// Unary
 void Visitor::Stringify::visit(const Parser::Nodes::UnaryExpr &node) {
     stringify(node, "UnaryExpr");
     node.rhs->accept(*this);
 }
 
+
+// Postfix
+
+
+// Primary
 void Visitor::Stringify::visit(const Parser::Nodes::PrimaryExpr &node) {
     stringify(node, "PrimaryExpr");
-}
-
-void Visitor::Stringify::visit(const Parser::Nodes::Constant &node) {
-    stringify(node, "Constant");
-}
-
-void Visitor::Stringify::visit(const Parser::Nodes::IntConstant &node) {
-    std::string mess = "IntConst: " + std::to_string(node.value);
-    stringify(node, std::move(mess));
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::Identifier &node) {
@@ -157,6 +159,47 @@ void Visitor::Stringify::visit(const Parser::Nodes::ParenthesisExpr &node) {
     node.expr->accept(*this);
 }
 
+
+// Const
+
+void Visitor::Stringify::visit(const Parser::Nodes::Constant &node) {
+    stringify(node, "Constant");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::IntConstant &node) {
+    std::string mess = "IntConst: " + std::to_string(node.value);
+    stringify(node, std::move(mess));
+}
+
 void Visitor::Stringify::visit(const Parser::Nodes::StringConstant &node) {
     stringify(node, "StringConst: " + node.value);
 }
+
+
+
+// Class Interface
+
+std::string Visitor::Stringify::repr() {
+    return _stream.str();
+}
+
+void Visitor::Stringify::stringify(const Parser::Nodes::Base &node, std::string &&as) {
+    add_margin(node.depth());
+    _stream << as << "\n";
+}
+
+void Visitor::Stringify::add_margin(std::uint32_t depth) {
+    for(std::uint32_t i = 0; i < depth; ++i) {
+        _stream << "--------";
+    }
+}
+
+
+
+
+
+
+
+
+
+
