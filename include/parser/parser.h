@@ -76,23 +76,52 @@ namespace Parser {
         using arg_list_t = std::vector<std::unique_ptr<Nodes::GlobVariableDecl>>;
         arg_list_t parse_func_arg_list();
 
+        std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
+        std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
+
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
         std::optional<std::string> parse_type();
+        std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
         // Helper functions
         template<typename Ret, typename ...Ts>
         std::unique_ptr<Ret> one_of(Ts &&... ts) {
             std::unique_ptr<Ret> res = nullptr;
-            ( run_parser<Ret>(ts, res) || ...);
+            ( run_parser<std::unique_ptr<Ret>>(ts, res) || ...);
+            return std::move(res);
+        }
+
+        template<typename Ret, typename ...Ts>
+        std::optional<Ret> one_of_op(Ts &&... ts) {
+            std::optional<Ret> res = std::nullopt;
+            ( run_parser<std::optional<Ret>>(ts, res) || ...);
             return std::move(res);
         }
 
         template<typename Ret, typename F>
-        bool run_parser(F f, std::unique_ptr<Ret> &result) {
+        bool run_parser(F f, Ret& result) {
             result = std::move(std::bind(f, this)());
             return (bool)result;
         }
+
+        template<typename Parser, typename Func>
+        void fold(Parser p, Func f) {
+            auto wrap_p = std::move(std::bind(p, this));
+            for(auto res = wrap_p(); res; res = wrap_p()) {
+                f(std::move(res));
+            }
+        }
+
+        template<typename Parser, typename Func>
+        void parse_or(Parser p, Func f) {
+            auto wrap_p = std::move(std::bind(p, this));
+            if(auto res = wrap_p(); !res) {
+                f(std::move(res));
+            }
+        }
+
+
     };
 
 }

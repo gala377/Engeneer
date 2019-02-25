@@ -114,7 +114,7 @@ Parser::Nodes::BinaryExpr::BinaryExpr(
         std::unique_ptr<Parser::Nodes::Expression> &&lhs,
         const Lexer::Token& op,
         std::unique_ptr<Parser::Nodes::Expression> &&rhs):
-        lhs(std::move(lhs)), op(op), rhs(std::move(rhs)) {}
+        lhs(std::move(lhs)), rhs(std::move(rhs)), op(op) {}
 
 void Parser::Nodes::BinaryExpr::set_depth(std::uint32_t depth) {
     Base::set_depth(depth);

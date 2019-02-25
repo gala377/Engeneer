@@ -85,8 +85,11 @@ namespace Lexer {
 
         Id id;
         std::string symbol;
+
     };
 
+
+    static Token none_tok = Token{Token::Id::None, ""};
 }
 
 #endif //TKOM2_TOKEN_H
