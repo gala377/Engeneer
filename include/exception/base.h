@@ -9,6 +9,7 @@
 #include <exception>
 
 #include <boost/format.hpp>
+#include <lexer/token.h>
 
 
 namespace Exception {
@@ -37,20 +38,22 @@ namespace Exception {
 
     class BaseFilePositioned: public BaseFormatted {
     public:
-
         BaseFilePositioned(
             std::string file,
             std::uint32_t line,
             std::uint32_t in_line,
-            std::string mess);
+            const std::string& mess);
     };
 
     class BaseSyntax: public  BaseFilePositioned {
+    public:
         BaseSyntax(
             std::string file,
             std::uint32_t line,
             std::uint32_t in_line,
-            std::string mess);
+            const std::string& mess);
+
+        BaseSyntax(const Lexer::Token& tok, const std::string& mess);
     };
 }
 

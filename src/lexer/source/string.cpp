@@ -39,3 +39,7 @@ const uint32_t Lexer::Source::String::curr_line() const {
 const uint32_t Lexer::Source::String::curr_in_line_position() const {
     return _in_line_pos;
 }
+
+const char *Lexer::Source::String::name() const {
+    return "str source";
+}

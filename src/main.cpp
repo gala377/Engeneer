@@ -10,13 +10,14 @@
 #include <visitor/llvm.h>
 
 #include <exception/base.h>
+#include <exception/concrete.h>
 
 int main() {
-//    Lexer::Source::String s(R"(
-//int test(a int, b int) {
-//    (a+b)*2;
-//}
-//)");
+    Lexer::Source::String s(R"(
+int test(a int, b int) {
+    (a+b)*2;
+}
+)");
 //    Visitor::Stringify v;
 //    Visitor::LLVM comp;
 //
@@ -29,7 +30,13 @@ int main() {
 //    std::cout << "\nCompiling\n";
 //    ast.accept(comp);
 //    std::cout << "Compiled\n";
-    auto excp = Exception::BaseFormatted{"%1% %2%", "Hello", "World"};
-    std::cout << excp.str();
+
+    Lexer::Lexer l{s};
+    Lexer::Token tok{Lexer::Token::Id::End, ""};
+
+    tok = l.curr_token();
+    std::cout << Exception::ExpectedToken{tok, l.next_token()}.str();
+
+
     return 0;
 }

@@ -31,6 +31,9 @@ namespace Lexer::Source {
 
         // Position of the next character to read from the source.
         virtual const std::tuple<std::uint32_t, std::uint32_t> curr_source_position() const;
+
+        // Returns the name of the source
+        virtual const char* name() const = 0;
     };
 
     // Assigns current char to ch.

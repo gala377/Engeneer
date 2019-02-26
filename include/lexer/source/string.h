@@ -22,6 +22,8 @@ namespace Lexer::Source {
         const uint32_t curr_line() const override;
         const uint32_t curr_in_line_position() const override;
 
+        const char *name() const override;
+
     private:
         std::string _raw;
         std::int32_t  _curr_index = -1;

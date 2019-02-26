@@ -13,7 +13,7 @@ namespace Lexer {
     public:
         enum class Id {
             // General ones
-            Identifier=0,
+                Identifier=0,
 
             LeftParenthesis,
             RightParenthesis,
@@ -26,7 +26,7 @@ namespace Lexer {
 
 
             // Keywords
-            If=100,
+                If=100,
             Else,
             For,
             Struct,
@@ -39,10 +39,10 @@ namespace Lexer {
 
 
             // Operators
-            Assignment=200,
+                Assignment=200,
 
             // Logical
-            Equality,
+                Equality,
 
             Inequality,
             Negation,
@@ -54,14 +54,14 @@ namespace Lexer {
             LessEq,
 
             // Arithmetic
-            Plus,
+                Plus,
             Minus,
             Multiplication,
             Division,
             Modulo,
 
             // Special
-            Comma,
+                Comma,
             Semicolon,
             Colon,
             Dot,
@@ -70,26 +70,36 @@ namespace Lexer {
             DoublePlus,
 
             // ConstExpr
-            Integer,
+                Integer,
             Float,
             String,
             Char,
 
             // Other
-            NewLine=300,
+                NewLine=300,
             Space,
 
             None,
             End,
         };
 
+        Token(Id id, const std::string& symbol);
+
+        struct Span {
+            std::string source_name;
+            std::uint32_t line;
+            std::uint32_t beg_pos;
+            std::uint32_t end_pos;
+        };
+
         Id id;
         std::string symbol;
-
+        Span span;
     };
 
 
     static Token none_tok = Token{Token::Id::None, ""};
+    std::string str(Token::Id id);
 }
 
 #endif //TKOM2_TOKEN_H

@@ -15,7 +15,7 @@ namespace Lexer::Source {
     class File: public Base {
     public:
         // Opens file under file_path and calls next_char.
-        explicit File(std::string file_path);
+        explicit File(const std::string& file_path);
         // Calls close_file.
         ~File();
 
@@ -28,8 +28,11 @@ namespace Lexer::Source {
         const uint32_t curr_line() const override;
         const uint32_t curr_in_line_position() const override;
 
+        const char *name() const override;
+
     private:
         std::ifstream _file;
+        std::string _file_path;
 
         std::uint32_t _file_line{1};
         std::uint32_t  _in_line_pos{1};

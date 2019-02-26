@@ -4,7 +4,7 @@
 
 #include <lexer/source/file.h>
 
-Lexer::Source::File::File(std::string file_path) {
+Lexer::Source::File::File(const std::string& file_path): _file_path(file_path) {
     _file.open(file_path);
     if(_file.bad()) {
         // todo custom error
@@ -65,4 +65,8 @@ const uint32_t Lexer::Source::File::curr_line() const {
 
 const uint32_t Lexer::Source::File::curr_in_line_position() const {
     return _in_line_pos;
+}
+
+const char *Lexer::Source::File::name() const {
+    return _file_path.c_str();
 }

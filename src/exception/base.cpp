@@ -18,10 +18,18 @@ Exception::BaseFilePositioned::BaseFilePositioned(
     std::string file,
     std::uint32_t line,
     std::uint32_t in_line,
-    std::string mess): BaseFormatted("[%1% %2%:%3%] %4%", file, line, in_line, mess) {}
+    const std::string& mess): BaseFormatted("[%1% %2%:%3%] %4%", file, line, in_line, mess) {}
 
 Exception::BaseSyntax::BaseSyntax(
     std::string file,
     std::uint32_t line,
     std::uint32_t in_line,
-    std::string mess): BaseFilePositioned(file, line, in_line, std::string{"Syntax error: "} + mess) {}
+    const std::string& mess): BaseFilePositioned(file, line, in_line, std::string{"Syntax error: "} + mess) {}
+
+Exception::BaseSyntax::BaseSyntax(const Lexer::Token &tok, const std::string &mess):
+    BaseSyntax {
+        tok.span.source_name,
+        tok.span.line,
+        tok.span.beg_pos,
+        mess
+    } {}
