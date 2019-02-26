@@ -7,6 +7,7 @@
 #include <lexer/token.h>
 
 #include <parser/parser.h>
+#include <exception/concrete.h>
 
 // Class Interface
 Parser::Parser::Parser(
@@ -23,11 +24,17 @@ Parser::AST Parser::Parser::parse() {
         });
     auto curr_node = parse_end_of_file();
     if(!curr_node) {
-        throw std::runtime_error("End of program expected!");
+        error<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "End of source expected");
     }
     return std::move(ast);
 }
 
+
+const Exception::Handler &Parser::Parser::excp_handler() const {
+    return _excp_handler;
+}
 
 // Parsing
 
@@ -54,18 +61,27 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
     }
     auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
     if(!identifier_res) {
-        throw std::runtime_error("Expected variable name after let");
+        abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Expected variable name after let");
     }
     Lexer::Token var = identifier_res.value();
 
     auto type_res = parse_type();
     if(!identifier_res) {
-        throw std::runtime_error("Expected type after variable name");
+        abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Expected type after variable name");
     }
     auto type_symbol = type_res.value();
 
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
-        throw std::runtime_error("Missing semicolon");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.curr_token(),
+                "Missing semicolon");
     }
 
     return std::make_unique<Nodes::GlobVariableDecl>(var.symbol, type_symbol);
@@ -98,17 +114,24 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
 
     auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
     if(!identifier_res) {
-        throw std::runtime_error("Expected function identifier");
+        abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Expected function identifier");
     }
     auto identifier = identifier_res.value().symbol;
     if(!parse_token(Lexer::Token::Id::LeftParenthesis)) {
-        throw std::runtime_error("( expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::LeftParenthesis, "("},
+                _lexer.curr_token());
     }
 
     auto arg_list = parse_func_arg_list();
 
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
-        throw std::runtime_error(") expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::RightParenthesis, ")"},
+                _lexer.curr_token());
     }
 
     return std::make_unique<Nodes::FunctionProt>(
@@ -125,14 +148,19 @@ Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
     while(ident) {
         auto type = parse_type();
         if(!type) {
-            throw std::runtime_error("Expected type identifier");
+            abort<Exception::ExpectedToken>(
+                    Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                    _lexer.curr_token(),
+                    "Expected type after variable name");
         }
         arg_list.emplace_back(
                 std::make_unique<Nodes::GlobVariableDecl>(ident.value().symbol, type.value()));
         if(parse_token(Lexer::Token::Id::Comma)) {
             ident = parse_token(Lexer::Token::Id::Identifier);
             if(!ident) {
-                throw std::runtime_error("Identifier expected");
+                abort<Exception::ExpectedToken>(
+                        Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                        _lexer.curr_token());
             }
         } else {
             ident = std::nullopt;
@@ -151,7 +179,10 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
         return res;
     }
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
-        throw std::runtime_error("Semicolon expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.curr_token(),
+                "Missing semicolon");
     }
     return res;
 }
@@ -160,7 +191,9 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     auto code_block = std::make_unique<Nodes::CodeBlock>();
 
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
-        throw std::runtime_error("Left brace '{' expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::LeftBrace, "{"},
+                _lexer.curr_token());
     }
     fold(
         &Parser::parse_statement,
@@ -168,7 +201,9 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
             code_block->add_child(std::move(res));
         });
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
-        throw std::runtime_error("Right brace '}' expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
+                _lexer.curr_token());
     }
     return std::move(code_block);
 }
@@ -179,11 +214,17 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     }
     auto identifier= parse_ident();
     if(!identifier) {
-        throw std::runtime_error("Expected variable name after let");
+        abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Expected variable name after let");
     }
     auto type = parse_type();
     if(!type) {
-        throw std::runtime_error("Expected type after variable name");
+        abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Expected type after variable name");
     }
     return std::make_unique<Nodes::VariableDecl>(identifier->symbol, type.value());
 }
@@ -211,23 +252,6 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
             std::move(lhs), op, std::move(rhs));
 }
 
-//std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
-//    auto lhs = parse_mult_expr();
-//    if(!lhs) {
-//        return {nullptr};
-//    }
-//    std::unique_ptr<Nodes::Expression> rhs = nullptr;
-//    Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
-//    if(auto tok = parse_token(Lexer::Token::Id::Plus); tok) {
-//        op = tok.value();
-//        rhs = parse_mult_expr();
-//    } else if (auto tok = parse_token(Lexer::Token::Id::Minus); tok) {
-//        op = tok.value();
-//        rhs = parse_mult_expr();
-//    }
-//    return std::make_unique<Nodes::AdditiveExpr>(
-//            std::move(lhs), op, std::move(rhs));
-//}
 
 std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
     auto add_expr = parse_single_add_expr();
@@ -315,7 +339,9 @@ std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr
     // well no, what if we have many unary op?
     auto rhs = parse_unary_expr();
     if(!rhs) {
-        throw std::runtime_error("Expression expected after unary - operator");
+        abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Expression expected after unary - operator");
     }
     return std::make_unique<Nodes::NegativeExpr>(std::move(rhs));
 }
@@ -361,7 +387,9 @@ std::unique_ptr<Parser::Nodes::ParenthesisExpr> Parser::Parser::parse_parenthesi
         return {nullptr};
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
-        throw std::runtime_error("Right parenthesis ']' expected");
+        error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::RightParenthesis, ")"},
+                _lexer.curr_token());
     }
     return std::make_unique<Nodes::ParenthesisExpr>(std::move(expr));
 }

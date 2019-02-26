@@ -7,4 +7,5 @@ add_library(Parser
         )
 target_link_libraries(Parser
         Lexer
+        Exception
         )

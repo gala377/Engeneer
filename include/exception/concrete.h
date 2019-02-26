@@ -12,11 +12,17 @@ namespace Exception {
     class UnexpectedToken: public BaseSyntax {
     public:
         explicit UnexpectedToken(Lexer::Token tok);
+        UnexpectedToken(const Lexer::Token& tok, const std::string& details);
     };
 
     class ExpectedToken: public BaseSyntax {
     public:
         ExpectedToken(Lexer::Token expected, Lexer::Token actual);
+        ExpectedToken(
+                const Lexer::Token& expected,
+                const Lexer::Token& actual,
+                const std::string& details);
+
     };
 
 }

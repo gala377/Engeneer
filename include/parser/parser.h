@@ -25,6 +25,8 @@ namespace Parser {
             Exception::Handler& excp_handler = Exception::default_handler);
 
         AST parse();
+
+        const Exception::Handler& excp_handler() const;
     protected:
         Lexer::Lexer _lexer;
         Exception::Handler& _excp_handler;

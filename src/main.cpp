@@ -7,7 +7,7 @@
 #include <lexer/source/string.h>
 #include <visitor/log.h>
 #include <parser/parser.h>
-#include <visitor/llvm.h>
+//#include <visitor/llvm.h>
 
 #include <exception/base.h>
 #include <exception/concrete.h>
@@ -16,44 +16,33 @@
 int main() {
     Lexer::Source::String s(R"(
 int test(a int, b int) {
-    (a+b)*2;
+    (a+b)*2
+    a + b
+    let c int;
+    let d int
+    a+b;
+    (a+b
 }
 )");
-//    Visitor::Stringify v;
+    Visitor::Stringify v;
 //    Visitor::LLVM comp;
-//
-//    Parser::Parser p(s);
-//    auto ast = p.parse();
-//    ast.accept(v);
-//    std::cout << "Code parsed!\n\n""";
-//    std::cout << v.repr();
-//
+
+    Parser::Parser p(s);
+    Parser::AST ast;
+    try {
+        ast = p.parse();
+        p.excp_handler().throw_if_able();
+    } catch(Exception::Handler::Abort& e) {
+        std::cout << "Parsing error\n";
+        std::cout << e.what();
+    }
+    ast.accept(v);
+    std::cout << "Code parsed!\n\n""";
+    std::cout << v.repr();
+
 //    std::cout << "\nCompiling\n";
 //    ast.accept(comp);
 //    std::cout << "Compiled\n";
 
-    Lexer::Lexer l{s};
-    Lexer::Token tok{Lexer::Token::Id::End, ""};
-
-
-    Exception::Handler h;
-
-    tok = l.curr_token();
-    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
-    tok = l.curr_token();
-    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
-    tok = l.curr_token();
-    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
-    tok = l.curr_token();
-    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
-    tok = l.curr_token();
-    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
-
-    try {
-        h.abort(std::make_unique<Exception::UnexpectedToken>(l.next_token()));
-    } catch(Exception::Handler::Abort& e) {
-        std::cout << "Aborted/n";
-        std::cout << e.what();
-    }
     return 0;
 }

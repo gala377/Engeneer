@@ -16,7 +16,7 @@ namespace Exception {
     public:
         class Abort: std::exception {
         public:
-            explicit Abort(Handler& h);
+            explicit Abort(const Handler& h);
             const char *what() const noexcept override;
 
         private:
@@ -25,6 +25,8 @@ namespace Exception {
 
         void error(std::unique_ptr<Exception::Base>&& e);
         void abort(std::unique_ptr<Exception::Base>&& e);
+
+        void throw_if_able() const;
     protected:
         std::vector<std::unique_ptr<Exception::Base>> _excp;
 

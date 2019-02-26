@@ -14,7 +14,7 @@ void Exception::Handler::abort(std::unique_ptr<Exception::Base> &&e) {
 }
 
 
-Exception::Handler::Abort::Abort(Exception::Handler &h) {
+Exception::Handler::Abort::Abort(const Exception::Handler &h) {
     for(const auto& e: h._excp) {
         _trace += e->str() + "\n\n";
     }
@@ -22,4 +22,10 @@ Exception::Handler::Abort::Abort(Exception::Handler &h) {
 
 const char *Exception::Handler::Abort::what() const noexcept {
     return _trace.c_str();
+}
+
+void Exception::Handler::throw_if_able() const {
+    if(!_excp.empty()) {
+        throw Abort(*this);
+    }
 }

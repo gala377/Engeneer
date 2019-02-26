@@ -7,6 +7,7 @@
 
 
 // todo max lenght for the indentifiers
+// todo error reporting instead of throw
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"if", Token::Id::If},
