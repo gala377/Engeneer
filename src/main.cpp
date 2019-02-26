@@ -11,6 +11,7 @@
 
 #include <exception/base.h>
 #include <exception/concrete.h>
+#include <exception/handler.h>
 
 int main() {
     Lexer::Source::String s(R"(
@@ -34,9 +35,25 @@ int test(a int, b int) {
     Lexer::Lexer l{s};
     Lexer::Token tok{Lexer::Token::Id::End, ""};
 
+
+    Exception::Handler h;
+
     tok = l.curr_token();
-    std::cout << Exception::ExpectedToken{tok, l.next_token()}.str();
+    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
+    tok = l.curr_token();
+    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
+    tok = l.curr_token();
+    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
+    tok = l.curr_token();
+    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
+    tok = l.curr_token();
+    h.error(std::make_unique<Exception::ExpectedToken>(tok, l.next_token()));
 
-
+    try {
+        h.abort(std::make_unique<Exception::UnexpectedToken>(l.next_token()));
+    } catch(Exception::Handler::Abort& e) {
+        std::cout << "Aborted/n";
+        std::cout << e.what();
+    }
     return 0;
 }

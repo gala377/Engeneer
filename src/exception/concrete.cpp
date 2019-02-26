@@ -3,10 +3,17 @@
 //
 
 #include <exception/concrete.h>
+#include <boost/format.hpp>
+
 
 Exception::UnexpectedToken::UnexpectedToken(Lexer::Token tok):
-    BaseSyntax{tok, "Unexpected token: " + Lexer::str(tok.id)}{
+    BaseSyntax{tok, (boost::format("Unexpected token: %1%(\"%2%\")") % Lexer::str(tok.id) % tok.symbol).str() }{
 }
 
 Exception::ExpectedToken::ExpectedToken(Lexer::Token expected, Lexer::Token actual):
-    BaseSyntax{actual, "Expected token: " + Lexer::str(expected.id) + " got: " + Lexer::str(actual.id)} {}
+    BaseSyntax{actual,
+               (boost::format(R"(Expected token: %1%("%2%") got: %3%("%4%"))")
+               % Lexer::str(expected.id)
+               % expected.symbol
+               % Lexer::str(actual.id)
+               % actual.symbol).str()} {}
