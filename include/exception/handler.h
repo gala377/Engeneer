@@ -30,7 +30,7 @@ namespace Exception {
 
     };
 
-
+    static Handler default_handler;
 
 }
 

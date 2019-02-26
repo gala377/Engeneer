@@ -9,7 +9,10 @@
 #include <parser/parser.h>
 
 // Class Interface
-Parser::Parser::Parser(Lexer::Source::Base &s): _lexer(s) {}
+Parser::Parser::Parser(
+    Lexer::Source::Base &s,
+    Exception::Handler& excp_handler):
+    _lexer(s), _excp_handler(excp_handler) {}
 
 Parser::AST Parser::Parser::parse() {
     AST ast;

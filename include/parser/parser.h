@@ -13,17 +13,21 @@
 #include <parser/ast.h>
 #include <parser/nodes/base.h>
 #include <parser/nodes/concrete.h>
+#include <exception/handler.h>
 
 namespace Parser {
 
     class Parser {
     public:
         Parser() = delete;
-        explicit Parser(Lexer::Source::Base& s);
+        explicit Parser(
+            Lexer::Source::Base& s,
+            Exception::Handler& excp_handler = Exception::default_handler);
 
         AST parse();
     protected:
         Lexer::Lexer _lexer;
+        Exception::Handler& _excp_handler;
 
         // Parsers
 
@@ -106,7 +110,7 @@ namespace Parser {
         }
 
         template<typename Parser, typename Func>
-        void fold(Parser p, Func f) {
+        void fold(Parser&& p, Func&& f) {
             auto wrap_p = std::move(std::bind(p, this));
             for(auto res = wrap_p(); res; res = wrap_p()) {
                 f(std::move(res));
@@ -121,7 +125,15 @@ namespace Parser {
             }
         }
 
+        template <typename T, typename ...Args>
+        void error(Args&&... args) {
+            _excp_handler.error(std::make_unique<T>(std::forward<Args>(args)...));
+        }
 
+        template <typename T, typename ...Args>
+        void abort(Args&&... args){
+            _excp_handler.abort(std::make_unique<T>(std::forward<Args>(args)...));
+        }
     };
 
 }
