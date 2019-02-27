@@ -14,28 +14,25 @@
 #include <parser/nodes/base.h>
 #include <parser/nodes/concrete.h>
 #include <exception/handler.h>
+#include <exception/handling_mixin.h>
 
 namespace Parser {
 
-    class Parser {
+    class Parser: public Exception::HandlingMixin {
     public:
         Parser() = delete;
+        explicit Parser(Lexer::Source::Base& s);
         explicit Parser(
-            Lexer::Source::Base& s,
-            Exception::Handler& excp_handler = Exception::default_handler);
+                Lexer::Source::Base& s,
+                Exception::Handler& excp_handler);
 
         AST parse();
-
-        const Exception::Handler& excp_handler() const;
     protected:
         Lexer::Lexer _lexer;
-        Exception::Handler& _excp_handler;
-
         // Parsers
 
         // End
         std::unique_ptr<Nodes::End> parse_end_of_file();
-
         // Top Level
         std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
@@ -125,16 +122,6 @@ namespace Parser {
             if(auto res = wrap_p(); !res) {
                 f(std::move(res));
             }
-        }
-
-        template <typename T, typename ...Args>
-        void error(Args&&... args) {
-            _excp_handler.error(std::make_unique<T>(std::forward<Args>(args)...));
-        }
-
-        template <typename T, typename ...Args>
-        void abort(Args&&... args){
-            _excp_handler.abort(std::make_unique<T>(std::forward<Args>(args)...));
         }
     };
 

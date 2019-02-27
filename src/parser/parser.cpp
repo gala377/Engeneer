@@ -10,10 +10,13 @@
 #include <exception/concrete.h>
 
 // Class Interface
+
+Parser::Parser::Parser(Lexer::Source::Base &s): _lexer(s), HandlingMixin() {}
+
 Parser::Parser::Parser(
     Lexer::Source::Base &s,
     Exception::Handler& excp_handler):
-    _lexer(s), _excp_handler(excp_handler) {}
+    _lexer(s), HandlingMixin(excp_handler) {}
 
 Parser::AST Parser::Parser::parse() {
     AST ast;
@@ -29,11 +32,6 @@ Parser::AST Parser::Parser::parse() {
                 "End of source expected");
     }
     return std::move(ast);
-}
-
-
-const Exception::Handler &Parser::Parser::excp_handler() const {
-    return _excp_handler;
 }
 
 // Parsing

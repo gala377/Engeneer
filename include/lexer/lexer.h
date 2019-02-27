@@ -12,12 +12,16 @@
 #include <lexer/source/base.h>
 #include <lexer/token.h>
 
+#include <exception/handling_mixin.h>
+
 namespace Lexer {
 
-    class Lexer {
+    class Lexer: public Exception::HandlingMixin {
     public:
 
         explicit Lexer(Source::Base& source);
+        explicit Lexer(Source::Base& source, Exception::Handler& h);
+
 
         const Token curr_token() const;
         const Token peek() const;
@@ -25,7 +29,6 @@ namespace Lexer {
         const Token next_token();
 
         std::tuple<std::uint32_t, std::uint32_t> in_source_pos() const;
-
     private:
         enum class TokenAssemblerId {
             Identifier,

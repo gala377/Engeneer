@@ -52,7 +52,12 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
         {".", Token::Id::Dot},
 };
 
-Lexer::Lexer::Lexer(Source::Base &source): _source(source), _curr_token(Token{Token::Id::End, ""}), _next_token(_curr_token) {
+Lexer::Lexer::Lexer(Source::Base &source):
+    _source(source),
+    _curr_token(Token{Token::Id::End, ""}),
+    _next_token(_curr_token),
+    HandlingMixin() {
+
     _token_assemblers[TokenAssemblerId::Identifier] = std::bind(
             &Lexer::_process_identifier, this, std::placeholders::_1);
     _token_assemblers[TokenAssemblerId::Number] = std::bind(
@@ -69,6 +74,9 @@ Lexer::Lexer::Lexer(Source::Base &source): _source(source), _curr_token(Token{To
     next_token();
     next_token();
 }
+
+// todo how to? 
+Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h): HandlingMixin(h), Lexer(source) {}
 
 const Lexer::Token Lexer::Lexer::curr_token() const {
     return _curr_token;
