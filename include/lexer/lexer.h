@@ -53,6 +53,9 @@ namespace Lexer {
 
         AssemblersMap _token_assemblers;
 
+        void _init_token_assemblers();
+        void _init_curr_token();
+
         TokenAssemblerId char_to_assembler_id(const char& ch) const;
 
         Token _process_blank_char(char ch);

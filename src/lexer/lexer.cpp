@@ -7,7 +7,9 @@
 
 
 // todo max lenght for the indentifiers
-// todo error reporting instead of throw
+// todo  error reporting instead of throw?
+// todo  but should me abort? What kind of errors should they be?
+// todo  like Syntax or what?
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"if", Token::Id::If},
@@ -57,26 +59,39 @@ Lexer::Lexer::Lexer(Source::Base &source):
     _curr_token(Token{Token::Id::End, ""}),
     _next_token(_curr_token),
     HandlingMixin() {
-
-    _token_assemblers[TokenAssemblerId::Identifier] = std::bind(
-            &Lexer::_process_identifier, this, std::placeholders::_1);
-    _token_assemblers[TokenAssemblerId::Number] = std::bind(
-            &Lexer::_process_numeric, this, std::placeholders::_1);
-    _token_assemblers[TokenAssemblerId::Operator] = std::bind(
-            &Lexer::_process_operator, this, std::placeholders::_1);
-    _token_assemblers[TokenAssemblerId::String] = std::bind(
-            &Lexer::_process_string, this, std::placeholders::_1);
-    _token_assemblers[TokenAssemblerId::Blank] = std::bind(
-            &Lexer::_process_blank_char, this, std::placeholders::_1);
-    _token_assemblers[TokenAssemblerId::Eof] = std::bind(
-            &Lexer::_process_eof, this, std::placeholders::_1);
-
-    next_token();
-    next_token();
+    _init_token_assemblers();
+    _init_curr_token();
 }
 
 // todo how to? 
-Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h): HandlingMixin(h), Lexer(source) {}
+Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h):
+    _source(source),
+    _curr_token(Token{Token::Id::End, ""}),
+    _next_token(_curr_token),
+    HandlingMixin(h) {
+    _init_token_assemblers();
+    _init_curr_token();
+}
+
+void Lexer::Lexer::_init_token_assemblers() {
+    _token_assemblers[TokenAssemblerId::Identifier] = std::bind(
+        &Lexer::_process_identifier, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::Number] = std::bind(
+        &Lexer::_process_numeric, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::Operator] = std::bind(
+        &Lexer::_process_operator, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::String] = std::bind(
+        &Lexer::_process_string, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::Blank] = std::bind(
+        &Lexer::_process_blank_char, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::Eof] = std::bind(
+        &Lexer::_process_eof, this, std::placeholders::_1);
+}
+
+void Lexer::Lexer::_init_curr_token() {
+    next_token();
+    next_token();
+}
 
 const Lexer::Token Lexer::Lexer::curr_token() const {
     return _curr_token;
