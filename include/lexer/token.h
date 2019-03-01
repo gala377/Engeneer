@@ -30,6 +30,7 @@ namespace Lexer {
             Else,
             For,
             Struct,
+            Wraps,
             Let,
             Return,
             While,

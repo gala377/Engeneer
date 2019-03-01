@@ -5,7 +5,8 @@
 #ifndef TKOM2_CONCRETE_H
 #define TKOM2_CONCRETE_H
 
-#include <variant>
+#include <optional>
+
 #include <parser/nodes/base.h>
 #include <lexer/token.h>
 
@@ -43,7 +44,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-
     // Function
     class FunctionDecl: public TopLevelDecl {
     public:
@@ -55,12 +55,11 @@ namespace Parser::Nodes {
         FunctionProt(
                 const std::string &identifier,
                 const std::string &type_identifier,
-                std::vector<std::unique_ptr<GlobVariableDecl>> &&arg_list);
+                std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
 
         std::string identifier;
         std::string type_identifier;
-        // todo change to VariableDecl its local not global
-        std::vector<std::unique_ptr<GlobVariableDecl>> arg_list;
+        std::vector<std::unique_ptr<VariableDecl>> arg_list;
 
         void accept(Parser::Visitor &v) const override;
     };
@@ -73,6 +72,25 @@ namespace Parser::Nodes {
         std::unique_ptr<CodeBlock> body;
 
         void set_depth(std::uint32_t depth) override;
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    // struct
+    class StructDecl: public TopLevelDecl {
+    public:
+        StructDecl(
+            const std::string& identifier,
+            std::vector<std::unique_ptr<VariableDecl>>&& members,
+            std::vector<std::unique_ptr<FunctionDef>>&& methods,
+            const std::optional<std::string>& wrapped_struct = std::nullopt);
+
+        std::string identifier;
+        std::vector<std::unique_ptr<VariableDecl>> members;
+        std::vector<std::unique_ptr<FunctionDef>> methods;
+        std::optional<std::string> wrapped_struct;
+
+        void set_depth(std::uint32_t depth) override;
+
         void accept(Parser::Visitor &v) const override;
     };
 

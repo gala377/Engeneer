@@ -23,6 +23,7 @@ namespace Parser {
         // Top Level
         class TopLevelDecl;
         class GlobVariableDecl;
+        class StructDecl;
 
         // Function
         class FunctionDecl;

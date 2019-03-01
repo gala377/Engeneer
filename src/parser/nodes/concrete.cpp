@@ -17,7 +17,6 @@ void Parser::Nodes::End::accept(Parser::Visitor &v) const {
 // Program
 void Parser::Nodes::Program::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    accept_children(v);
 }
 
 
@@ -49,7 +48,7 @@ void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
 Parser::Nodes::FunctionProt::FunctionProt(
         const std::string &identifier,
         const std::string &type_identifier,
-        std::vector<std::unique_ptr<Parser::Nodes::GlobVariableDecl>> &&arg_list) :
+        std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>> &&arg_list) :
         identifier(identifier), type_identifier(type_identifier), arg_list(std::move(arg_list)) {}
 
 void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
@@ -73,10 +72,32 @@ void Parser::Nodes::FunctionDef::set_depth(std::uint32_t depth) {
 
 void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    declaration->accept(v);
-//    body->accept(v);
 }
 
+
+// Struct
+Parser::Nodes::StructDecl::StructDecl(const std::string &identifier,
+                                      std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>>&& members,
+                                      std::vector<std::unique_ptr<Parser::Nodes::FunctionDef>>&& methods,
+                                      const std::optional<std::string>& wrapped_struct):
+                                      identifier{identifier},
+                                      members{members},
+                                      methods{methods},
+                                      wrapped_struct{wrapped_struct} {}
+
+void Parser::Nodes::StructDecl::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::StructDecl::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    for(auto& m: members) {
+        m->set_depth(_depth+1);
+    }
+    for(auto& m: methods) {
+        m->set_depth(_depth+1);
+    }
+}
 
 
 // Statement
@@ -87,7 +108,6 @@ void Parser::Nodes::Statement::accept(Parser::Visitor &v) const {
 
 void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    accept_children(v);
 }
 
 
@@ -126,37 +146,21 @@ void Parser::Nodes::BinaryExpr::set_depth(std::uint32_t depth) {
 
 void Parser::Nodes::BinaryExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    lhs->accept(v);
-//    if (rhs) {
-//        rhs->accept(v);
-//    }
 }
 
 
 void Parser::Nodes::AssignmentExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    lhs->accept(v);
-//    if (rhs) {
-//        rhs->accept(v);
-//    }
 }
 
 
 void Parser::Nodes::AdditiveExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    lhs->accept(v);
-//    if (rhs) {
-//        rhs->accept(v);
-//    }
 }
 
 
 void Parser::Nodes::MultiplicativeExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    lhs->accept(v);
-//    if (rhs) {
-//        rhs->accept(v);
-//    }
 }
 
 
@@ -174,7 +178,6 @@ void Parser::Nodes::UnaryExpr::set_depth(std::uint32_t depth) {
 
 void Parser::Nodes::UnaryExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    rhs->accept(v);
 }
 
 
@@ -275,7 +278,6 @@ void Parser::Nodes::ParenthesisExpr::set_depth(std::uint32_t depth) {
 
 void Parser::Nodes::ParenthesisExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
-//    expr->accept(v);
 }
 
 

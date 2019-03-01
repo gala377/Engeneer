@@ -16,6 +16,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"else", Token::Id::Else},
         {"for", Token::Id::For},
         {"struct", Token::Id::Struct},
+        {"wraps", Token::Id::Wraps},
         {"let", Token::Id::Let},
         {"return", Token::Id::Return},
         {"while", Token::Id::While},
@@ -55,20 +56,20 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
 };
 
 Lexer::Lexer::Lexer(Source::Base &source):
+    HandlingMixin(),
     _source(source),
     _curr_token(Token{Token::Id::End, ""}),
-    _next_token(_curr_token),
-    HandlingMixin() {
+    _next_token(_curr_token) {
     _init_token_assemblers();
     _init_curr_token();
 }
 
 // todo how to? 
 Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h):
+    HandlingMixin(h),
     _source(source),
     _curr_token(Token{Token::Id::End, ""}),
-    _next_token(_curr_token),
-    HandlingMixin(h) {
+    _next_token(_curr_token) {
     _init_token_assemblers();
     _init_curr_token();
 }
