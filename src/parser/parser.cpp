@@ -11,12 +11,12 @@
 
 // Class Interface
 
-Parser::Parser::Parser(Lexer::Source::Base &s): _lexer(s), HandlingMixin() {}
+Parser::Parser::Parser(Lexer::Source::Base &s): HandlingMixin(), _lexer(s)  {}
 
 Parser::Parser::Parser(
     Lexer::Source::Base &s,
     Exception::Handler& excp_handler):
-    _lexer(s), HandlingMixin(excp_handler) {}
+    HandlingMixin(excp_handler), _lexer(s) {}
 
 Parser::AST Parser::Parser::parse() {
     AST ast;
@@ -360,6 +360,7 @@ std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr()
             //return std::make_unique<Nodes::AccessExpr>();
             throw std::runtime_error("Unimplemented!");
     }
+    return nullptr;
 }
 
 
