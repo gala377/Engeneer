@@ -32,6 +32,9 @@ void Visitor::Base::visit(const Parser::Nodes::GlobVariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::StructDecl &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
 
 // Function
 void Visitor::Base::visit(const Parser::Nodes::FunctionProt &node) {

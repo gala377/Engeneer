@@ -81,8 +81,8 @@ Parser::Nodes::StructDecl::StructDecl(const std::string &identifier,
                                       std::vector<std::unique_ptr<Parser::Nodes::FunctionDef>>&& methods,
                                       const std::optional<std::string>& wrapped_struct):
                                       identifier{identifier},
-                                      members{members},
-                                      methods{methods},
+                                      members{std::move(members)},
+                                      methods{std::move(methods)},
                                       wrapped_struct{wrapped_struct} {}
 
 void Parser::Nodes::StructDecl::accept(Parser::Visitor &v) const {

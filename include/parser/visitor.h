@@ -82,6 +82,7 @@ namespace Parser {
         virtual void visit(const Nodes::FunctionDecl& node) = 0;
         virtual void visit(const Nodes::FunctionProt& node) = 0;
         virtual void visit(const Nodes::FunctionDef& node) = 0;
+        virtual void visit(const Nodes::StructDecl& node) = 0;
 
         // Statement
         virtual void visit(const Nodes::Statement& node) = 0;

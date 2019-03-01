@@ -190,6 +190,21 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     }
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
+    std::string mess = "StructDecl: " + node.identifier;
+    if(node.wrapped_struct) {
+        mess += " wraps " + node.wrapped_struct.value();
+    }
+    stringify(node, std::move(mess));
+
+    for(auto& m: node.members) {
+        m->accept(*this);
+    }
+    for(auto& m: node.methods) {
+        m->accept(*this);
+    }
+}
+
 
 
 

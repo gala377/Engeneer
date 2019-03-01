@@ -34,6 +34,13 @@ Parser::AST Parser::Parser::parse() {
     return std::move(ast);
 }
 
+// Helper functions
+bool Parser::Parser::is_struct_decl() {
+    auto id = _lexer.peek().id;
+    return id == Lexer::Token::Id::Wraps ||
+           id == Lexer::Token::Id::LeftBrace;
+}
+
 // Parsing
 
 // End
@@ -50,7 +57,18 @@ std::unique_ptr<Parser::Nodes::End> Parser::Parser::parse_end_of_file() {
 std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_decl() {
     return one_of<Nodes::TopLevelDecl>(
             &Parser::parse_glob_var_decl,
-            &Parser::parse_func_decl);
+            &Parser::parse_func_or_struct);
+}
+
+std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_func_or_struct() {
+    // todo get identifier then check if struct and if so pass the identifier to apropriate function
+    auto identifier = parse_token(Lexer::Token::Id::Identifier);
+    if(!identifier) {
+        return {nullptr};
+    }
+    return one_of<Nodes::TopLevelDecl>(
+        std::bind(&Parser::parse_func_decl, std::placeholders::_1, identifier.value()),
+        std::bind(&Parser::parse_struct_decl, std::placeholders::_1, identifier.value()));
 }
 
 std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_decl() {
@@ -85,10 +103,36 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
     return std::make_unique<Nodes::GlobVariableDecl>(var.symbol, type_symbol);
 }
 
+std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl(const Lexer::Token& identifier) {
+    std::optional<std::string> wrapped_id;
+    if(parse_token(Lexer::Token::Id::Wraps)) {
+        auto id = parse_token(Lexer::Token::Id::Identifier);
+        if(!id) {
+            abort<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.curr_token(),
+                "Struct identifier expected after wraps keyword");
+        }
+        wrapped_id = id.value().symbol;
+    }
+    // todo
+    // auto body = parse_struct_body();
+    // parse_semicolon
+    // return std::make_unique<Nodes::StructDecl>
+}
+
+Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
+    unique_vec<Nodes::VariableDecl> members;
+    unique_vec<Nodes::FunctionDef> methods;
+    // todo we know after 2 identifiers
+    // 2 identifier semicolon is variable
+    // 2 identifiers parenthesis is function
+    // if i had function kywords it would be so much simpler but noooooo
+}
 
 // Function
-std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
-    auto header = parse_func_header();
+std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl(const Lexer::Token& type_identifier) {
+    auto header = parse_func_header(type_identifier);
     if(!header) {
         return {nullptr};
     }
@@ -103,19 +147,10 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
         std::move(header), std::move(body));
 }
 
-std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header() {
-    auto type_res = parse_type();
-    if(!type_res) {
-        return {nullptr};
-    }
-    auto type_symbol = type_res.value();
-
+std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header(const Lexer::Token& type_identifier) {
     auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
     if(!identifier_res) {
-        abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
-                _lexer.curr_token(),
-                "Expected function identifier");
+        return {nullptr};
     }
     auto identifier = identifier_res.value().symbol;
     if(!parse_token(Lexer::Token::Id::LeftParenthesis)) {
@@ -134,7 +169,7 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
 
     return std::make_unique<Nodes::FunctionProt>(
             identifier,
-            type_symbol,
+            type_identifier,
             std::move(arg_list));
 }
 
@@ -152,7 +187,7 @@ Parser::Parser::arg_list_t Parser::Parser::parse_func_arg_list() {
                     "Expected type after variable name");
         }
         arg_list.emplace_back(
-                std::make_unique<Nodes::GlobVariableDecl>(ident.value().symbol, type.value()));
+                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, type.value()));
         if(parse_token(Lexer::Token::Id::Comma)) {
             ident = parse_token(Lexer::Token::Id::Identifier);
             if(!ident) {

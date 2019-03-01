@@ -36,10 +36,11 @@ namespace Parser {
         // Top Level
         std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
+        std::unique_ptr<Nodes::StructDecl> parse_struct_decl(const Lexer::Token& identifier);
 
         // Function
-        std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();
-        std::unique_ptr<Nodes::FunctionProt> parse_func_header();
+        std::unique_ptr<Nodes::FunctionDecl> parse_func_decl(const Lexer::Token& type_identifier);
+        std::unique_ptr<Nodes::FunctionProt> parse_func_header(const Lexer::Token& type_identifier);
 
         // Statement
         std::unique_ptr<Nodes::Statement> parse_statement();
@@ -76,11 +77,19 @@ namespace Parser {
 
 
         // helper parsers
-        using arg_list_t = std::vector<std::unique_ptr<Nodes::GlobVariableDecl>>;
+        template <typename T>
+        using unique_vec = std::vector<std::unique_ptr<T>>;
+
+        using arg_list_t = unique_vec<Nodes::VariableDecl>;
         arg_list_t parse_func_arg_list();
 
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
+
+        std::unique_ptr<Nodes::TopLevelDecl> parse_func_or_struct();
+
+        using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDef>>;
+        struct_body_parse_res_t parse_struct_body();
 
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
@@ -88,6 +97,8 @@ namespace Parser {
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
         // Helper functions
+        bool is_struct_decl();
+
         template<typename Ret, typename ...Ts>
         std::unique_ptr<Ret> one_of(Ts &&... ts) {
             std::unique_ptr<Ret> res = nullptr;
