@@ -6,6 +6,7 @@
 
 #include <parser/parser.h>
 #include <lexer/source/string.h>
+#include <exception/concrete.h>
 #include <visitor/log.h>
 
 BOOST_AUTO_TEST_SUITE()
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE(top_level_func_decl_with_single_arg_and_trailing_comma_thro
         R"(
     int test (a double,);
 )"};
-    ast_assert_throw<std::runtime_error>(input);
+    ast_assert_throw<Exception::Handler::Abort>(input);
 }
 
 BOOST_AUTO_TEST_CASE(func_def_with_single_var_decl) {
