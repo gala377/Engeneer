@@ -123,6 +123,7 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
 
 std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
     // todo we didnt want to have a struct keyword but its really hard to parse it
+    // todo so I leave it for now and maybe delete it later? I dont know?
     if(!parse_token(Lexer::Token::Id::Struct)) {
         return nullptr;
     }
