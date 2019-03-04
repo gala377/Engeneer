@@ -7,7 +7,7 @@
 #include <lexer/source/string.h>
 #include <visitor/log.h>
 #include <parser/parser.h>
-//#include <visitor/llvm.h>
+#include <visitor/llvm.h>
 
 #include <exception/base.h>
 #include <exception/concrete.h>
@@ -15,21 +15,12 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    struct Test wraps Foo {
-        a int;
-        b double;
-
-        void foo() {
-            a + b;
-        }
-
-        c Test
-
-        void bar(a int, b int, c int) {}
-
+    struct A {
+        int foo(a int, b int);
+    }
 )");
     Visitor::Stringify v;
-//    Visitor::LLVM comp;
+    Visitor::LLVM comp;
 
     Parser::Parser p(s);
     Parser::AST ast;

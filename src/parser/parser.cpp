@@ -45,11 +45,6 @@ void Parser::Parser::add_member_or_method(
     auto arg_list = parse_func_arg_list();
     if(arg_list) {
         auto body = parse_code_block();
-        if(!body) {
-            abort<Exception::BaseSyntax>(
-                _lexer.curr_token(),
-                    "Missing function body");
-        }
         methods.emplace_back(
             std::make_unique<Nodes::FunctionDef>(
                 std::make_unique<Nodes::FunctionProt>(
@@ -145,13 +140,13 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
                 _lexer.curr_token(),
                 "Struct identifier expected after wraps keyword");
         }
-        wrapped_id = id.value().symbol;
+        wrapped_id = id->symbol;
     }
 
     auto [members, methods] = parse_struct_body();
 
     return std::make_unique<Nodes::StructDecl>(
-        identifier.value().symbol,
+        identifier->symbol,
         std::move(members),
         std::move(methods),
         wrapped_id);
