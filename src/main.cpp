@@ -15,14 +15,24 @@
 
 int main() {
     Lexer::Source::String s(R"(
-int test(a int, b int) {
-    (a+b)*2
-    a + b
-    let c int;
-    let d int
-    a+b;
-    (a+b
-}
+    struct Test wraps Foo {
+        a int;
+        b double;
+
+        void foo() {
+            a + b;
+        }
+
+        c Test
+
+        void bar(a int, b int, c int) {}
+    }
+
+    let test_var int;
+
+    Test test_func(a int, b int) {
+        a+b;
+    }
 )");
     Visitor::Stringify v;
 //    Visitor::LLVM comp;
