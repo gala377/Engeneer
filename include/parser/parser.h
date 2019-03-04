@@ -97,6 +97,11 @@ namespace Parser {
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
         // Helper functions
+        void add_member_or_method(
+            std::pair<std::string, std::string> identifiers,
+            unique_vec<Nodes::VariableDecl>& members,
+            unique_vec<Nodes::FunctionDef>& methods);
+
         template<typename Ret, typename ...Ts>
         std::unique_ptr<Ret> one_of(Ts &&... ts) {
             std::unique_ptr<Ret> res = nullptr;

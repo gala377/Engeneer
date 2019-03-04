@@ -26,13 +26,7 @@ int main() {
         c Test
 
         void bar(a int, b int, c int) {}
-    }
 
-    let test_var int;
-
-    Test test_func(a int, b int) {
-        a+b;
-    }
 )");
     Visitor::Stringify v;
 //    Visitor::LLVM comp;

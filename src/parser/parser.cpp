@@ -34,6 +34,41 @@ Parser::AST Parser::Parser::parse() {
     return std::move(ast);
 }
 
+// Helpers
+
+void Parser::Parser::add_member_or_method(
+    std::pair<std::string, std::string> identifiers,
+    Parser::Parser::unique_vec<Nodes::VariableDecl> &members,
+    Parser::Parser::unique_vec<Nodes::FunctionDef> &methods) {
+
+    auto& [first_id, second_id] = identifiers;
+    auto arg_list = parse_func_arg_list();
+    if(arg_list) {
+        auto body = parse_code_block();
+        if(!body) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                    "Missing function body");
+        }
+        methods.emplace_back(
+            std::make_unique<Nodes::FunctionDef>(
+                std::make_unique<Nodes::FunctionProt>(
+                    second_id,
+                    first_id,
+                    std::move(arg_list.value())),
+                std::move(body)));
+    } else {
+        if(!parse_token(Lexer::Token::Id::Semicolon)) {
+            error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.curr_token(),
+                "Missing semicolon");
+        }
+        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+            first_id, second_id));
+    }
+}
+
 // Parsing
 
 // End
@@ -124,72 +159,40 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
 Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     unique_vec<Nodes::VariableDecl> members;
     unique_vec<Nodes::FunctionDef> methods;
-
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
         error<Exception::ExpectedToken>(
                 Lexer::Token{Lexer::Token::Id::LeftBrace, "{"},
                 _lexer.curr_token(),
                 "Struct body is expected to be a code block");
     }
-    // todo actually its really complicated if we want to be able to
-    // todo have syntax for pointers
-
-    // todo <- parse 2 identifiers
-    // then parse semicolon if so then add a member
-    // if no parse function arg list if no then error missing semicolon
-    // if ok make function proto and parse body if no then missing function body
-    // if ok make a method
-    while(true) {
-        if(parse_token(Lexer::Token::Id::RightBrace)) {
-            break;
-        }
-        if(parse_token(Lexer::Token::Id::End)) {
-            abort<Exception::UnexpectedToken>(
-                Lexer::Token{Lexer::Token::Id::End, ""},
-                    "Unexpected end during struct parsing");
-        }
-        auto first_id = parse_token(Lexer::Token::Id::Identifier);
-        if(!first_id) {
-            abort<Exception::ExpectedToken>(
+    // todo type modifiers make it so much worst
+    // todo like consts and pointers
+    // todo because its no longer 2 identifiers
+    // todo its type and identifier or identifier and type
+    // todo but identifier alone, can also be a type
+    // todo so we can have 4 situations
+    // todo type identifier, identifier type, identifier identifier, type type
+    // todo and right now we only have this one --------^
+    fold(
+        make_tok_parser(Lexer::Token::Id::Identifier),
+        [this, &members, &methods](auto first_id) {
+            auto second_id = parse_token(Lexer::Token::Id::Identifier);
+            if(!second_id) {
+                abort<Exception::ExpectedToken>(
                     Lexer::Token{Lexer::Token::Id::Identifier, ""},
-                    _lexer.curr_token(),
-                    "Declarations in struct body need to be functions or variables");
-        }
-        auto second_id = parse_token(Lexer::Token::Id::Identifier);
-        if(!second_id) {
-            abort<Exception::ExpectedToken>(
-                    Lexer::Token{Lexer::Token::Id::Identifier, ""},
-                    _lexer.curr_token(),
-                    "Declarations in struct body need to be functions or variables");
-        }
-        auto arg_list = parse_func_arg_list();
-        if(arg_list) {
-            auto body = parse_code_block();
-            if(!body) {
-                abort<Exception::BaseSyntax>(
-                    _lexer.curr_token(),
-                    "Missing function body");
+                        _lexer.curr_token(),
+                        "Declarations in struct body need to be functions or variables");
             }
-            // make a method
-            methods.emplace_back(
-                std::make_unique<Nodes::FunctionDef>(
-                        std::make_unique<Nodes::FunctionProt>(
-                            second_id.value().symbol,
-                            first_id.value().symbol,
-                            std::move(arg_list.value())),
-                        std::move(body)));
-        } else {
-            if(!parse_token(Lexer::Token::Id::Semicolon)) {
-                error<Exception::ExpectedToken>(
-                    Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
-                    _lexer.curr_token(),
-                    "Missing semicolon");
-            }
-            // make a variable
-            members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-                first_id.value().symbol, second_id.value().symbol));
-
-        }
+            add_member_or_method(
+                std::make_pair(first_id->symbol, second_id->symbol),
+                members,
+                methods);
+        });
+    if(!parse_token(Lexer::Token::Id::RightBrace)) {
+        error<Exception::ExpectedToken>(
+            Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
+            _lexer.curr_token(),
+            "Struct body not closed");
     }
     return std::make_tuple(std::move(members), std::move(methods));
 }
