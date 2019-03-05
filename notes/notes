@@ -21,7 +21,7 @@ prefixes
 do zrobionia
 
 zbieranie informacji w trakcie parsowania
-skończyc parsowanie expression <- blokujące
+skończyc parsowanie expression <- blokujące (problemy z unary i postfixami)
     if else
     while
     ? for <- serio?

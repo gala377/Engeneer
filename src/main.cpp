@@ -15,8 +15,8 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    struct A {
-        int foo(a int, b int);
+    void foo() {
+        a + foo(7+1, a, 2+2*a)[-a];
     }
 )");
     Visitor::Stringify v;

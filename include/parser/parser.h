@@ -62,7 +62,6 @@ namespace Parser {
         // Postfix
         std::unique_ptr<Nodes::PostfixExpr> parse_postfix_expr();
         std::unique_ptr<Nodes::CallExpr> parse_call_expr();
-        std::unique_ptr<Nodes::IndexExpr> parse_index_expr();
         std::unique_ptr<Nodes::AccessExpr> parse_access_expr();
 
         // Primary
@@ -85,10 +84,17 @@ namespace Parser {
 
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
+        std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix();
+
+        std::unique_ptr<Nodes::UnaryExpr> parse_prim_to_unary_expr();
 
         using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDef>>;
 
         struct_body_parse_res_t parse_struct_body();
+
+        using call_args_t = unique_vec<Nodes::Expression>;
+        std::optional<call_args_t> parse_call_parameters();
+        std::unique_ptr<Nodes::Expression> parse_index_expr();
 
 
         // Token parsers
@@ -126,14 +132,6 @@ namespace Parser {
         void fold(Parser&& p, Func&& f) {
             auto wrap_p = std::move(std::bind(p, this));
             for(auto res = wrap_p(); res; res = wrap_p()) {
-                f(std::move(res));
-            }
-        }
-
-        template<typename Parser, typename Func>
-        void parse_or(Parser p, Func f) {
-            auto wrap_p = std::move(std::bind(p, this));
-            if(auto res = wrap_p(); !res) {
                 f(std::move(res));
             }
         }
