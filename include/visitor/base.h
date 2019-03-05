@@ -42,6 +42,18 @@ namespace Visitor {
 
         // Binary
         void visit(const Parser::Nodes::BinaryExpr &node) override;
+
+        // Logical
+        void visit(const Parser::Nodes::LogicalOrExpr &node) override;
+        void visit(const Parser::Nodes::LogicalAndExpr &node) override;
+        void visit(const Parser::Nodes::InclusiveOrExpr &node) override;
+        void visit(const Parser::Nodes::ExclusiveOrExpr &node) override;
+        void visit(const Parser::Nodes::AndExpr &node) override;
+        void visit(const Parser::Nodes::EqualityExpr &node) override;
+        void visit(const Parser::Nodes::RelationalExpr &node) override;
+        void visit(const Parser::Nodes::ShiftExpr &node) override;
+
+        // Arithmetic
         void visit(const Parser::Nodes::AssignmentExpr &node) override;
         void visit(const Parser::Nodes::AdditiveExpr &node) override;
         void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
@@ -49,6 +61,7 @@ namespace Visitor {
         // Unary
         void visit(const Parser::Nodes::UnaryExpr &node) override;
         void visit(const Parser::Nodes::NegativeExpr &node) override;
+        void visit(const Parser::Nodes::NegationExpr &node) override;
 
         // Postfix
         void visit(const Parser::Nodes::PostfixExpr &node) override;

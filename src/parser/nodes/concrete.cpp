@@ -149,6 +149,46 @@ void Parser::Nodes::BinaryExpr::accept(Parser::Visitor &v) const {
 }
 
 
+void Parser::Nodes::LogicalAndExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::LogicalOrExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::InclusiveOrExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::ExclusiveOrExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::AndExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::EqualityExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::RelationalExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::ShiftExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
 void Parser::Nodes::AssignmentExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
@@ -185,6 +225,14 @@ Parser::Nodes::NegativeExpr::NegativeExpr(std::unique_ptr<Parser::Nodes::Express
         UnaryExpr(Lexer::Token{Lexer::Token::Id::Minus, "-"}, std::move(rhs)){}
 
 void Parser::Nodes::NegativeExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::NegationExpr::NegationExpr(std::unique_ptr<Parser::Nodes::Expression> &&rhs):
+    UnaryExpr(Lexer::Token{Lexer::Token::Id::Negation, "!"}, std::move(rhs)) {}
+
+void Parser::Nodes::NegationExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 

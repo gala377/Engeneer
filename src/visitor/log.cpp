@@ -91,6 +91,89 @@ void Visitor::Stringify::visit(const Parser::Nodes::BinaryExpr &node) {
     }
 }
 
+// Logical
+void Visitor::Stringify::visit(const Parser::Nodes::LogicalOrExpr &node) {
+    stringify(node, "LogicalOrExpr: ||");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::LogicalAndExpr &node) {
+    stringify(node, "LogicalAndExpr: &&");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+    node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::InclusiveOrExpr &node) {
+    stringify(node, "InclusiveOrExpr: |");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
+    stringify(node, "ExclusiveOrExpr: ^");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::AndExpr &node) {
+    stringify(node, "AndExpr: &");
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::EqualityExpr &node) {
+    std::string mess = "EqualityExpr: ";
+    if(node.op.id == Lexer::Token::Id::Equality) {
+        mess += "==";
+    } else if(node.op.id == Lexer::Token::Id::Inequality) {
+        mess += "!=";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::RelationalExpr &node) {
+    std::string mess = "RelationalExpr: ";
+    if(node.op.id == Lexer::Token::Id::GreaterThan) {
+        mess += ">";
+    } else if(node.op.id == Lexer::Token::Id::GreaterEq) {
+        mess += ">=";
+    } if(node.op.id == Lexer::Token::Id::LessThan) {
+        mess += "<";
+    } else if(node.op.id == Lexer::Token::Id::LessEq) {
+        mess += "<=";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::ShiftExpr &node) {
+    Base::visit(node);
+}
+
+
+// Arithmetic
 void Visitor::Stringify::visit(const Parser::Nodes::AssignmentExpr &node) {
     std::string mess = "AssignmentExpr: ";
     if(node.op.id == Lexer::Token::Id::Assignment) {
@@ -149,6 +232,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::NegativeExpr &node) {
     node.rhs->accept(*this);
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::NegationExpr &node) {
+    stringify(node, "Negation: !");
+    node.rhs->accept(*this);
+}
 
 // Postfix
 void Visitor::Stringify::visit(const Parser::Nodes::PostfixExpr &node) {
@@ -216,17 +303,3 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
         _stream << "--------";
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

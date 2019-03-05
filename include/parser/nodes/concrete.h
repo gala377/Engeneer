@@ -143,6 +143,64 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    // logical
+    class LogicalOrExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    class LogicalAndExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    class InclusiveOrExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class ExclusiveOrExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    class AndExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class EqualityExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    class RelationalExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    class ShiftExpr: public BinaryExpr {
+    public:
+        using BinaryExpr::BinaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
+    // arithmetic
     // todo make constructors for binary
     // expr so they pass the operator by themselves
     class AssignmentExpr: public BinaryExpr {
@@ -189,6 +247,13 @@ namespace Parser::Nodes {
         NegativeExpr(std::unique_ptr<Expression>&& rhs);
 
         void accept(Parser::Visitor &v) const override;
+    };
+
+    class NegationExpr: public UnaryExpr {
+    public:
+        NegationExpr(std::unique_ptr<Expression>&& rhs);
+
+        void accept(Parser::Visitor& v) const override;
     };
 
 

@@ -71,6 +71,42 @@ void Visitor::Base::visit(const Parser::Nodes::Expression &node) {
 
 
 // Binary
+
+// Logical
+void Visitor::Base::visit(const Parser::Nodes::LogicalOrExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::LogicalAndExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::InclusiveOrExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::AndExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::EqualityExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::RelationalExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::ShiftExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+
+// Arithmetic
 void Visitor::Base::visit(const Parser::Nodes::BinaryExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
@@ -94,6 +130,10 @@ void Visitor::Base::visit(const Parser::Nodes::UnaryExpr &node) {
 }
 
 void Visitor::Base::visit(const Parser::Nodes::NegativeExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::NegationExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 

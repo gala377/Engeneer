@@ -508,7 +508,6 @@ std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr()
 
 std::unique_ptr<Parser::Nodes::CallExpr> Parser::Parser::parse_call_expr(
     std::unique_ptr<Nodes::PostfixExpr> &lhs) {
-
     auto res = parse_call_parameters();
     if(!res) {
         return nullptr;
@@ -543,10 +542,9 @@ std::unique_ptr<Parser::Nodes::AccessExpr> Parser::Parser::parse_access_expr(
 }
 
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix() {
-    std::cerr << "Parsing single postfix\n";
     auto lhs = parse_prim_expr();
     if(!lhs) {
-        std::cerr << "single postfix: LHS is null\n";
+
         return nullptr;
     }
     if(auto res = parse_call_parameters(); res) {
@@ -637,7 +635,7 @@ std::unique_ptr<Parser::Nodes::PrimaryExpr> Parser::Parser::parse_prim_expr() {
 }
 
 std::unique_ptr<Parser::Nodes::Identifier> Parser::Parser::parse_ident() {
-    std::cerr << "identifier?\n";
+
     auto res = parse_token(Lexer::Token::Id::Identifier);
     return res ? std::make_unique<Nodes::Identifier>(res->symbol) : nullptr;
 }
@@ -661,7 +659,6 @@ std::unique_ptr<Parser::Nodes::ParenthesisExpr> Parser::Parser::parse_parenthesi
 
 // Consts
 std::unique_ptr<Parser::Nodes::Constant> Parser::Parser::parse_const() {
-    std::cerr << "Parsing const\n";
     return one_of<Nodes::Constant>(
             &Parser::parse_int,
             &Parser::parse_string);
@@ -669,12 +666,12 @@ std::unique_ptr<Parser::Nodes::Constant> Parser::Parser::parse_const() {
 
 std::unique_ptr<Parser::Nodes::IntConstant> Parser::Parser::parse_int() {
     auto res = parse_token(Lexer::Token::Id::Integer);
-    std::cerr << "Is it an integer?\n";
+
     return res ? std::make_unique<Nodes::IntConstant>(std::stoi(res->symbol)) : nullptr;
 }
 
 std::unique_ptr<Parser::Nodes::StringConstant> Parser::Parser::parse_string() {
-    std::cerr << "Is it a string?\n";
+
     auto res = parse_token(Lexer::Token::Id::String);
     return res ? std::make_unique<Nodes::StringConstant>(res->symbol) : nullptr;
 }

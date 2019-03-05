@@ -40,6 +40,18 @@ namespace Parser {
 
         // Binary
         class BinaryExpr;
+
+        // Logical
+        class LogicalOrExpr;
+        class LogicalAndExpr;
+        class InclusiveOrExpr;
+        class ExclusiveOrExpr;
+        class AndExpr;
+        class EqualityExpr;
+        class RelationalExpr;
+        class ShiftExpr;
+
+        // Arithmetic
         class AssignmentExpr;
         class AdditiveExpr;
         class MultiplicativeExpr;
@@ -47,6 +59,7 @@ namespace Parser {
         // Unary
         class UnaryExpr;
         class NegativeExpr;
+        class NegationExpr;
 
         // Postfix
         class PostfixExpr;
@@ -94,14 +107,28 @@ namespace Parser {
         virtual void visit(const Nodes::Expression& node) = 0;
 
         // Binary
+
+        // Logical
+        virtual void visit(const Nodes::LogicalOrExpr& node) = 0;
+        virtual void visit(const Nodes::LogicalAndExpr& node) = 0;
+        virtual void visit(const Nodes::InclusiveOrExpr& node) = 0;
+        virtual void visit(const Nodes::ExclusiveOrExpr& node) = 0;
+        virtual void visit(const Nodes::AndExpr& node) = 0;
+        virtual void visit(const Nodes::EqualityExpr& node) = 0;
+        virtual void visit(const Nodes::RelationalExpr& node) = 0;
+        virtual void visit(const Nodes::ShiftExpr& node) = 0;
+
+        // Arithmetic
         virtual void visit(const Nodes::BinaryExpr& node) = 0;
         virtual void visit(const Nodes::AssignmentExpr& node) = 0;
         virtual void visit(const Nodes::AdditiveExpr& node) = 0;
+        // todo modulo expr
         virtual void visit(const Nodes::MultiplicativeExpr& node) = 0;
 
         // Unary
         virtual void visit(const Nodes::UnaryExpr& node) = 0;
         virtual void visit(const Nodes::NegativeExpr& node) = 0;
+        virtual void visit(const Nodes::NegationExpr& node) = 0;
 
         // Postfix
         virtual void visit(const Nodes::PostfixExpr& node) = 0;
