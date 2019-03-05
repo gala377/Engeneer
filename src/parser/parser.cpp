@@ -308,7 +308,8 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
         error<Exception::ExpectedToken>(
                 Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
-                _lexer.curr_token());
+                _lexer.curr_token(),
+                "Code block left open");
     }
     return std::move(code_block);
 }
@@ -343,6 +344,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
+    std::cerr << "Parse assig\n";
     auto lhs = parse_add_expr();
     if(!lhs) {
         return nullptr;
@@ -359,6 +361,7 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
 
 
 std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
+    std::cerr << "Parse add\n";
     auto add_expr = parse_single_add_expr();
     fold(
         [](Parser* p) {
@@ -398,6 +401,7 @@ std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_single_add_ex
 }
 
 std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_expr() {
+    std::cerr << "Parse mult\n";
     auto mult_expr = parse_single_mult_expr();
     fold(
         [](Parser* p) {
@@ -406,7 +410,7 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_ex
                 p->make_tok_parser(Lexer::Token::Id::Division));
         },
         [this, &mult_expr] (auto&& op) {
-            auto res = parse_prim_expr();
+            auto res = parse_unary_expr();
             if(!res) {
                 abort<Exception::BaseSyntax>(
                     _lexer.curr_token(),
@@ -419,7 +423,7 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_ex
 }
 
 std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_single_mult_expr() {
-    std::unique_ptr<Nodes::Expression> lhs = parse_prim_expr();
+    std::unique_ptr<Nodes::Expression> lhs = parse_unary_expr();
     if(!lhs) {
         return nullptr;
     }
@@ -428,7 +432,7 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_single_
         make_tok_parser(Lexer::Token::Id::Division));
     std::unique_ptr<Nodes::Expression> rhs{nullptr};
     if(op) {
-        rhs = parse_prim_expr();
+        rhs = parse_unary_expr();
     } else {
         op = std::optional{Lexer::none_tok};
     }
@@ -438,14 +442,17 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_single_
 
 // Unary
 std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_unary_expr() {
+    std::cerr << "Parse unary\n";
     return one_of<Nodes::UnaryExpr>(
         &Parser::parse_negative_expr,
-        &Parser::parse_prim_to_unary_expr);
+        &Parser::parse_postfix_to_unary_expr);
 }
 
-std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_prim_to_unary_expr() {
+std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_postfix_to_unary_expr() {
+    std::cerr << "Parse postfix to unary\n";
     auto res = parse_postfix_expr();
     if(!res) {
+        std::cerr << "postfix to unary: LHS is null\n";
         return nullptr;
     }
     return std::make_unique<Nodes::UnaryExpr>(
@@ -454,11 +461,13 @@ std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_prim_to_unary_ex
 }
 
 std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr() {
+    std::cerr << "Parse negative?\n";
     if(!parse_token(Lexer::Token::Id::Minus)) {
+        std::cerr << "Negaitive: No minus sign\n";
         return nullptr;
     }
     // note: double unary only after parenthesis
-    auto rhs = parse_prim_expr();
+    auto rhs = parse_postfix_expr();
     if(!rhs) {
         abort<Exception::BaseSyntax>(
                 _lexer.curr_token(),
@@ -471,43 +480,66 @@ std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr
 
 // Postfix
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr() {
+    std::cerr << "Parse postfix\n";
     auto lhs = parse_single_postfix();
-    while(lhs) {
-        lhs = one_of<Nodes::PostfixExpr>(
-            [this, &lhs](Parser* p) -> std::unique_ptr<Nodes::CallExpr> {
-                auto res = parse_call_parameters();
-                if(!res) {
-                    return nullptr;
-                }
-                return std::make_unique<Nodes::CallExpr>(
-                        std::move(lhs),
-                        std::move(res.value()));
-            },
-            [this, &lhs] (Parser* p) -> std::unique_ptr<Nodes::IndexExpr> {
-                auto idx = parse_index_expr();
-                if(!idx) {
-                    return nullptr;
-                }
-                return std::make_unique<Nodes::IndexExpr>(
-                        std::move(lhs),
-                        std::move(idx));
-            },
-            [this, &lhs] (Parser* p) -> std::unique_ptr<Nodes::AccessExpr> {
-                auto rhs = parse_access_expr();
-                if(!rhs) {
-                    return nullptr;
-                }
-                return std::make_unique<Nodes::AccessExpr>(
-                        std::move(lhs),
-                        std::move(rhs));
-            });
+    if(!lhs) {
+        std::cerr << "postfix expr: LHS is null\n";
+        return nullptr;
     }
+    fold(
+        [&lhs] (Parser* p) -> std::unique_ptr<Nodes::PostfixExpr> {
+            return p->one_of<Nodes::PostfixExpr>(
+                    [&lhs] (Parser* p) {
+                        return p->parse_call_expr(lhs);
+                    },
+                    [&lhs] (Parser* p) {
+                        return p->parse_index_expr(lhs);
+                    },
+                    [&lhs] (Parser* p) {
+                        return p->parse_access_expr(lhs);
+                    });
+        },
+        [&lhs](auto&& res) {
+            lhs = std::move(res);
+        });
     return std::move(lhs);
 }
 
+
+std::unique_ptr<Parser::Nodes::CallExpr> Parser::Parser::parse_call_expr(
+    std::unique_ptr<Nodes::PostfixExpr> &lhs) {
+
+    auto res = parse_call_parameters();
+    if(!res) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::CallExpr>(
+        std::move(lhs),
+        std::move(res.value()));
+}
+
+std::unique_ptr<Parser::Nodes::IndexExpr> Parser::Parser::parse_index_expr(
+    std::unique_ptr<Nodes::PostfixExpr> &lhs) {
+
+    auto idx = parse_index_parameters();
+    if(!idx) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::IndexExpr>(
+        std::move(lhs),
+        std::move(idx));
+}
+
+std::unique_ptr<Parser::Nodes::AccessExpr> Parser::Parser::parse_access_expr(
+    std::unique_ptr<Nodes::PostfixExpr> &lhs) {
+    return nullptr;
+}
+
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix() {
+    std::cerr << "Parsing single postfix\n";
     auto lhs = parse_prim_expr();
     if(!lhs) {
+        std::cerr << "single postfix: LHS is null\n";
         return nullptr;
     }
     if(auto res = parse_call_parameters(); res) {
@@ -515,16 +547,17 @@ std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix
             std::move(lhs),
             std::move(res.value()));
     }
-    if(auto idx = parse_index_expr(); idx) {
+    if(auto idx = parse_index_parameters(); idx) {
         return std::make_unique<Nodes::IndexExpr>(
             std::move(lhs),
             std::move(idx));
     }
-    if(auto rhs = parse_access_expr(); rhs) {
-        return std::make_unique<Nodes::AccessExpr>(
-            std::move(lhs),
-            std::move(rhs));
-    }
+    // todo access has its own problems for now
+//    if(auto rhs = parse_access_expr(); rhs) {
+//        return std::make_unique<Nodes::AccessExpr>(
+//            std::move(lhs),
+//            std::move(rhs));
+//    }
     return std::make_unique<Nodes::PostfixExpr>(std::move(lhs));
 }
 
@@ -557,7 +590,7 @@ std::optional<Parser::Parser::call_args_t> Parser::Parser::parse_call_parameters
     return std::optional{std::move(args)};
 }
 
-std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_expr() {
+std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_parameters() {
     if(!parse_token(Lexer::Token::Id::LeftSquareBracket)) {
         return nullptr;
     }
@@ -576,10 +609,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_expr() {
     return std::move(lhs);
 }
 
-std::unique_ptr<Parser::Nodes::AccessExpr> Parser::Parser::parse_access_expr() {
-    // todo body
-    return nullptr;
-}
 
 // Primary
 std::unique_ptr<Parser::Nodes::PrimaryExpr> Parser::Parser::parse_prim_expr() {
@@ -590,6 +619,7 @@ std::unique_ptr<Parser::Nodes::PrimaryExpr> Parser::Parser::parse_prim_expr() {
 }
 
 std::unique_ptr<Parser::Nodes::Identifier> Parser::Parser::parse_ident() {
+    std::cerr << "identifier?\n";
     auto res = parse_token(Lexer::Token::Id::Identifier);
     return res ? std::make_unique<Nodes::Identifier>(res->symbol) : nullptr;
 }
@@ -613,6 +643,7 @@ std::unique_ptr<Parser::Nodes::ParenthesisExpr> Parser::Parser::parse_parenthesi
 
 // Consts
 std::unique_ptr<Parser::Nodes::Constant> Parser::Parser::parse_const() {
+    std::cerr << "Parsing const\n";
     return one_of<Nodes::Constant>(
             &Parser::parse_int,
             &Parser::parse_string);
@@ -620,10 +651,12 @@ std::unique_ptr<Parser::Nodes::Constant> Parser::Parser::parse_const() {
 
 std::unique_ptr<Parser::Nodes::IntConstant> Parser::Parser::parse_int() {
     auto res = parse_token(Lexer::Token::Id::Integer);
+    std::cerr << "Is it an integer?\n";
     return res ? std::make_unique<Nodes::IntConstant>(std::stoi(res->symbol)) : nullptr;
 }
 
 std::unique_ptr<Parser::Nodes::StringConstant> Parser::Parser::parse_string() {
+    std::cerr << "Is it a string?\n";
     auto res = parse_token(Lexer::Token::Id::String);
     return res ? std::make_unique<Nodes::StringConstant>(res->symbol) : nullptr;
 }

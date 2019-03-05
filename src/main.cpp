@@ -16,7 +16,7 @@
 int main() {
     Lexer::Source::String s(R"(
     void foo() {
-        a + foo(7+1, a, 2+2*a)[-a];
+        2+foo(2+2)(1+1, a, "Hej")[7](2+2*2)[1]["Hello"]*-3(a);
     }
 )");
     Visitor::Stringify v;

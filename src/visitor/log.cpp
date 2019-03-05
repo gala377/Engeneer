@@ -31,6 +31,21 @@ void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
     stringify(node, "GlobVarDecl: " + node.type_identifier + " " + node.identifier);
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
+    std::string mess = "StructDecl: " + node.identifier;
+    if(node.wrapped_struct) {
+        mess += " wraps " + node.wrapped_struct.value();
+    }
+    stringify(node, std::move(mess));
+
+    for(auto& m: node.members) {
+        m->accept(*this);
+    }
+    for(auto& m: node.methods) {
+        m->accept(*this);
+    }
+}
+
 
 // Function
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
@@ -124,6 +139,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 
 
 // Unary
+void Visitor::Stringify::visit(const Parser::Nodes::UnaryExpr &node) {
+    stringify(node, "UnaryExpr");
+    node.rhs->accept(*this);
+}
+
 void Visitor::Stringify::visit(const Parser::Nodes::NegativeExpr &node) {
     stringify(node, "Negative: -" );
     node.rhs->accept(*this);
@@ -131,6 +151,12 @@ void Visitor::Stringify::visit(const Parser::Nodes::NegativeExpr &node) {
 
 
 // Postfix
+void Visitor::Stringify::visit(const Parser::Nodes::PostfixExpr &node) {
+    stringify(node, "PostfixExpr");
+    node.lhs->accept(*this);
+}
+
+
 void Visitor::Stringify::visit(const Parser::Nodes::CallExpr &node) {
     stringify(node, "CallExpr: ()");
     node.lhs->accept(*this);
@@ -142,6 +168,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::CallExpr &node) {
 void Visitor::Stringify::visit(const Parser::Nodes::IndexExpr &node) {
     stringify(node, "Index Expr: []");
     node.lhs->accept(*this);
+    node.index_expr->accept(*this);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::AccessExpr &node) {
@@ -189,22 +216,6 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
         _stream << "--------";
     }
 }
-
-void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
-    std::string mess = "StructDecl: " + node.identifier;
-    if(node.wrapped_struct) {
-        mess += " wraps " + node.wrapped_struct.value();
-    }
-    stringify(node, std::move(mess));
-
-    for(auto& m: node.members) {
-        m->accept(*this);
-    }
-    for(auto& m: node.methods) {
-        m->accept(*this);
-    }
-}
-
 
 
 

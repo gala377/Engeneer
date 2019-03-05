@@ -46,9 +46,11 @@ namespace Visitor {
         void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
 
         // Unary
+        void visit(const Parser::Nodes::UnaryExpr &node) override;
         void visit(const Parser::Nodes::NegativeExpr &node) override;
 
         // Postfix
+        void visit(const Parser::Nodes::PostfixExpr &node) override;
         void visit(const Parser::Nodes::CallExpr &node) override;
         void visit(const Parser::Nodes::IndexExpr &node) override;
         void visit(const Parser::Nodes::AccessExpr &node) override;

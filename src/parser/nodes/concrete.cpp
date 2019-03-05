@@ -210,7 +210,7 @@ Parser::Nodes::CallExpr::CallExpr(std::unique_ptr<Parser::Nodes::Expression> &&l
 
 
 void Parser::Nodes::CallExpr::set_depth(std::uint32_t depth) {
-    Base::set_depth(depth);
+    PostfixExpr::set_depth(depth);
     for(auto& ch: args) {
         ch->set_depth(_depth+1);
     }
@@ -230,8 +230,7 @@ void Parser::Nodes::IndexExpr::accept(Parser::Visitor &v) const {
 }
 
 void Parser::Nodes::IndexExpr::set_depth(std::uint32_t depth) {
-    Base::set_depth(depth);
-    lhs->set_depth(_depth+1);
+    PostfixExpr::set_depth(depth);
     index_expr->set_depth(_depth+1);
 }
 
@@ -245,8 +244,7 @@ void Parser::Nodes::AccessExpr::accept(Parser::Visitor &v) const {
 }
 
 void Parser::Nodes::AccessExpr::set_depth(std::uint32_t depth) {
-    Base::set_depth(depth);
-    lhs->set_depth(_depth+1);
+    PostfixExpr::set_depth(depth);
     rhs->set_depth(_depth+1);
 }
 
