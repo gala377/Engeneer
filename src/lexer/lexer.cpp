@@ -41,6 +41,14 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
         {"--", Token::Id::DoubleMinus},
         {">=", Token::Id::GreaterEq},
         {"<=", Token::Id::LessEq},
+        {"||", Token::Id::LogicalOr},
+        {"&&", Token::Id::LogicalAnd},
+        {"|", Token::Id::InclusiveOr},
+        {"^", Token::Id::ExclusiveOr},
+        {"&", Token::Id::And},
+        {"<<", Token::Id::LeftShift},
+        {">>", Token::Id::RightShift},
+
 
         {"(", Token::Id::LeftParenthesis},
         {")", Token::Id::RightParenthesis},

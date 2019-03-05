@@ -51,6 +51,11 @@ namespace Parser {
         std::unique_ptr<Nodes::Expression> parse_expr();
 
         // Binary
+
+        // Logical
+        std::unique_ptr<Nodes::ShiftExpr> parse_shift_expr();
+
+        // Arithmetic
         std::unique_ptr<Nodes::AssignmentExpr> parse_assig_expr();
         std::unique_ptr<Nodes::AdditiveExpr> parse_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_mult_expr();
@@ -83,7 +88,8 @@ namespace Parser {
         // single expr parser
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
-        std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix();
+        std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix_expr();
+        std::unique_ptr<Nodes::ShiftExpr> parse_single_shift_expr();
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 

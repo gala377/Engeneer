@@ -17,7 +17,7 @@ int main() {
     // todo this one is not working
     Lexer::Source::String s(R"(
         int bar(a int, b int) {
-           1 + 1 + 1;
+            2 + 2 * 2;
         }
 
 )");

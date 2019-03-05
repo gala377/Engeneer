@@ -13,7 +13,7 @@ namespace Lexer {
     public:
         enum class Id {
             // General ones
-                Identifier=0,
+            Identifier=0,
 
             LeftParenthesis,
             RightParenthesis,
@@ -26,7 +26,7 @@ namespace Lexer {
 
 
             // Keywords
-                If=100,
+            If=100,
             Else,
             For,
             Struct,
@@ -40,11 +40,10 @@ namespace Lexer {
 
 
             // Operators
-                Assignment=200,
+            Assignment=200,
 
             // Logical
-                Equality,
-
+            Equality,
             Inequality,
             Negation,
 
@@ -54,15 +53,24 @@ namespace Lexer {
             GreaterEq,
             LessEq,
 
+            LeftShift,
+            RightShift,
+            LogicalOr,
+            LogicalAnd,
+            InclusiveOr,
+            ExclusiveOr,
+            And,
+
+
             // Arithmetic
-                Plus,
+            Plus,
             Minus,
             Multiplication,
             Division,
             Modulo,
 
             // Special
-                Comma,
+            Comma,
             Semicolon,
             Colon,
             Dot,
@@ -71,13 +79,13 @@ namespace Lexer {
             DoublePlus,
 
             // ConstExpr
-                Integer,
+            Integer,
             Float,
             String,
             Char,
 
             // Other
-                NewLine=300,
+            NewLine=300,
             Space,
 
             None,

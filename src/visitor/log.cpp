@@ -169,7 +169,19 @@ void Visitor::Stringify::visit(const Parser::Nodes::RelationalExpr &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::ShiftExpr &node) {
-    Base::visit(node);
+    std::string mess = "ShiftExpr: ";
+    if(node.op.id == Lexer::Token::Id::LeftShift) {
+        mess += "<<";
+    } else if(node.op.id == Lexer::Token::Id::RightShift) {
+        mess += ">>";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+    if(node.rhs) {
+        node.rhs->accept(*this);
+    }
 }
 
 

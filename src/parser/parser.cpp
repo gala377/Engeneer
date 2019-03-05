@@ -345,7 +345,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
     std::cerr << "Parse assig\n";
-    auto lhs = parse_add_expr();
+    auto lhs = parse_shift_expr();
     if(!lhs) {
         return nullptr;
     }
@@ -353,13 +353,54 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
     Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
     if(auto tok = parse_token(Lexer::Token::Id::Assignment); tok) {
         op = tok.value();
-        rhs = parse_add_expr();
+        rhs = parse_shift_expr();
     }
     return std::make_unique<Nodes::AssignmentExpr>(
             std::move(lhs), op, std::move(rhs));
 }
 
 
+// Logical
+std::unique_ptr<Parser::Nodes::ShiftExpr> Parser::Parser::parse_shift_expr() {
+    auto shift_expr = parse_single_shift_expr();
+    fold(
+            [](Parser *p) {
+                return p->one_of_op<Lexer::Token>(
+                        p->make_tok_parser(Lexer::Token::Id::LeftShift),
+                        p->make_tok_parser(Lexer::Token::Id::RightShift));
+            },
+            [this, &shift_expr](auto &&op) {
+                auto res = parse_add_expr();
+                if (!res) {
+                    abort<Exception::BaseSyntax>(
+                            _lexer.curr_token(),
+                            "Expression expected after shift operator");
+                }
+                shift_expr = std::make_unique<Nodes::ShiftExpr>(
+                        std::move(shift_expr), op.value(), std::move(res));
+            });
+    return shift_expr;
+}
+
+std::unique_ptr<Parser::Nodes::ShiftExpr> Parser::Parser::parse_single_shift_expr() {
+    std::unique_ptr<Nodes::AdditiveExpr> lhs = parse_add_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = one_of_op<Lexer::Token>(
+            make_tok_parser(Lexer::Token::Id::LeftShift),
+            make_tok_parser(Lexer::Token::Id::RightShift));
+    std::unique_ptr<Nodes::AdditiveExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_add_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::ShiftExpr>(
+            std::move(lhs), op.value(), std::move(rhs));
+}
+
+// Arithmetic
 std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
     std::cerr << "Parse add\n";
     auto add_expr = parse_single_add_expr();
@@ -481,7 +522,7 @@ std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr
 // Postfix
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr() {
     std::cerr << "Parse postfix\n";
-    auto lhs = parse_single_postfix();
+    auto lhs = parse_single_postfix_expr();
     if(!lhs) {
         std::cerr << "postfix expr: LHS is null\n";
         return nullptr;
@@ -541,7 +582,7 @@ std::unique_ptr<Parser::Nodes::AccessExpr> Parser::Parser::parse_access_expr(
         std::move(rhs));
 }
 
-std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix() {
+std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix_expr() {
     auto lhs = parse_prim_expr();
     if(!lhs) {
 
@@ -697,7 +738,3 @@ std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make
         return p->parse_token(id);
     };
 }
-
-
-
-
