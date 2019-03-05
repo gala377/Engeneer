@@ -193,6 +193,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     return std::make_tuple(std::move(members), std::move(methods));
 }
 
+
 // Function
 std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
     auto header = parse_func_header();
@@ -345,7 +346,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
     std::cerr << "Parse assig\n";
-    auto lhs = parse_shift_expr();
+    auto lhs = parse_relational_expr();
     if(!lhs) {
         return nullptr;
     }
@@ -353,7 +354,7 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
     Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
     if(auto tok = parse_token(Lexer::Token::Id::Assignment); tok) {
         op = tok.value();
-        rhs = parse_shift_expr();
+        rhs = parse_relational_expr();
     }
     return std::make_unique<Nodes::AssignmentExpr>(
             std::move(lhs), op, std::move(rhs));
@@ -361,6 +362,38 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
 
 
 // Logical
+std::unique_ptr<Parser::Nodes::RelationalExpr> Parser::Parser::parse_relational_expr() {
+    auto rel_expr = parse_single_relational_expr();
+    fold(&Parser::parse_relational_op,
+            [this, &rel_expr] (auto&& op) {
+                auto res = parse_mult_expr();
+                if(!res) {
+                    abort<Exception::BaseSyntax>(
+                            _lexer.curr_token(),
+                            "Expression expected after relation operator");
+                }
+                rel_expr = std::make_unique<Nodes::RelationalExpr>(
+                        std::move(rel_expr), op.value(), std::move(res));
+            });
+    return rel_expr;
+}
+
+std::unique_ptr<Parser::Nodes::RelationalExpr> Parser::Parser::parse_single_relational_expr() {
+    std::unique_ptr<Nodes::ShiftExpr> lhs = parse_shift_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_relational_op();
+    std::unique_ptr<Nodes::ShiftExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_shift_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::RelationalExpr>(
+            std::move(lhs), op.value(), std::move(rhs));
+}
+
 std::unique_ptr<Parser::Nodes::ShiftExpr> Parser::Parser::parse_shift_expr() {
     auto shift_expr = parse_single_shift_expr();
     fold(
@@ -726,6 +759,14 @@ std::optional<Lexer::Token> Parser::Parser::parse_token(Lexer::Token::Id id) {
     }
     _lexer.next_token();
     return {tok};
+}
+
+std::optional<Lexer::Token> Parser::Parser::parse_relational_op() {
+    return one_of_op<Lexer::Token>(
+            make_tok_parser(Lexer::Token::Id::GreaterThan),
+            make_tok_parser(Lexer::Token::Id::GreaterEq),
+            make_tok_parser(Lexer::Token::Id::LessThan),
+            make_tok_parser(Lexer::Token::Id::LessEq));
 }
 
 std::optional<std::string> Parser::Parser::parse_type() {

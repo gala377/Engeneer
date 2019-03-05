@@ -46,13 +46,14 @@ namespace Parser {
         std::unique_ptr<Nodes::Statement> parse_statement();
         std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
-        
+
         // Expressions
         std::unique_ptr<Nodes::Expression> parse_expr();
 
         // Binary
 
         // Logical
+        std::unique_ptr<Nodes::RelationalExpr> parse_relational_expr();
         std::unique_ptr<Nodes::ShiftExpr> parse_shift_expr();
 
         // Arithmetic
@@ -90,6 +91,7 @@ namespace Parser {
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
         std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix_expr();
         std::unique_ptr<Nodes::ShiftExpr> parse_single_shift_expr();
+        std::unique_ptr<Nodes::RelationalExpr> parse_single_relational_expr();
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 
@@ -108,8 +110,10 @@ namespace Parser {
 
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
+        std::optional<Lexer::Token> parse_relational_op();
         std::optional<std::string> parse_type();
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
+
 
         // Helper functions
         void add_member_or_method(
