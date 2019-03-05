@@ -46,7 +46,7 @@ namespace Parser {
         std::unique_ptr<Nodes::Statement> parse_statement();
         std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
-
+        
         // Expressions
         std::unique_ptr<Nodes::Expression> parse_expr();
 
