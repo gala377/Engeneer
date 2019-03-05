@@ -94,6 +94,7 @@ namespace Parser {
         using call_args_t = unique_vec<Nodes::Expression>;
         std::optional<call_args_t> parse_call_parameters();
         std::unique_ptr<Nodes::Expression> parse_index_parameters();
+        std::unique_ptr<Nodes::Identifier> parse_access_parameters();
 
         std::unique_ptr<Nodes::CallExpr> parse_call_expr(std::unique_ptr<Nodes::PostfixExpr>& lhs);
         std::unique_ptr<Nodes::IndexExpr> parse_index_expr(std::unique_ptr<Nodes::PostfixExpr>& lhs);

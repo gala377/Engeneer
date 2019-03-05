@@ -376,7 +376,7 @@ std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
                     _lexer.curr_token(),
                     "Expression expected after addition/subtraction operator");
             }
-            std::make_unique<Nodes::AdditiveExpr>(
+            add_expr = std::make_unique<Nodes::AdditiveExpr>(
                 std::move(add_expr), op.value(), std::move(res));
         });
     return add_expr;
@@ -416,7 +416,7 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_ex
                     _lexer.curr_token(),
                     "Expression expected after multiplication/division operator");
             }
-            std::make_unique<Nodes::MultiplicativeExpr>(
+            mult_expr = std::make_unique<Nodes::MultiplicativeExpr>(
                 std::move(mult_expr), op.value(), std::move(res));
         });
     return mult_expr;
@@ -532,7 +532,14 @@ std::unique_ptr<Parser::Nodes::IndexExpr> Parser::Parser::parse_index_expr(
 
 std::unique_ptr<Parser::Nodes::AccessExpr> Parser::Parser::parse_access_expr(
     std::unique_ptr<Nodes::PostfixExpr> &lhs) {
-    return nullptr;
+
+    auto rhs = parse_access_parameters();
+    if(!rhs) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::AccessExpr>(
+        std::move(lhs),
+        std::move(rhs));
 }
 
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix() {
@@ -552,12 +559,11 @@ std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_single_postfix
             std::move(lhs),
             std::move(idx));
     }
-    // todo access has its own problems for now
-//    if(auto rhs = parse_access_expr(); rhs) {
-//        return std::make_unique<Nodes::AccessExpr>(
-//            std::move(lhs),
-//            std::move(rhs));
-//    }
+    if(auto rhs = parse_access_parameters(); rhs) {
+        return std::make_unique<Nodes::AccessExpr>(
+            std::move(lhs),
+            std::move(rhs));
+    }
     return std::make_unique<Nodes::PostfixExpr>(std::move(lhs));
 }
 
@@ -609,6 +615,18 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_parameter
     return std::move(lhs);
 }
 
+std::unique_ptr<Parser::Nodes::Identifier> Parser::Parser::parse_access_parameters() {
+    if(!parse_token(Lexer::Token::Id::Dot)) {
+        return nullptr;
+    }
+    auto ident = parse_ident();
+    if(!ident) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "Access can only be done with identifiers");
+    }
+    return std::move(ident);
+}
 
 // Primary
 std::unique_ptr<Parser::Nodes::PrimaryExpr> Parser::Parser::parse_prim_expr() {

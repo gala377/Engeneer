@@ -14,10 +14,12 @@
 #include <exception/handler.h>
 
 int main() {
+    // todo this one is not working
     Lexer::Source::String s(R"(
-    void foo() {
-        2+foo(2+2)(1+1, a, "Hej")[7](2+2*2)[1]["Hello"]*-3(a);
-    }
+        int bar(a int, b int) {
+           1 + 1 + 1;
+        }
+
 )");
     Visitor::Stringify v;
     Visitor::LLVM comp;
