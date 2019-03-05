@@ -14,10 +14,9 @@
 #include <exception/handler.h>
 
 int main() {
-    // todo this one is not working
     Lexer::Source::String s(R"(
         int bar(a int, b int) {
-            a = a < 3 <= 5 > 3 >= 1 << 2;
+            5 > 3 > 1 >> 2;
         }
 
 )");

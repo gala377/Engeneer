@@ -366,7 +366,7 @@ std::unique_ptr<Parser::Nodes::RelationalExpr> Parser::Parser::parse_relational_
     auto rel_expr = parse_single_relational_expr();
     fold(&Parser::parse_relational_op,
             [this, &rel_expr] (auto&& op) {
-                auto res = parse_mult_expr();
+                auto res = parse_shift_expr();
                 if(!res) {
                     abort<Exception::BaseSyntax>(
                             _lexer.curr_token(),
