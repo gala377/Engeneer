@@ -345,7 +345,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
-    std::cerr << "Parse assig\n";
+
     auto lhs = parse_relational_expr();
     if(!lhs) {
         return nullptr;
@@ -435,7 +435,6 @@ std::unique_ptr<Parser::Nodes::ShiftExpr> Parser::Parser::parse_single_shift_exp
 
 // Arithmetic
 std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_add_expr() {
-    std::cerr << "Parse add\n";
     auto add_expr = parse_single_add_expr();
     fold(
         [](Parser* p) {
@@ -475,7 +474,6 @@ std::unique_ptr<Parser::Nodes::AdditiveExpr> Parser::Parser::parse_single_add_ex
 }
 
 std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_mult_expr() {
-    std::cerr << "Parse mult\n";
     auto mult_expr = parse_single_mult_expr();
     fold(
         [](Parser* p) {
@@ -516,17 +514,17 @@ std::unique_ptr<Parser::Nodes::MultiplicativeExpr> Parser::Parser::parse_single_
 
 // Unary
 std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_unary_expr() {
-    std::cerr << "Parse unary\n";
     return one_of<Nodes::UnaryExpr>(
         &Parser::parse_negative_expr,
+        &Parser::parse_negation_expr,
         &Parser::parse_postfix_to_unary_expr);
 }
 
 std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_postfix_to_unary_expr() {
-    std::cerr << "Parse postfix to unary\n";
+
     auto res = parse_postfix_expr();
     if(!res) {
-        std::cerr << "postfix to unary: LHS is null\n";
+
         return nullptr;
     }
     return std::make_unique<Nodes::UnaryExpr>(
@@ -535,9 +533,7 @@ std::unique_ptr<Parser::Nodes::UnaryExpr> Parser::Parser::parse_postfix_to_unary
 }
 
 std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr() {
-    std::cerr << "Parse negative?\n";
     if(!parse_token(Lexer::Token::Id::Minus)) {
-        std::cerr << "Negaitive: No minus sign\n";
         return nullptr;
     }
     // note: double unary only after parenthesis
@@ -551,13 +547,24 @@ std::unique_ptr<Parser::Nodes::NegativeExpr> Parser::Parser::parse_negative_expr
     return std::make_unique<Nodes::NegativeExpr>(std::move(rhs));
 }
 
+std::unique_ptr<Parser::Nodes::NegationExpr> Parser::Parser::parse_negation_expr() {
+    if(!parse_token(Lexer::Token::Id::Negation)) {
+        return nullptr;
+    }
+    auto rhs = parse_postfix_expr();
+    if(!rhs) {
+        abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Primary expression expected after unary ! operator "
+                "(use parenthesis for multiple unary operators)");
+    }
+    return std::make_unique<Nodes::NegationExpr>(std::move(rhs));
+}
 
 // Postfix
 std::unique_ptr<Parser::Nodes::PostfixExpr> Parser::Parser::parse_postfix_expr() {
-    std::cerr << "Parse postfix\n";
     auto lhs = parse_single_postfix_expr();
     if(!lhs) {
-        std::cerr << "postfix expr: LHS is null\n";
         return nullptr;
     }
     fold(

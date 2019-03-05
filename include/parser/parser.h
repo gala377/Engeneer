@@ -64,6 +64,7 @@ namespace Parser {
         // Unary
         std::unique_ptr<Nodes::UnaryExpr> parse_unary_expr();
         std::unique_ptr<Nodes::NegativeExpr> parse_negative_expr();
+        std::unique_ptr<Nodes::NegationExpr> parse_negation_expr();
 
         // Postfix
         std::unique_ptr<Nodes::PostfixExpr> parse_postfix_expr();
