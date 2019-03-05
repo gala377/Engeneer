@@ -154,7 +154,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::RelationalExpr &node) {
         mess += ">";
     } else if(node.op.id == Lexer::Token::Id::GreaterEq) {
         mess += ">=";
-    } if(node.op.id == Lexer::Token::Id::LessThan) {
+    } else if(node.op.id == Lexer::Token::Id::LessThan) {
         mess += "<";
     } else if(node.op.id == Lexer::Token::Id::LessEq) {
         mess += "<=";
