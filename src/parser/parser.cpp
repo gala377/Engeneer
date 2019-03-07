@@ -59,8 +59,9 @@ void Parser::Parser::add_member_or_method(
                 _lexer.curr_token(),
                 "Missing semicolon");
         }
-        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-            first_id, second_id));
+        // todo uncomment
+//        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+//            first_id, second_id));
     }
 }
 
@@ -84,36 +85,47 @@ std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_dec
             &Parser::parse_struct_decl);
 }
 
+// todo variable symbol as identifier node
 std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_decl() {
     if(!parse_token(Lexer::Token::Id::Let)) {
         return nullptr;
     }
-    auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
-    if(!identifier_res) {
+    auto identifier= parse_ident();
+    if(!identifier) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+            Lexer::Token{Lexer::Token::Id::Identifier, ""},
                 _lexer.curr_token(),
                 "Expected variable name after let");
     }
-    Lexer::Token var = identifier_res.value();
-
-    auto type_res = parse_type();
-    if(!identifier_res) {
+    auto type = parse_type();
+    if(!type) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+            Lexer::Token{Lexer::Token::Id::Identifier, ""},
                 _lexer.curr_token(),
                 "Expected type after variable name");
     }
-    auto type_symbol = type_res.value();
+
+    std::unique_ptr<Nodes::Expression> init_expr{nullptr};
+    if(parse_token(Lexer::Token::Id::Assignment)) {
+        init_expr = parse_expr();
+        if(!init_expr) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                    "Expression expected after variable initialization");
+        }
+    }
 
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
-                _lexer.curr_token(),
-                "Missing semicolon");
+            Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+            _lexer.curr_token(),
+            "Missing semicolon");
     }
 
-    return std::make_unique<Nodes::GlobVariableDecl>(var.symbol, type_symbol);
+    return std::make_unique<Nodes::GlobVariableDecl>(
+        identifier->symbol,
+        std::move(type),
+        std::move(init_expr));
 }
 
 std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
@@ -254,7 +266,7 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
                     "Expected type after variable name");
         }
         arg_list.emplace_back(
-                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, type.value()));
+                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, std::move(type)));
         if(parse_token(Lexer::Token::Id::Comma)) {
             ident = parse_token(Lexer::Token::Id::Identifier);
             if(!ident) {
@@ -344,7 +356,7 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     }
     return std::make_unique<Nodes::VariableDecl>(
         identifier->symbol,
-        type.value(),
+        std::move(type),
         std::move(init_expr));
 }
 

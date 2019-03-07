@@ -11,13 +11,11 @@
 #include <parser/nodes/concrete.h>
 
 namespace Parser::Types {
-    class BasicType {
-    public:
-        virtual const Nodes::Identifier& identifier() const = 0;
-    };
 
     class SimpleType: public BasicType {
     public:
+        explicit SimpleType(std::unique_ptr<Nodes::Identifier>&& ident);
+
         std::unique_ptr<Nodes::Identifier> ident;
 
         const Nodes::Identifier& identifier() const override;

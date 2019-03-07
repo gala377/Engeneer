@@ -10,6 +10,13 @@
 #include <parser/nodes/base.h>
 #include <lexer/token.h>
 
+namespace Parser::Types {
+    class BasicType {
+    public:
+        virtual const Nodes::Identifier& identifier() const = 0;
+    };
+}
+
 namespace Parser::Nodes {
 
     // End
@@ -36,10 +43,16 @@ namespace Parser::Nodes {
 
     class GlobVariableDecl: public TopLevelDecl {
     public:
-        GlobVariableDecl(const std::string& symbol, const std::string& type_symbol);
+        GlobVariableDecl(
+            const std::string& symbol,
+            std::unique_ptr<Types::BasicType> &&type,
+            std::unique_ptr<Expression>&& init_expr = nullptr);
 
         std::string identifier;
-        std::string type_identifier;
+        std::unique_ptr<Types::BasicType> type;
+        std::unique_ptr<Expression> init_expr;
+
+        void set_depth(std::uint32_t depth) override;
 
         void accept(Parser::Visitor &v) const override;
     };
@@ -112,11 +125,11 @@ namespace Parser::Nodes {
     public:
         VariableDecl(
             const std::string& symbol,
-            const std::string& type_symbol,
+            std::unique_ptr<Types::BasicType> &&type,
             std::unique_ptr<Expression>&& init_expr = nullptr);
 
         std::string identifier;
-        std::string type_identifier;
+        std::unique_ptr<Types::BasicType> type;
         std::unique_ptr<Expression> init_expr;
 
         void set_depth(std::uint32_t depth) override;

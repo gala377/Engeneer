@@ -28,7 +28,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
 
 // Top Level
 void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
-    stringify(node, "GlobVarDecl: " + node.type_identifier + " " + node.identifier);
+    stringify(node, "GlobVarDecl: " + strf_type(node.type) + " " + node.identifier);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
@@ -51,7 +51,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
     std::string repr{"FuncHeader: " + node.type_identifier + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
-        repr += arg->type_identifier + " " + arg->identifier + ", ";
+        repr += strf_type(arg->type) + " " + arg->identifier + ", ";
     }
     repr += ")";
     stringify(node, std::move(repr));
@@ -75,7 +75,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
-    stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
+    stringify(node, "VarDecl: " + strf_type(node.type) + " " + node.identifier);
     if(node.init_expr) {
         node.init_expr->accept(*this);
     }
@@ -347,4 +347,17 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     for(std::uint32_t i = 0; i < depth; ++i) {
         _stream << "--------";
     }
+}
+
+std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::BasicType> &type) {
+    if(auto complex = dynamic_cast<Parser::Types::ComplexType*>(type.get()); complex) {
+        std::string mess = complex->is_const ? "const ": "";
+        mess += complex->is_ptr ? "&" : "";
+        mess += strf_type(complex->underlying_type);
+        return mess;
+    }
+    if(auto simple = dynamic_cast<Parser::Types::SimpleType*>(type.get()); simple) {
+        return simple->identifier().symbol;
+    }
+    throw std::runtime_error("StringifyVisitor: Passed type is neither complex nor simple");
 }

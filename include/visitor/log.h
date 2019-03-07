@@ -9,6 +9,7 @@
 
 #include <visitor/base.h>
 #include <parser/nodes/concrete.h>
+#include <parser/type.h>
 
 namespace Visitor {
 
@@ -84,6 +85,7 @@ namespace Visitor {
 
         void add_margin(std::uint32_t depth);
         void stringify(const Parser::Nodes::Base& node, std::string&& as);
+        std::string strf_type(const std::unique_ptr<Parser::Types::BasicType>& type);
     };
 
 }

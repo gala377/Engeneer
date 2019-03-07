@@ -14,3 +14,6 @@ const Parser::Nodes::Identifier &Parser::Types::SimpleType::identifier() const {
 const Parser::Nodes::Identifier &Parser::Types::ComplexType::identifier() const {
     return underlying_type->identifier();
 }
+
+Parser::Types::SimpleType::SimpleType(std::unique_ptr<Parser::Nodes::Identifier> &&ident):
+    ident(std::move(ident)) {}

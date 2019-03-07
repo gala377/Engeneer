@@ -30,13 +30,20 @@ void Parser::Nodes::TopLevelDecl::accept(Parser::Visitor &v) const {
 // GlobVarDecl
 Parser::Nodes::GlobVariableDecl::GlobVariableDecl(
         const std::string& symbol,
-        const std::string& type_symbol):
-        identifier(symbol), type_identifier(type_symbol) {}
+        std::unique_ptr<Types::BasicType>&& type,
+        std::unique_ptr<Expression>&& init_expr):
+        identifier(symbol), type(std::move(type)), init_expr(std::move(init_expr)) {}
 
 void Parser::Nodes::GlobVariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+void Parser::Nodes::GlobVariableDecl::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    if(init_expr) {
+        init_expr->set_depth(_depth + 1);
+    }
+}
 
 
 // Functions
@@ -113,9 +120,9 @@ void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
 
 Parser::Nodes::VariableDecl::VariableDecl(
         const std::string& symbol,
-        const std::string& type_symbol,
+        std::unique_ptr<Types::BasicType>&& type,
         std::unique_ptr<Parser::Nodes::Expression>&& init_expr):
-        identifier(symbol), type_identifier(type_symbol), init_expr(std::move(init_expr)) {}
+        identifier(symbol), type(std::move(type)), init_expr(std::move(init_expr)) {}
 
 void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);

@@ -40,8 +40,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "Arg list size is " << node.arg_list.size() << "\n";
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
-        if(arg->type_identifier != "int") {
-            throw std::runtime_error("Usage of undeclared type " + arg->type_identifier);
+        if(arg->type->identifier().symbol != "int") {
+            throw std::runtime_error("Usage of undeclared type " + arg->type->identifier().symbol);
         }
         // add int64 type. todo need more types
         args_types.push_back(llvm::Type::getInt64Ty(_context));
@@ -140,8 +140,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     if(v) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier);
     }
-    if(node.type_identifier != "int") {
-        throw std::runtime_error("Use of undeclared type " + node.type_identifier);
+    if(node.type->identifier().symbol != "int") {
+        throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
     }
     // add variable with default value
     // _named_values[node.identifier] = llvm::?
