@@ -137,6 +137,65 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    class BlockStmt: public Statement {
+    public:
+        explicit BlockStmt(std::unique_ptr<CodeBlock>&& body);
+
+        std::unique_ptr<CodeBlock> body;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class IfStmt: public BlockStmt {
+    public:
+        IfStmt(
+            std::unique_ptr<Expression>&& cond,
+            std::unique_ptr<CodeBlock>&& body,
+            std::unique_ptr<BlockStmt>&& else_clause = nullptr);
+
+        std::unique_ptr<Expression> cond;
+        std::unique_ptr<BlockStmt> else_clause;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class WhileStmt: public BlockStmt {
+    public:
+        WhileStmt(
+            std::unique_ptr<Expression>&& cond,
+            std::unique_ptr<CodeBlock>&& body);
+
+        std::unique_ptr<Expression> cond;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class ReturnStmt: public Statement {
+    public:
+        explicit ReturnStmt(std::unique_ptr<Expression>&& expr);
+
+        std::unique_ptr<Expression> expr;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class BreakStmt: public Statement {
+    public:
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class ContinueStmt: public Statement {
+    public:
+        void accept(Parser::Visitor& v) const override;
+    };
 
     // Expressions
     class Expression: public Statement {

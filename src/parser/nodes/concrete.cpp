@@ -142,6 +142,77 @@ void Parser::Nodes::VariableDecl::set_depth(std::uint32_t depth) {
 }
 
 
+Parser::Nodes::BlockStmt::BlockStmt(std::unique_ptr<Parser::Nodes::CodeBlock> &&body): body(std::move(body)) {}
+
+void Parser::Nodes::BlockStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::BlockStmt::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    body->set_depth(_depth + 1);
+}
+
+
+Parser::Nodes::IfStmt::IfStmt(std::unique_ptr<Parser::Nodes::Expression> &&cond,
+                              std::unique_ptr<Parser::Nodes::CodeBlock> &&body,
+                              std::unique_ptr<Parser::Nodes::BlockStmt> &&else_clause):
+                              BlockStmt(std::move(body)),
+                              cond(std::move(cond)),
+                              else_clause(std::move(else_clause)) {}
+
+void Parser::Nodes::IfStmt::set_depth(std::uint32_t depth) {
+    BlockStmt::set_depth(depth);
+    cond->set_depth(_depth+1);
+    if(else_clause) {
+        else_clause->set_depth(_depth+1);
+    }
+}
+
+void Parser::Nodes::IfStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::WhileStmt::WhileStmt(std::unique_ptr<Parser::Nodes::Expression> &&cond,
+                                    std::unique_ptr<Parser::Nodes::CodeBlock> &&body):
+                                    BlockStmt(std::move(body)),
+                                    cond(std::move(cond)) {}
+
+void Parser::Nodes::WhileStmt::set_depth(std::uint32_t depth) {
+    BlockStmt::set_depth(depth);
+    cond->set_depth(_depth+1);
+}
+
+void Parser::Nodes::WhileStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+Parser::Nodes::ReturnStmt::ReturnStmt(std::unique_ptr<Parser::Nodes::Expression> &&expr):
+                                      expr(std::move(expr)) {}
+
+void Parser::Nodes::ReturnStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::ReturnStmt::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    expr->set_depth(_depth+1);
+}
+
+
+void Parser::Nodes::BreakStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+void Parser::Nodes::ContinueStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+
+
 // Expressions
 void Parser::Nodes::Expression::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -366,3 +437,4 @@ Parser::Nodes::StringConstant::StringConstant(const std::string& value): value(v
 void Parser::Nodes::StringConstant::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
+
