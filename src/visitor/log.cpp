@@ -93,7 +93,13 @@ void Visitor::Stringify::visit(const Parser::Nodes::BinaryExpr &node) {
 
 // Logical
 void Visitor::Stringify::visit(const Parser::Nodes::LogicalOrExpr &node) {
-    stringify(node, "LogicalOrExpr: ||");
+    std::string mess{"LogicalOrExpr: "};
+    if(node.op.id == Lexer::Token::Id::LogicalOr) {
+        mess += "||";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
     node.lhs->accept(*this);
     if(node.rhs) {
         node.rhs->accept(*this);
@@ -101,10 +107,16 @@ void Visitor::Stringify::visit(const Parser::Nodes::LogicalOrExpr &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::LogicalAndExpr &node) {
-    stringify(node, "LogicalAndExpr: &&");
+    std::string mess{"LogicalAndExpr: "};
+    if(node.op.id == Lexer::Token::Id::LogicalAnd) {
+        mess += "&&";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
     node.lhs->accept(*this);
     if(node.rhs) {
-    node.rhs->accept(*this);
+        node.rhs->accept(*this);
     }
 }
 

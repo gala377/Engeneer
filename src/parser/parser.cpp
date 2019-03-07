@@ -345,7 +345,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
-    auto lhs = parse_inclusive_or_expr();
+    auto lhs = parse_logical_or_expr();
     if(!lhs) {
         return nullptr;
     }
@@ -353,7 +353,7 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
     Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
     if(auto tok = parse_token(Lexer::Token::Id::Assignment); tok) {
         op = tok.value();
-        rhs = parse_inclusive_or_expr();
+        rhs = parse_logical_or_expr();
     }
     return std::make_unique<Nodes::AssignmentExpr>(
             std::move(lhs), op, std::move(rhs));
@@ -361,6 +361,72 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
 
 
 // Logical
+std::unique_ptr<Parser::Nodes::LogicalOrExpr> Parser::Parser::parse_logical_or_expr() {
+    auto logical_or_expr = parse_single_logical_or_expr();
+    fold(
+        make_tok_parser(Lexer::Token::Id::LogicalOr),
+        [this, &logical_or_expr](auto &&op) {
+            auto res = parse_logical_and_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after logical or operator");
+            }
+            logical_or_expr = std::make_unique<Nodes::LogicalOrExpr>(
+                std::move(logical_or_expr), op.value(), std::move(res));
+        });
+    return logical_or_expr;
+}
+
+std::unique_ptr<Parser::Nodes::LogicalOrExpr> Parser::Parser::parse_single_logical_or_expr() {
+    std::unique_ptr<Nodes::LogicalAndExpr> lhs = parse_logical_and_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_token(Lexer::Token::Id::LogicalOr);
+    std::unique_ptr<Nodes::LogicalAndExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_logical_and_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::LogicalOrExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
+std::unique_ptr<Parser::Nodes::LogicalAndExpr> Parser::Parser::parse_logical_and_expr() {
+    auto logical_and_expr = parse_single_logical_and_expr();
+    fold(
+        make_tok_parser(Lexer::Token::Id::LogicalAnd),
+        [this, &logical_and_expr](auto &&op) {
+            auto res = parse_inclusive_or_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after logical and operator");
+            }
+            logical_and_expr = std::make_unique<Nodes::LogicalAndExpr>(
+                std::move(logical_and_expr), op.value(), std::move(res));
+        });
+    return logical_and_expr;
+}
+
+std::unique_ptr<Parser::Nodes::LogicalAndExpr> Parser::Parser::parse_single_logical_and_expr() {
+    std::unique_ptr<Nodes::InclusiveOrExpr> lhs = parse_inclusive_or_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_token(Lexer::Token::Id::LogicalAnd);
+    std::unique_ptr<Nodes::InclusiveOrExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_inclusive_or_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::LogicalAndExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
 std::unique_ptr<Parser::Nodes::InclusiveOrExpr> Parser::Parser::parse_inclusive_or_expr() {
     auto inclusive_or_expr = parse_single_inclusive_or_expr();
     fold(

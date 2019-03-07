@@ -16,7 +16,7 @@
 int main() {
     Lexer::Source::String s(R"(
         int bar(a int, b int) {
-            a | b | c | d ^ a | d ^ 1 & a;
+            a = true && false || a << 1;
         }
 
 )");

@@ -53,6 +53,8 @@ namespace Parser {
         // Binary
 
         // Logical
+        std::unique_ptr<Nodes::LogicalOrExpr> parse_logical_or_expr();
+        std::unique_ptr<Nodes::LogicalAndExpr> parse_logical_and_expr();
         std::unique_ptr<Nodes::InclusiveOrExpr> parse_inclusive_or_expr();
         std::unique_ptr<Nodes::ExclusiveOrExpr> parse_exclusive_or_expr();
         std::unique_ptr<Nodes::AndExpr> parse_and_expr();
@@ -101,6 +103,8 @@ namespace Parser {
         std::unique_ptr<Nodes::EqualityExpr> parse_single_equality_expr();
         std::unique_ptr<Nodes::AndExpr> parse_single_and_expr();
         std::unique_ptr<Nodes::ExclusiveOrExpr> parse_single_exclusive_or_expr();
+        std::unique_ptr<Nodes::LogicalAndExpr> parse_single_logical_and_expr();
+        std::unique_ptr<Nodes::LogicalOrExpr> parse_single_logical_or_expr();
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 
