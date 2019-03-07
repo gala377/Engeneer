@@ -133,6 +133,7 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
         wrapped_id);
 }
 
+// todo refactor
 Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     unique_vec<Nodes::VariableDecl> members;
     unique_vec<Nodes::FunctionDecl> methods;
