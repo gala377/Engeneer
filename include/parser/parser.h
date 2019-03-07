@@ -112,7 +112,7 @@ namespace Parser {
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 
-        using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDef>>;
+        using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDecl>>;
         struct_body_parse_res_t parse_struct_body();
 
         // postfix helpers
@@ -130,12 +130,6 @@ namespace Parser {
         std::optional<Lexer::Token> parse_relational_op();
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
-
-        // Helper functions
-        void add_member_or_method(
-            std::pair<std::string, std::string> identifiers,
-            unique_vec<Nodes::VariableDecl>& members,
-            unique_vec<Nodes::FunctionDef>& methods);
 
         template<typename Ret, typename ...Ts>
         std::unique_ptr<Ret> one_of(Ts &&... ts) {

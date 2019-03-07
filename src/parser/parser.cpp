@@ -34,38 +34,6 @@ Parser::AST Parser::Parser::parse() {
     return std::move(ast);
 }
 
-// Helpers
-
-void Parser::Parser::add_member_or_method(
-    std::pair<std::string, std::string> identifiers,
-    Parser::Parser::unique_vec<Nodes::VariableDecl> &members,
-    Parser::Parser::unique_vec<Nodes::FunctionDef> &methods) {
-
-    auto& [first_id, second_id] = identifiers;
-    auto arg_list = parse_func_arg_list();
-    if(arg_list) {
-        // todo uncomment and fix
-        auto body = parse_code_block();
-//        methods.emplace_back(
-//            std::make_unique<Nodes::FunctionDef>(
-//                std::make_unique<Nodes::FunctionProt>(
-//                    second_id,
-//                    first_id,
-//                    std::move(arg_list.value())),
-//                std::move(body)));
-    } else {
-        if(!parse_token(Lexer::Token::Id::Semicolon)) {
-            error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
-                _lexer.curr_token(),
-                "Missing semicolon");
-        }
-        // todo uncomment and fix
-//        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-//            first_id, second_id));
-    }
-}
-
 // Parsing
 
 // End
@@ -167,36 +135,79 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
 
 Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     unique_vec<Nodes::VariableDecl> members;
-    unique_vec<Nodes::FunctionDef> methods;
+    unique_vec<Nodes::FunctionDecl> methods;
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
         error<Exception::ExpectedToken>(
                 Lexer::Token{Lexer::Token::Id::LeftBrace, "{"},
                 _lexer.curr_token(),
                 "Struct body is expected to be a code block");
     }
-    // todo type modifiers make it so much worst
-    // todo like consts and pointers
-    // todo because its no longer 2 identifiers
-    // todo its type and identifier or identifier and type
-    // todo but identifier alone, can also be a type
-    // todo so we can have 4 situations
-    // todo type identifier, identifier type, identifier identifier, type type
-    // todo and right now we only have this one --------^
-    fold(
-        make_tok_parser(Lexer::Token::Id::Identifier),
-        [this, &members, &methods](auto first_id) {
-            auto second_id = parse_token(Lexer::Token::Id::Identifier);
-            if(!second_id) {
-                abort<Exception::ExpectedToken>(
-                    Lexer::Token{Lexer::Token::Id::Identifier, ""},
-                        _lexer.curr_token(),
-                        "Declarations in struct body need to be functions or variables");
+
+    while(true) {
+        auto first_id = parse_ident();
+        if(!first_id) {
+            auto func = parse_func_decl();
+            if(!func) {
+                break;
             }
-            add_member_or_method(
-                std::make_pair(first_id->symbol, second_id->symbol),
-                members,
-                methods);
-        });
+            methods.emplace_back(std::move(func));
+            continue;
+        }
+        auto second_id = parse_ident();
+        if(!second_id) {
+            auto type = parse_type();
+            if(!parse_type()) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Declarations in struct body need to be functions or variables");
+            }
+            if(!parse_token(Lexer::Token::Id::Semicolon)) {
+                error<Exception::ExpectedToken>(
+                    Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                    _lexer.curr_token(),
+                    "Missing semicolon");
+            }
+            members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+                first_id->symbol,
+                std::move(type)));
+            continue;
+        }
+        if(auto args = parse_func_arg_list(); args) {
+            // function decl
+            auto header = std::make_unique<Nodes::FunctionProt>(
+                second_id->symbol,
+                std::make_unique<Types::SimpleType>(std::move(first_id)),
+                std::move(args.value()));
+            auto body = parse_code_block();
+            if(!body) {
+                if(!parse_token(Lexer::Token::Id::Semicolon)) {
+                    error<Exception::ExpectedToken>(
+                        Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                        _lexer.curr_token(),
+                        "Missing semicolon after method prototype");
+                }
+                methods.emplace_back(std::move(header));
+                continue;
+            }
+            methods.emplace_back(
+                std::make_unique<Nodes::FunctionDef>(
+                    std::move(header),
+                    std::move(body)));
+            continue;
+
+        }
+        // variable decl
+        if(!parse_token(Lexer::Token::Id::Semicolon)) {
+            error<Exception::ExpectedToken>(
+                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.curr_token(),
+                "Missing semicolon");
+            members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+                first_id->symbol,
+                std::make_unique<Types::SimpleType>(std::move(second_id))));
+        }
+    }
+
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
         error<Exception::ExpectedToken>(
             Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
@@ -218,7 +229,11 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
     }
     auto body = parse_code_block();
     if(!body) {
-        return nullptr;
+        error<Exception::ExpectedToken>(
+            Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+            _lexer.curr_token(),
+            "Missing semicolon after function prototype");
+        return std::move(header);
     }
     return std::make_unique<Nodes::FunctionDef>(
         std::move(header), std::move(body));
@@ -277,7 +292,6 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
         } else {
             ident = std::nullopt;
         }
-
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         error<Exception::ExpectedToken>(
@@ -305,14 +319,15 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
     return res;
 }
 
+// todo fix so it returns nullptr when no left brace present
+// todo then fix function decl to keep that in mind
+// todo and struct decl
+// todo and struct method parsing
 std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
-    auto code_block = std::make_unique<Nodes::CodeBlock>();
-
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
-        error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::LeftBrace, "{"},
-                _lexer.curr_token());
+        return nullptr;
     }
+    auto code_block = std::make_unique<Nodes::CodeBlock>();
     fold(
         &Parser::parse_statement,
         [&code_block](auto&& res) {
