@@ -156,16 +156,17 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
         auto second_id = parse_ident();
         if(!second_id) {
             auto type = parse_type();
-            if(!parse_type()) {
+            if(!type) {
                 abort<Exception::BaseSyntax>(
                     _lexer.curr_token(),
+                    "Couldn't parse member type. "
                     "Declarations in struct body need to be functions or variables");
             }
             if(!parse_token(Lexer::Token::Id::Semicolon)) {
                 error<Exception::ExpectedToken>(
                     Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
                     _lexer.curr_token(),
-                    "Missing semicolon");
+                    "Missing semicolon after member declarations");
             }
             members.emplace_back(std::make_unique<Nodes::VariableDecl>(
                 first_id->symbol,

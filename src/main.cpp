@@ -15,11 +15,21 @@
 
 int main() {
     Lexer::Source::String s(R"(
+    struct Test {
+
+        foo int;
+        foo2 &Test;
+        foo3 int
+        foo4 &const int
+
         const& int bar(a &int, b &int) {
             let a &int;
             1 = 2;
         }
 
+        int bar2();
+        int bar3()
+    }
 )");
     Visitor::Stringify v;
     Visitor::LLVM comp;
