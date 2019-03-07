@@ -23,6 +23,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"throw", Token::Id::Throw},
         {"brake", Token::Id::Brake},
         {"continue", Token::Id::Continue},
+        {"const", Token::Id::Const},
 };
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {

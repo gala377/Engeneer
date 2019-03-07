@@ -11,8 +11,10 @@
 #include <lexer/lexer.h>
 
 #include <parser/ast.h>
+#include <parser/type.h>
 #include <parser/nodes/base.h>
 #include <parser/nodes/concrete.h>
+
 #include <exception/handler.h>
 #include <exception/handling_mixin.h>
 
@@ -93,6 +95,8 @@ namespace Parser {
         using arg_list_t = unique_vec<Nodes::VariableDecl>;
         std::optional<arg_list_t> parse_func_arg_list();
 
+        std::unique_ptr<Types::BasicType> parse_type();
+
         // single expr parser
         std::unique_ptr<Nodes::InclusiveOrExpr> parse_single_inclusive_or_expr();
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
@@ -124,7 +128,6 @@ namespace Parser {
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
         std::optional<Lexer::Token> parse_relational_op();
-        std::optional<std::string> parse_type();
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
 

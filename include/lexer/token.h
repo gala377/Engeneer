@@ -37,7 +37,7 @@ namespace Lexer {
             Throw,
             Brake,
             Continue,
-
+            Const,
 
             // Operators
             Assignment=200,

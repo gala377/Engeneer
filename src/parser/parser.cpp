@@ -335,7 +335,6 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     }
     std::unique_ptr<Nodes::Expression> init_expr{nullptr};
     if(parse_token(Lexer::Token::Id::Assignment)) {
-        std::cerr << "Parsing init expr\n";
         init_expr = parse_expr();
         if(!init_expr) {
             abort<Exception::BaseSyntax>(
@@ -357,6 +356,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 
 // Binary
+// todo make assignment stack, for now it does not
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
     auto lhs = parse_logical_or_expr();
     if(!lhs) {
@@ -992,9 +992,30 @@ std::optional<Lexer::Token> Parser::Parser::parse_relational_op() {
             make_tok_parser(Lexer::Token::Id::LessEq));
 }
 
-std::optional<std::string> Parser::Parser::parse_type() {
-    auto res = parse_token(Lexer::Token::Id::Identifier);
-    return res ? std::optional{res.value().symbol} : std::nullopt;
+std::unique_ptr<Parser::Types::BasicType> Parser::Parser::parse_type() {
+    auto complex = std::make_unique<Types::ComplexType>();
+    if(parse_token(Lexer::Token::Id::Const)) {
+        complex->is_const = true;
+    }
+    if(parse_token(Lexer::Token::Id::And)) {
+        complex->is_ptr = true;
+    }
+    if(complex->is_ptr || complex->is_const) {
+        auto underlying_type = parse_type();
+        if(!underlying_type) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "No type to apply identifiers to");
+        }
+        complex->underlying_type = std::move(underlying_type);
+        return complex;
+    }
+    auto res = parse_ident();
+    if(!res) {
+        return nullptr;
+    }
+    return std::make_unique<Types::SimpleType>(std::move(res));
+
 }
 
 std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make_tok_parser(Lexer::Token::Id id) {
