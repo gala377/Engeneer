@@ -109,7 +109,13 @@ void Visitor::Stringify::visit(const Parser::Nodes::LogicalAndExpr &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::InclusiveOrExpr &node) {
-    stringify(node, "InclusiveOrExpr: |");
+    std::string mess{"InclusiveOrExpr: "};
+    if(node.op.id == Lexer::Token::Id::InclusiveOr) {
+        mess += "|";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
     node.lhs->accept(*this);
     if(node.rhs) {
         node.rhs->accept(*this);
@@ -117,7 +123,13 @@ void Visitor::Stringify::visit(const Parser::Nodes::InclusiveOrExpr &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
-    stringify(node, "ExclusiveOrExpr: ^");
+    std::string mess{"ExclusiveOrExpr: "};
+    if(node.op.id == Lexer::Token::Id::ExclusiveOr) {
+        mess += "^";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
     node.lhs->accept(*this);
     if(node.rhs) {
         node.rhs->accept(*this);
@@ -125,7 +137,13 @@ void Visitor::Stringify::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::AndExpr &node) {
-    stringify(node, "AndExpr: &");
+    std::string mess{"AndExpr: "};
+    if(node.op.id == Lexer::Token::Id::And) {
+        mess += "&";
+    } else {
+        mess += "None";
+    }
+    stringify(node, std::move(mess));
     node.lhs->accept(*this);
     if(node.rhs) {
         node.rhs->accept(*this);

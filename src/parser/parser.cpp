@@ -345,8 +345,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 // Binary
 std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr() {
-
-    auto lhs = parse_relational_expr();
+    auto lhs = parse_inclusive_or_expr();
     if(!lhs) {
         return nullptr;
     }
@@ -354,7 +353,7 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
     Lexer::Token op = Lexer::Token{Lexer::Token::Id::None, ""};
     if(auto tok = parse_token(Lexer::Token::Id::Assignment); tok) {
         op = tok.value();
-        rhs = parse_relational_expr();
+        rhs = parse_inclusive_or_expr();
     }
     return std::make_unique<Nodes::AssignmentExpr>(
             std::move(lhs), op, std::move(rhs));
@@ -362,6 +361,144 @@ std::unique_ptr<Parser::Nodes::AssignmentExpr> Parser::Parser::parse_assig_expr(
 
 
 // Logical
+std::unique_ptr<Parser::Nodes::InclusiveOrExpr> Parser::Parser::parse_inclusive_or_expr() {
+    auto inclusive_or_expr = parse_single_inclusive_or_expr();
+    fold(
+        make_tok_parser(Lexer::Token::Id::InclusiveOr),
+        [this, &inclusive_or_expr](auto &&op) {
+            auto res = parse_exclusive_or_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after inclusive or operator");
+            }
+            inclusive_or_expr = std::make_unique<Nodes::InclusiveOrExpr>(
+                std::move(inclusive_or_expr), op.value(), std::move(res));
+        });
+    return inclusive_or_expr;
+}
+
+std::unique_ptr<Parser::Nodes::InclusiveOrExpr> Parser::Parser::parse_single_inclusive_or_expr() {
+    std::unique_ptr<Nodes::ExclusiveOrExpr> lhs = parse_exclusive_or_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_token(Lexer::Token::Id::InclusiveOr);
+    std::unique_ptr<Nodes::ExclusiveOrExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_exclusive_or_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::InclusiveOrExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
+std::unique_ptr<Parser::Nodes::ExclusiveOrExpr> Parser::Parser::parse_exclusive_or_expr() {
+    auto exclusive_or_expr = parse_single_exclusive_or_expr();
+    fold(
+        make_tok_parser(Lexer::Token::Id::ExclusiveOr),
+        [this, &exclusive_or_expr](auto &&op) {
+            auto res = parse_and_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after exclusive or operator");
+            }
+            exclusive_or_expr = std::make_unique<Nodes::ExclusiveOrExpr>(
+                std::move(exclusive_or_expr), op.value(), std::move(res));
+        });
+    return exclusive_or_expr;
+}
+
+std::unique_ptr<Parser::Nodes::ExclusiveOrExpr> Parser::Parser::parse_single_exclusive_or_expr() {
+    std::unique_ptr<Nodes::AndExpr> lhs = parse_and_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_token(Lexer::Token::Id::ExclusiveOr);
+    std::unique_ptr<Nodes::AndExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_and_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::ExclusiveOrExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
+std::unique_ptr<Parser::Nodes::AndExpr> Parser::Parser::parse_and_expr() {
+    auto and_expr = parse_single_and_expr();
+    fold(
+        make_tok_parser(Lexer::Token::Id::And),
+        [this, &and_expr](auto &&op) {
+            auto res = parse_equality_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after and operator");
+            }
+            and_expr = std::make_unique<Nodes::AndExpr>(
+                std::move(and_expr), op.value(), std::move(res));
+        });
+    return and_expr;
+}
+
+std::unique_ptr<Parser::Nodes::AndExpr> Parser::Parser::parse_single_and_expr() {
+    std::unique_ptr<Nodes::EqualityExpr> lhs = parse_equality_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = parse_token(Lexer::Token::Id::And);
+    std::unique_ptr<Nodes::EqualityExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_equality_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::AndExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
+std::unique_ptr<Parser::Nodes::EqualityExpr> Parser::Parser::parse_equality_expr() {
+    auto equality_expr = parse_single_equality_expr();
+    fold(
+        [](Parser *p) {
+            return p->one_of_op<Lexer::Token>(
+                p->make_tok_parser(Lexer::Token::Id::Equality),
+                p->make_tok_parser(Lexer::Token::Id::Inequality));
+        },
+        [this, &equality_expr](auto &&op) {
+            auto res = parse_relational_expr();
+            if (!res) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Expression expected after equality operator");
+            }
+            equality_expr = std::make_unique<Nodes::EqualityExpr>(
+                std::move(equality_expr), op.value(), std::move(res));
+        });
+    return equality_expr;
+}
+
+std::unique_ptr<Parser::Nodes::EqualityExpr> Parser::Parser::parse_single_equality_expr() {
+    std::unique_ptr<Nodes::RelationalExpr> lhs = parse_relational_expr();
+    if(!lhs) {
+        return nullptr;
+    }
+    auto op = one_of_op<Lexer::Token>(
+        make_tok_parser(Lexer::Token::Id::Equality),
+        make_tok_parser(Lexer::Token::Id::Inequality));
+    std::unique_ptr<Nodes::RelationalExpr> rhs{nullptr};
+    if(op) {
+        rhs = parse_relational_expr();
+    } else {
+        op = std::optional{Lexer::none_tok};
+    }
+    return std::make_unique<Nodes::EqualityExpr>(
+        std::move(lhs), op.value(), std::move(rhs));
+}
+
 std::unique_ptr<Parser::Nodes::RelationalExpr> Parser::Parser::parse_relational_expr() {
     auto rel_expr = parse_single_relational_expr();
     fold(&Parser::parse_relational_op,

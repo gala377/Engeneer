@@ -16,7 +16,7 @@
 int main() {
     Lexer::Source::String s(R"(
         int bar(a int, b int) {
-            5 > 3 > 1 >> 2;
+            a | b | c | d ^ a | d ^ 1 & a;
         }
 
 )");

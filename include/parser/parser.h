@@ -53,6 +53,10 @@ namespace Parser {
         // Binary
 
         // Logical
+        std::unique_ptr<Nodes::InclusiveOrExpr> parse_inclusive_or_expr();
+        std::unique_ptr<Nodes::ExclusiveOrExpr> parse_exclusive_or_expr();
+        std::unique_ptr<Nodes::AndExpr> parse_and_expr();
+        std::unique_ptr<Nodes::EqualityExpr> parse_equality_expr();
         std::unique_ptr<Nodes::RelationalExpr> parse_relational_expr();
         std::unique_ptr<Nodes::ShiftExpr> parse_shift_expr();
 
@@ -88,11 +92,15 @@ namespace Parser {
         std::optional<arg_list_t> parse_func_arg_list();
 
         // single expr parser
+        std::unique_ptr<Nodes::InclusiveOrExpr> parse_single_inclusive_or_expr();
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
         std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
         std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix_expr();
         std::unique_ptr<Nodes::ShiftExpr> parse_single_shift_expr();
         std::unique_ptr<Nodes::RelationalExpr> parse_single_relational_expr();
+        std::unique_ptr<Nodes::EqualityExpr> parse_single_equality_expr();
+        std::unique_ptr<Nodes::AndExpr> parse_single_and_expr();
+        std::unique_ptr<Nodes::ExclusiveOrExpr> parse_single_exclusive_or_expr();
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 
