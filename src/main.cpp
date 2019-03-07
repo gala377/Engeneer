@@ -15,7 +15,7 @@
 
 int main() {
     Lexer::Source::String s(R"(
-        int bar(a &int, b &int) {
+        const& int bar(a &int, b &int) {
             let a &int;
             1 = 2;
         }

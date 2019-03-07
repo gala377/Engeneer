@@ -67,11 +67,11 @@ namespace Parser::Nodes {
     public:
         FunctionProt(
                 const std::string &identifier,
-                const std::string &type_identifier,
+                std::unique_ptr<Types::BasicType>&& type,
                 std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
 
         std::string identifier;
-        std::string type_identifier;
+        std::unique_ptr<Types::BasicType> type;
         std::vector<std::unique_ptr<VariableDecl>> arg_list;
 
         void accept(Parser::Visitor &v) const override;

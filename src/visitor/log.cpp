@@ -49,7 +49,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
 
 // Function
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
-    std::string repr{"FuncHeader: " + node.type_identifier + " " + node.identifier + "("};
+    std::string repr{"FuncHeader: " + strf_type(node.type) + " " + node.identifier + "("};
     for(const auto& arg: node.arg_list) {
         repr += strf_type(arg->type) + " " + arg->identifier + ", ";
     }

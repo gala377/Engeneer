@@ -33,8 +33,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "FunctionProt\n";
-    if(node.type_identifier != "int") {
-        throw std::runtime_error("Usage of unsupported return type " + node.type_identifier);
+    if(node.type->identifier().symbol != "int") {
+        throw std::runtime_error("Usage of unsupported return type " + node.type->identifier().symbol);
     }
     std::cout << "Compiling arg list\n";
     std::cout << "Arg list size is " << node.arg_list.size() << "\n";

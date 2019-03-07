@@ -54,9 +54,9 @@ void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
 
 Parser::Nodes::FunctionProt::FunctionProt(
         const std::string &identifier,
-        const std::string &type_identifier,
+        std::unique_ptr<Types::BasicType>&& type,
         std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>> &&arg_list) :
-        identifier(identifier), type_identifier(type_identifier), arg_list(std::move(arg_list)) {}
+        identifier(identifier), type(std::move(type)), arg_list(std::move(arg_list)) {}
 
 void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
     v.visit(*this);

@@ -44,14 +44,15 @@ void Parser::Parser::add_member_or_method(
     auto& [first_id, second_id] = identifiers;
     auto arg_list = parse_func_arg_list();
     if(arg_list) {
+        // todo uncomment and fix
         auto body = parse_code_block();
-        methods.emplace_back(
-            std::make_unique<Nodes::FunctionDef>(
-                std::make_unique<Nodes::FunctionProt>(
-                    second_id,
-                    first_id,
-                    std::move(arg_list.value())),
-                std::move(body)));
+//        methods.emplace_back(
+//            std::make_unique<Nodes::FunctionDef>(
+//                std::make_unique<Nodes::FunctionProt>(
+//                    second_id,
+//                    first_id,
+//                    std::move(arg_list.value())),
+//                std::move(body)));
     } else {
         if(!parse_token(Lexer::Token::Id::Semicolon)) {
             error<Exception::ExpectedToken>(
@@ -59,7 +60,7 @@ void Parser::Parser::add_member_or_method(
                 _lexer.curr_token(),
                 "Missing semicolon");
         }
-        // todo uncomment
+        // todo uncomment and fix
 //        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
 //            first_id, second_id));
     }
@@ -224,11 +225,10 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
 }
 
 std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header() {
-    auto type_res = parse_token(Lexer::Token::Id::Identifier);
-    if(!type_res) {
+    auto type = parse_type();
+    if(!type) {
         return nullptr;
     }
-    auto type_identifier = type_res.value().symbol;
     auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
     if(!identifier_res) {
         abort<Exception::ExpectedToken>(
@@ -245,7 +245,7 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
     }
     return std::make_unique<Nodes::FunctionProt>(
             identifier,
-            type_identifier,
+            std::move(type),
             std::move(arg_list.value()));
 }
 
