@@ -29,10 +29,12 @@ void Parser::Nodes::TopLevelDecl::accept(Parser::Visitor &v) const {
 
 // GlobVarDecl
 Parser::Nodes::GlobVariableDecl::GlobVariableDecl(
-        const std::string& symbol,
+        std::unique_ptr<Identifier>&& identifier,
         std::unique_ptr<Types::BasicType>&& type,
         std::unique_ptr<Expression>&& init_expr):
-        identifier(symbol), type(std::move(type)), init_expr(std::move(init_expr)) {}
+        identifier(std::move(identifier)),
+        type(std::move(type)),
+        init_expr(std::move(init_expr)) {}
 
 void Parser::Nodes::GlobVariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -53,10 +55,12 @@ void Parser::Nodes::FunctionDecl::accept(Parser::Visitor &v) const {
 
 
 Parser::Nodes::FunctionProt::FunctionProt(
-        const std::string &identifier,
+        std::unique_ptr<Identifier>&& identifier,
         std::unique_ptr<Types::BasicType>&& type,
         std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>> &&arg_list) :
-        identifier(identifier), type(std::move(type)), arg_list(std::move(arg_list)) {}
+        identifier(std::move(identifier)),
+        type(std::move(type)),
+        arg_list(std::move(arg_list)) {}
 
 void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -83,11 +87,11 @@ void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
 
 
 // Struct
-Parser::Nodes::StructDecl::StructDecl(const std::string &identifier,
+Parser::Nodes::StructDecl::StructDecl(std::unique_ptr<Identifier>&& identifier,
                                       std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>>&& members,
                                       std::vector<std::unique_ptr<Parser::Nodes::FunctionDecl>>&& methods,
                                       const std::optional<std::string>& wrapped_struct):
-                                      identifier{identifier},
+                                      identifier{std::move(identifier)},
                                       members{std::move(members)},
                                       methods{std::move(methods)},
                                       wrapped_struct{wrapped_struct} {}
@@ -119,10 +123,12 @@ void Parser::Nodes::CodeBlock::accept(Parser::Visitor &v) const {
 
 
 Parser::Nodes::VariableDecl::VariableDecl(
-        const std::string& symbol,
+        std::unique_ptr<Identifier>&& identifier,
         std::unique_ptr<Types::BasicType>&& type,
         std::unique_ptr<Parser::Nodes::Expression>&& init_expr):
-        identifier(symbol), type(std::move(type)), init_expr(std::move(init_expr)) {}
+        identifier(std::move(identifier)),
+        type(std::move(type)),
+        init_expr(std::move(init_expr)) {}
 
 void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);

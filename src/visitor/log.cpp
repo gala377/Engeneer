@@ -28,11 +28,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::Program& node) {
 
 // Top Level
 void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
-    stringify(node, "GlobVarDecl: " + strf_type(node.type) + " " + node.identifier);
+    stringify(node, "GlobVarDecl: " + strf_type(node.type) + " " + node.identifier->symbol);
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
-    std::string mess = "StructDecl: " + node.identifier;
+    std::string mess = "StructDecl: " + node.identifier->symbol;
     if(node.wrapped_struct) {
         mess += " wraps " + node.wrapped_struct.value();
     }
@@ -49,9 +49,9 @@ void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
 
 // Function
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {
-    std::string repr{"FuncHeader: " + strf_type(node.type) + " " + node.identifier + "("};
+    std::string repr{"FuncHeader: " + strf_type(node.type) + " " + node.identifier->symbol + "("};
     for(const auto& arg: node.arg_list) {
-        repr += strf_type(arg->type) + " " + arg->identifier + ", ";
+        repr += strf_type(arg->type) + " " + arg->identifier->symbol + ", ";
     }
     repr += ")";
     stringify(node, std::move(repr));
@@ -75,7 +75,7 @@ void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
-    stringify(node, "VarDecl: " + strf_type(node.type) + " " + node.identifier);
+    stringify(node, "VarDecl: " + strf_type(node.type) + " " + node.identifier->symbol);
     if(node.init_expr) {
         node.init_expr->accept(*this);
     }

@@ -57,7 +57,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     llvm::Function* func = llvm::Function::Create(
             func_t,
             llvm::Function::ExternalLinkage,
-            node.identifier,
+            node.identifier->symbol,
             _module.get());
 
     if(!func) {
@@ -68,8 +68,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "Setting func arg names\n";
     unsigned int i = 0;
     for(auto& arg: func->args()) {
-        std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier << "\n";
-        arg.setName(node.arg_list[i++]->identifier);
+        std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier->symbol << "\n";
+        arg.setName(node.arg_list[i++]->identifier->symbol);
     }
     std::cout << "Printing func IR\n";
     // todo its just temporary
@@ -82,15 +82,15 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     std::cout << "FuncDef\n";
     // todo there is a bug with redefining function with different arg names
 
-    auto func = _module->getFunction(node.declaration->identifier);
+    auto func = _module->getFunction(node.declaration->identifier->symbol);
     if(!func) {
         node.declaration->accept(*this); func = _ret_func;
     }
     if(!func) {
-        throw std::runtime_error("Could not compile func prototype! " + node.declaration->identifier);
+        throw std::runtime_error("Could not compile func prototype! " + node.declaration->identifier->symbol);
     }
     if(!func->empty()) {
-        throw std::runtime_error("Redefinition of func " + node.declaration->identifier);
+        throw std::runtime_error("Redefinition of func " + node.declaration->identifier->symbol);
     }
     auto basic_block = llvm::BasicBlock::Create(_context, "entry", func);
     _builder.SetInsertPoint(basic_block);
@@ -136,9 +136,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
 
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     std::cout << "Var decl\n";
-    llvm::Value *v = _named_values[node.identifier];
+    llvm::Value *v = _named_values[node.identifier->symbol];
     if(v) {
-        throw std::runtime_error("Redeclaration of a variable! " + node.identifier);
+        throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
     if(node.type->identifier().symbol != "int") {
         throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
@@ -151,6 +151,62 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
 
 // Expression
 // Binary
+void Visitor::LLVM::visit(const Parser::Nodes::LogicalOrExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::LogicalAndExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::InclusiveOrExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::AndExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::EqualityExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::ShiftExpr &node) {
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported binary operator");
+    }
+    node.lhs->accept(*this);
+}
+
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     std::cout << "Assig expr\n";
     // Compute left and right if needed
@@ -214,7 +270,22 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 
 
 // Unary
+void Visitor::LLVM::visit(const Parser::Nodes::UnaryExpr &node) {
+    std::cout << "Unary\n";
+    if(node.op.id != Lexer::Token::Id::None) {
+        throw std::runtime_error("Unsupported unary operator");
+    }
+    node.rhs->accept(*this);
+}
+
+
 // Postfix
+void Visitor::LLVM::visit(const Parser::Nodes::PostfixExpr &node) {
+    std::cout << "Postifx\n";
+    node.lhs->accept(*this);
+}
+
+
 // Primary
 void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
     std::cout << "IdentifierExpr\n";
@@ -236,3 +307,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     std::cout << "ConstInt\n";
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
 }
+
+
+
+

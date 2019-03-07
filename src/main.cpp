@@ -15,20 +15,8 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    struct Test {
-
-        foo int;
-        foo2 &Test;
-        foo3 int
-        foo4 &const int
-
-        const& int bar(a &int, b &int) {
-            let a &int;
-            1 = 2;
-        }
-
-        int bar2();
-        int bar3()
+    int test(a int, b int) {
+        3 * (2+2)
     }
 )");
     Visitor::Stringify v;
@@ -47,9 +35,9 @@ int main() {
     std::cout << "Code parsed!\n\n""";
     std::cout << v.repr();
 
-//    std::cout << "\nCompiling\n";
-//    ast.accept(comp);
-//    std::cout << "Compiled\n";
+    std::cout << "\nCompiling\n";
+    ast.accept(comp);
+    std::cout << "Compiled\n";
 
     return 0;
 }

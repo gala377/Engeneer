@@ -44,11 +44,11 @@ namespace Parser::Nodes {
     class GlobVariableDecl: public TopLevelDecl {
     public:
         GlobVariableDecl(
-            const std::string& symbol,
+            std::unique_ptr<Identifier>&& identifier,
             std::unique_ptr<Types::BasicType> &&type,
             std::unique_ptr<Expression>&& init_expr = nullptr);
 
-        std::string identifier;
+        std::unique_ptr<Identifier> identifier;
         std::unique_ptr<Types::BasicType> type;
         std::unique_ptr<Expression> init_expr;
 
@@ -66,11 +66,11 @@ namespace Parser::Nodes {
     class FunctionProt: public FunctionDecl {
     public:
         FunctionProt(
-                const std::string &identifier,
+                std::unique_ptr<Identifier>&& identifier,
                 std::unique_ptr<Types::BasicType>&& type,
                 std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
 
-        std::string identifier;
+        std::unique_ptr<Identifier> identifier;;
         std::unique_ptr<Types::BasicType> type;
         std::vector<std::unique_ptr<VariableDecl>> arg_list;
 
@@ -92,12 +92,12 @@ namespace Parser::Nodes {
     class StructDecl: public TopLevelDecl {
     public:
         StructDecl(
-            const std::string& identifier,
+            std::unique_ptr<Identifier>&& identifier,
             std::vector<std::unique_ptr<VariableDecl>>&& members,
             std::vector<std::unique_ptr<FunctionDecl>>&& methods,
             const std::optional<std::string>& wrapped_struct = std::nullopt);
 
-        std::string identifier;
+        std::unique_ptr<Identifier> identifier;;
         std::vector<std::unique_ptr<VariableDecl>> members;
         std::vector<std::unique_ptr<FunctionDecl>> methods;
         std::optional<std::string> wrapped_struct;
@@ -124,11 +124,11 @@ namespace Parser::Nodes {
     class VariableDecl: public Statement {
     public:
         VariableDecl(
-            const std::string& symbol,
+            std::unique_ptr<Identifier>&& identifier,
             std::unique_ptr<Types::BasicType> &&type,
             std::unique_ptr<Expression>&& init_expr = nullptr);
 
-        std::string identifier;
+        std::unique_ptr<Identifier> identifier;
         std::unique_ptr<Types::BasicType> type;
         std::unique_ptr<Expression> init_expr;
 

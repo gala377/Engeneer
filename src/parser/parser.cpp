@@ -54,7 +54,6 @@ std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_dec
             &Parser::parse_struct_decl);
 }
 
-// todo variable symbol as identifier node
 std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_decl() {
     if(!parse_token(Lexer::Token::Id::Let)) {
         return nullptr;
@@ -92,7 +91,7 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
     }
 
     return std::make_unique<Nodes::GlobVariableDecl>(
-        identifier->symbol,
+        std::move(identifier),
         std::move(type),
         std::move(init_expr));
 }
@@ -104,7 +103,7 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
         return nullptr;
     }
 
-    auto identifier = parse_token(Lexer::Token::Id::Identifier);
+    auto identifier = parse_ident();
     if(!identifier) {
         abort<Exception::ExpectedToken>(
             Lexer::Token{Lexer::Token::Id::Identifier, ""},
@@ -127,7 +126,7 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
     auto [members, methods] = parse_struct_body();
 
     return std::make_unique<Nodes::StructDecl>(
-        identifier->symbol,
+        std::move(identifier),
         std::move(members),
         std::move(methods),
         wrapped_id);
@@ -170,14 +169,14 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
                     "Missing semicolon after member declarations");
             }
             members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-                first_id->symbol,
+                std::move(first_id),
                 std::move(type)));
             continue;
         }
         if(auto args = parse_func_arg_list(); args) {
             // function decl
             auto header = std::make_unique<Nodes::FunctionProt>(
-                second_id->symbol,
+                std::move(second_id),
                 std::make_unique<Types::SimpleType>(std::move(first_id)),
                 std::move(args.value()));
             auto body = parse_code_block();
@@ -205,7 +204,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
                 _lexer.curr_token(),
                 "Missing semicolon");
             members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-                first_id->symbol,
+                std::move(first_id),
                 std::make_unique<Types::SimpleType>(std::move(second_id))));
         }
     }
@@ -246,14 +245,13 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
     if(!type) {
         return nullptr;
     }
-    auto identifier_res = parse_token(Lexer::Token::Id::Identifier);
-    if(!identifier_res) {
+    auto identifier = parse_ident();
+    if(!identifier) {
         abort<Exception::ExpectedToken>(
                 Lexer::Token{Lexer::Token::Id::Identifier, ""},
                 _lexer.curr_token(),
                 "Function name expected");
     }
-    auto identifier = identifier_res.value().symbol;
     auto arg_list = parse_func_arg_list();
     if(!arg_list) {
         abort<Exception::ExpectedToken>(
@@ -261,7 +259,7 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
                 _lexer.curr_token());
     }
     return std::make_unique<Nodes::FunctionProt>(
-            identifier,
+            std::move(identifier),
             std::move(type),
             std::move(arg_list.value()));
 }
@@ -273,7 +271,7 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
         return std::nullopt;
     }
     arg_list_t arg_list{};
-    auto ident = parse_token(Lexer::Token::Id::Identifier);
+    auto ident = parse_ident();
     while(ident) {
         auto type = parse_type();
         if(!type) {
@@ -283,16 +281,14 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
                     "Expected type after variable name");
         }
         arg_list.emplace_back(
-                std::make_unique<Nodes::VariableDecl>(ident.value().symbol, std::move(type)));
+                std::make_unique<Nodes::VariableDecl>(std::move(ident), std::move(type)));
         if(parse_token(Lexer::Token::Id::Comma)) {
-            ident = parse_token(Lexer::Token::Id::Identifier);
+            ident = parse_ident();
             if(!ident) {
                 abort<Exception::ExpectedToken>(
                         Lexer::Token{Lexer::Token::Id::Identifier, ""},
                         _lexer.curr_token());
             }
-        } else {
-            ident = std::nullopt;
         }
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
@@ -321,10 +317,6 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
     return res;
 }
 
-// todo fix so it returns nullptr when no left brace present
-// todo then fix function decl to keep that in mind
-// todo and struct decl
-// todo and struct method parsing
 std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
         return nullptr;
@@ -372,7 +364,7 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
         }
     }
     return std::make_unique<Nodes::VariableDecl>(
-        identifier->symbol,
+        std::move(identifier),
         std::move(type),
         std::move(init_expr));
 }
