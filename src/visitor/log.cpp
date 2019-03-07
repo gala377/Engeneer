@@ -82,6 +82,40 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
 }
 
 
+void Visitor::Stringify::visit(const Parser::Nodes::BlockStmt &node) {
+    stringify(node, "BlockStmt");
+    node.body->accept(*this);
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::IfStmt &node) {
+    stringify(node, "IfStmt");
+    node.cond->accept(*this);
+    node.body->accept(*this);
+    if(node.else_clause) {
+        node.else_clause->accept(*this);
+    }
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::WhileStmt &node) {
+    stringify(node, "WhileStmt");
+    node.cond->accept(*this);
+    node.body->accept(*this);
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::ReturnStmt &node) {
+    stringify(node, "ReturnStmt");
+    node.expr->accept(*this);
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::BreakStmt &node) {
+    stringify(node, "BreakStmt");
+}
+
+void Visitor::Stringify::visit(const Parser::Nodes::ContinueStmt &node) {
+    stringify(node, "ContinueStmt");
+}
+
+
 // Expression
 
 

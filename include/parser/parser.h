@@ -48,6 +48,12 @@ namespace Parser {
         std::unique_ptr<Nodes::Statement> parse_statement();
         std::unique_ptr<Nodes::CodeBlock> parse_code_block();
         std::unique_ptr<Nodes::VariableDecl> parse_var_decl();
+        std::unique_ptr<Nodes::BlockStmt> parse_block_stmt();
+        std::unique_ptr<Nodes::IfStmt> parse_if_stmt();
+        std::unique_ptr<Nodes::WhileStmt> parse_while_stmt();
+        std::unique_ptr<Nodes::ReturnStmt> parse_return_stmt();
+        std::unique_ptr<Nodes::BreakStmt> parse_break_stmt();
+        std::unique_ptr<Nodes::ContinueStmt> parse_continue_stmt();
 
         // Expressions
         std::unique_ptr<Nodes::Expression> parse_expr();

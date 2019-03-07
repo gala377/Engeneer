@@ -35,7 +35,7 @@ namespace Lexer {
             Return,
             While,
             Throw,
-            Brake,
+            Break,
             Continue,
             Const,
 

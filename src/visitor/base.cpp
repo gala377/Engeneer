@@ -63,6 +63,29 @@ void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::BlockStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::IfStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::WhileStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::ReturnStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::BreakStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::ContinueStmt &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
 
 // Expressions
 void Visitor::Base::visit(const Parser::Nodes::Expression &node) {

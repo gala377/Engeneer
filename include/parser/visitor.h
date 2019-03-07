@@ -34,6 +34,12 @@ namespace Parser {
         class CodeBlock;
         class Statement;
         class VariableDecl;
+        class BlockStmt;
+        class IfStmt;
+        class WhileStmt;
+        class ReturnStmt;
+        class BreakStmt;
+        class ContinueStmt;
 
         // Expressions
         class Expression;
@@ -101,7 +107,12 @@ namespace Parser {
         virtual void visit(const Nodes::Statement& node) = 0;
         virtual void visit(const Nodes::CodeBlock& node) = 0;
         virtual void visit(const Nodes::VariableDecl& node) = 0;
-
+        virtual void visit(const Nodes::BlockStmt& node) = 0;
+        virtual void visit(const Nodes::IfStmt& node) = 0;
+        virtual void visit(const Nodes::WhileStmt& node) = 0;
+        virtual void visit(const Nodes::ReturnStmt& node) = 0;
+        virtual void visit(const Nodes::BreakStmt& node) = 0;
+        virtual void visit(const Nodes::ContinueStmt& node) = 0;
 
         // Expressions
         virtual void visit(const Nodes::Expression& node) = 0;

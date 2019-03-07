@@ -16,7 +16,17 @@
 int main() {
     Lexer::Source::String s(R"(
     int test(a int, b int) {
-        3 * (2+2)
+        if a > b {
+            return a
+        } else if a == b {
+            return a + b;
+        } else {
+            while a < b {
+                b = b + 1;
+                a = a - 1;
+            }
+        }
+        return b;
     }
 )");
     Visitor::Stringify v;
@@ -35,9 +45,9 @@ int main() {
     std::cout << "Code parsed!\n\n""";
     std::cout << v.repr();
 
-    std::cout << "\nCompiling\n";
-    ast.accept(comp);
-    std::cout << "Compiled\n";
+//    std::cout << "\nCompiling\n";
+//    ast.accept(comp);
+//    std::cout << "Compiled\n";
 
     return 0;
 }

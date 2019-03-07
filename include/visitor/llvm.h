@@ -32,6 +32,7 @@ namespace Visitor {
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
 
+
         // Expression
         // Binary
         void visit(const Parser::Nodes::LogicalOrExpr &node) override;

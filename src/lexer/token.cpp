@@ -41,8 +41,8 @@ std::string Lexer::str(Lexer::Token::Id id) {
             return "While";
         case Token::Id::Throw:
             return "Throw";
-        case Token::Id::Brake:
-            return "Brake";
+        case Token::Id::Break:
+            return "Break";
         case Token::Id::Continue:
             return "Continue";
         case Token::Id::Assignment:

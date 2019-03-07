@@ -304,7 +304,12 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
 std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
     auto res = one_of<Nodes::Statement>(
         &Parser::parse_var_decl,
-        &Parser::parse_expr);
+        &Parser::parse_expr,
+        &Parser::parse_if_stmt,
+        &Parser::parse_while_stmt,
+        &Parser::parse_return_stmt,
+        &Parser::parse_break_stmt,
+        &Parser::parse_continue_stmt);
     if(!res) {
         return nullptr;
     }
@@ -369,6 +374,90 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
         std::move(init_expr));
 }
 
+std::unique_ptr<Parser::Nodes::BlockStmt> Parser::Parser::parse_block_stmt() {
+    auto code_block = parse_code_block();
+    if(!code_block) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::BlockStmt>(std::move(code_block));
+}
+
+std::unique_ptr<Parser::Nodes::IfStmt> Parser::Parser::parse_if_stmt() {
+    if(!parse_token(Lexer::Token::Id::If)) {
+        return nullptr;
+    }
+    auto cond = parse_expr();
+    if(!cond) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "Expression expected after if keyword");
+    }
+    auto body = parse_code_block();
+    if(!body) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "If statement body missing");
+    }
+    std::unique_ptr<Nodes::BlockStmt> else_clause;
+    if(parse_token(Lexer::Token::Id::Else)) {
+        else_clause = one_of<Nodes::BlockStmt>(
+            &Parser::parse_block_stmt,
+            &Parser::parse_if_stmt);
+    }
+    return std::make_unique<Nodes::IfStmt>(
+        std::move(cond),
+        std::move(body),
+        std::move(else_clause));
+}
+
+std::unique_ptr<Parser::Nodes::WhileStmt> Parser::Parser::parse_while_stmt() {
+    if(!parse_token(Lexer::Token::Id::While)) {
+        return nullptr;
+    }
+    auto cond = parse_expr();
+    if(!cond) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "Expression expected after while keyword");
+    }
+    auto body = parse_code_block();
+    if(!body) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "While statement body is missing");
+    }
+    return std::make_unique<Nodes::WhileStmt>(
+        std::move(cond),
+        std::move(body));
+}
+
+std::unique_ptr<Parser::Nodes::ReturnStmt> Parser::Parser::parse_return_stmt() {
+    if(!parse_token(Lexer::Token::Id::Return)) {
+        return nullptr;
+    }
+    auto expr = parse_expr();
+    if(!expr) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "Expression expected after return statement");
+    }
+    return std::make_unique<Nodes::ReturnStmt>(
+        std::move(expr));
+}
+
+std::unique_ptr<Parser::Nodes::BreakStmt> Parser::Parser::parse_break_stmt() {
+    if(!parse_token(Lexer::Token::Id::Break)) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::BreakStmt>();
+}
+
+std::unique_ptr<Parser::Nodes::ContinueStmt> Parser::Parser::parse_continue_stmt() {
+    if(!parse_token(Lexer::Token::Id::Continue)) {
+        return nullptr;
+    }
+    return std::make_unique<Nodes::ContinueStmt>();
+}
 
 // Expression
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
