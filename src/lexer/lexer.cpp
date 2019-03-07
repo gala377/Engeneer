@@ -21,7 +21,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"return", Token::Id::Return},
         {"while", Token::Id::While},
         {"throw", Token::Id::Throw},
-        {"brake", Token::Id::Break},
+        {"break", Token::Id::Break},
         {"continue", Token::Id::Continue},
         {"const", Token::Id::Const},
 };

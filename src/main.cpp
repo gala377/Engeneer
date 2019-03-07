@@ -17,13 +17,15 @@ int main() {
     Lexer::Source::String s(R"(
     int test(a int, b int) {
         if a > b {
-            return a
+            return a;
         } else if a == b {
             return a + b;
         } else {
             while a < b {
                 b = b + 1;
                 a = a - 1;
+                break;
+                continue;
             }
         }
         return b;
