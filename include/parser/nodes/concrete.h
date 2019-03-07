@@ -206,9 +206,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor& v) const override;
     };
 
-    // arithmetic
-    // todo make constructors for binary
-    // expr so they pass the operator by themselves
     class AssignmentExpr: public BinaryExpr {
     public:
         using BinaryExpr::BinaryExpr;
@@ -216,8 +213,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo should + and - be the same
-    // or should they be subclasses of AdditiveExpr?
     class AdditiveExpr: public BinaryExpr {
     public:
         using BinaryExpr::BinaryExpr;
@@ -225,7 +220,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo division and multiplication subclasses?
     class MultiplicativeExpr: public BinaryExpr {
     public:
         using BinaryExpr::BinaryExpr;
@@ -235,7 +229,6 @@ namespace Parser::Nodes {
 
 
     // Unary Expr
-    // todo each unary its own class?
     class UnaryExpr: public Expression {
     public:
         UnaryExpr(const Lexer::Token& op, std::unique_ptr<Expression>&& rhs);
@@ -302,10 +295,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo should it be like that
-    // and compiler says if something is wrong
-    // or should we catch this on parsing stage?
-    // Or should access be postfix like in c?
     class AccessExpr: public PostfixExpr {
     public:
         AccessExpr(
@@ -351,8 +340,6 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
-    // todo should I actually have o value here?
-    // or maybe just a symbol
     class IntConstant: public Constant {
     public:
         explicit IntConstant(int value);
