@@ -110,10 +110,16 @@ namespace Parser::Nodes {
 
     class VariableDecl: public Statement {
     public:
-        VariableDecl(const std::string& symbol, const std::string& type_symbol);
+        VariableDecl(
+            const std::string& symbol,
+            const std::string& type_symbol,
+            std::unique_ptr<Expression>&& init_expr = nullptr);
 
         std::string identifier;
         std::string type_identifier;
+        std::unique_ptr<Expression> init_expr;
+
+        void set_depth(std::uint32_t depth) override;
 
         void accept(Parser::Visitor &v) const override;
     };

@@ -16,7 +16,7 @@
 int main() {
     Lexer::Source::String s(R"(
         int bar(a int, b int) {
-            a = true && false || a << 1;
+            let a bool;
         }
 
 )");

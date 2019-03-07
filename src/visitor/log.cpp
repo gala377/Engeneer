@@ -76,6 +76,9 @@ void Visitor::Stringify::visit(const Parser::Nodes::CodeBlock &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
     stringify(node, "VarDecl: " + node.type_identifier + " " + node.identifier);
+    if(node.init_expr) {
+        node.init_expr->accept(*this);
+    }
 }
 
 

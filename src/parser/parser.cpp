@@ -282,7 +282,7 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
         &Parser::parse_var_decl,
         &Parser::parse_expr);
     if(!res) {
-        return res;
+        return nullptr;
     }
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         error<Exception::ExpectedToken>(
@@ -333,7 +333,20 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
                 _lexer.curr_token(),
                 "Expected type after variable name");
     }
-    return std::make_unique<Nodes::VariableDecl>(identifier->symbol, type.value());
+    std::unique_ptr<Nodes::Expression> init_expr{nullptr};
+    if(parse_token(Lexer::Token::Id::Assignment)) {
+        std::cerr << "Parsing init expr\n";
+        init_expr = parse_expr();
+        if(!init_expr) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Expression expected after variable initialization");
+        }
+    }
+    return std::make_unique<Nodes::VariableDecl>(
+        identifier->symbol,
+        type.value(),
+        std::move(init_expr));
 }
 
 
