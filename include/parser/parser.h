@@ -103,15 +103,20 @@ namespace Parser {
         template <typename T>
         using unique_vec = std::vector<std::unique_ptr<T>>;
 
+        // Func helpers
         using arg_list_t = unique_vec<Nodes::VariableDecl>;
         std::optional<arg_list_t> parse_func_arg_list();
 
+        // Struct gelpers
+        unique_vec<Nodes::Identifier> parse_wraps_decl();
+        using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDecl>>;
+        struct_body_parse_res_t parse_struct_body();
+
+        // type parsers
         std::unique_ptr<Types::BaseType> parse_type();
         std::unique_ptr<Types::ComplexType> parse_complex_type();
         std::unique_ptr<Types::ArrayType> parse_array_type();
         std::unique_ptr<Types::SimpleType> parse_simple_type();
-
-        unique_vec<Nodes::Identifier> parse_wraps_decl();
 
         // single expr parser
         std::unique_ptr<Nodes::InclusiveOrExpr> parse_single_inclusive_or_expr();
@@ -128,9 +133,6 @@ namespace Parser {
 
         std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
 
-        using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDecl>>;
-        struct_body_parse_res_t parse_struct_body();
-
         // postfix helpers
         using call_args_t = unique_vec<Nodes::Expression>;
         std::optional<call_args_t> parse_call_parameters();
@@ -146,7 +148,7 @@ namespace Parser {
         std::optional<Lexer::Token> parse_relational_op();
         std::function<std::optional<Lexer::Token>(Parser*)> make_tok_parser(Lexer::Token::Id id);
 
-
+        // Functional parsers
         template<typename Ret, typename ...Ts>
         std::unique_ptr<Ret> one_of(Ts &&... ts) {
             std::unique_ptr<Ret> res = nullptr;

@@ -1117,6 +1117,15 @@ std::optional<Lexer::Token> Parser::Parser::parse_relational_op() {
             make_tok_parser(Lexer::Token::Id::LessEq));
 }
 
+std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make_tok_parser(Lexer::Token::Id id) {
+    return [id](Parser* p) {
+        return p->parse_token(id);
+    };
+}
+
+
+
+// Type parsers
 std::unique_ptr<Parser::Types::BaseType> Parser::Parser::parse_type() {
     return one_of<Types::BaseType>(
         &Parser::parse_complex_type,
@@ -1178,10 +1187,4 @@ std::unique_ptr<Parser::Types::SimpleType> Parser::Parser::parse_simple_type() {
         return nullptr;
     }
     return std::make_unique<Types::SimpleType>(std::move(res));
-}
-
-std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make_tok_parser(Lexer::Token::Id id) {
-    return [id](Parser* p) {
-        return p->parse_token(id);
-    };
 }
