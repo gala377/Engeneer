@@ -41,6 +41,11 @@ wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
     Może warto zaimplementować jumpy i labele i transpilacje?
     Przykład transpilacji poniżej
 
+    // todo do zapytania
+
+    Może niech parser robi to od razu?
+    Niech nie ma noda fora tylko noda while i przy parsowaniu fora stworzymy whila?
+
 
     ? for <- serio? (dałoby się to zrobić jako whila? )
 
