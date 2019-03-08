@@ -32,10 +32,10 @@ namespace Parser {
     protected:
         Lexer::Lexer _lexer;
 
-        AST::symbol_map<Nodes::FunctionProt*> function_protos;
-        AST::symbol_map<Nodes::FunctionDef*> function_defs;
-        AST::symbol_map<Nodes::GlobVariableDecl*> glob_var_decls;
-        AST::symbol_map<Nodes::StructDecl*> structs_decls;
+        AST::symbol_map<Nodes::FunctionProt*> _function_protos;
+        AST::symbol_map<Nodes::FunctionDef*> _function_defs;
+        AST::symbol_map<Nodes::GlobVariableDecl*> _glob_var_decls;
+        AST::symbol_map<Nodes::StructDecl*> _structs_decls;
         // Parsers
 
         // End
