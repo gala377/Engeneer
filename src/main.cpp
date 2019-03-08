@@ -23,8 +23,10 @@ int main() {
 
         foo Test;
     }
+
+    int test() {}
+    int test() {}
 )");
-    Visitor::Stringify v;
     Visitor::LLVM comp;
 
     Parser::Parser p(s);
@@ -36,6 +38,7 @@ int main() {
         std::cout << "Parsing error\n";
         std::cout << e.what();
     }
+    Visitor::Stringify v(ast);
     ast.accept(v);
     std::cout << "Code parsed!\n\n""";
     std::cout << v.repr();

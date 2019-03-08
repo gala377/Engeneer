@@ -8,6 +8,31 @@
 #include <lexer/lexer.h>
 
 
+Visitor::Stringify::Stringify(Parser::AST &ast) {
+    _ast = std::move(std::make_optional(std::ref(ast)));
+    add_header();
+}
+
+void Visitor::Stringify::add_header() {
+    _stream << "AST information\n";
+    _stream << "Structs\n";
+    for(auto& s: _ast->get().iter_struct_decl()) {
+        _stream << "\t\t" << s.first << "\n";
+    }
+    _stream << "GlobVars\n";
+    for(auto& s: _ast->get().iter_glob_var_decl()) {
+        _stream << "\t\t" << s.first << "\n";
+    }
+    _stream << "FuncProtos\n";
+    for(auto& s: _ast->get().iter_func_prot()) {
+        _stream << "\t\t" << s.first << "\n";
+    }
+    _stream << "FuncDefs\n";
+    for(auto& s: _ast->get().iter_func_def()) {
+        _stream << "\t\t" << s.first << "\n";
+    }
+}
+
 // Visitor Interface
 
 // Base

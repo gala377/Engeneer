@@ -17,15 +17,15 @@ namespace Parser {
 
     class AST {
     public:
-        AST() = default;
-
-        Nodes::BaseParent& root();
-        void accept(Visitor &v);
-
         using symbol_t = std::string;
 
         template <typename T>
         using symbol_map = std::map<symbol_t, T>;
+
+        AST() = default;
+
+        Nodes::BaseParent& root();
+        void accept(Visitor &v);
 
         void note(Nodes::FunctionProt* f);
         void note(Nodes::FunctionDef* f);

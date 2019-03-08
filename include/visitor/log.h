@@ -10,11 +10,15 @@
 #include <visitor/base.h>
 #include <parser/nodes/concrete.h>
 #include <parser/type.h>
+#include <parser/ast.h>
 
 namespace Visitor {
 
     class Stringify: public Base {
     public:
+        Stringify() = default;
+        Stringify(Parser::AST& ast);
+
         // Visitor Interface
 
         // Base
@@ -88,10 +92,14 @@ namespace Visitor {
 
     protected:
         std::stringstream _stream;
+        std::optional<std::reference_wrapper<Parser::AST>> _ast{std::nullopt};
 
         void add_margin(std::uint32_t depth);
         void stringify(const Parser::Nodes::Base& node, std::string&& as);
         std::string strf_type(const std::unique_ptr<Parser::Types::BaseType>& type);
+
+        void add_header();
+
     };
 
 }

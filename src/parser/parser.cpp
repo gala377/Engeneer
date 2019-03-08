@@ -31,7 +31,23 @@ Parser::AST Parser::Parser::parse() {
                 _lexer.curr_token(),
                 "End of source expected");
     }
+    initialize_ast(ast);
     return std::move(ast);
+}
+
+void Parser::Parser::initialize_ast(AST &ast) const {
+    for(auto& p: _function_protos) {
+        ast.note(p);
+    }
+    for(auto& f: _function_defs) {
+        ast.note(f);
+    }
+    for(auto& g: _glob_var_decls) {
+        ast.note(g);
+    }
+    for(auto& s: _structs_decls) {
+        ast.note(s);
+    }
 }
 
 // Parsing
@@ -90,10 +106,12 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
             "Missing semicolon");
     }
 
-    return std::make_unique<Nodes::GlobVariableDecl>(
+    auto res = std::make_unique<Nodes::GlobVariableDecl>(
         std::move(identifier),
         std::move(type),
         std::move(init_expr));
+    _glob_var_decls.push_back(res.get());
+    return std::move(res);
 }
 
 std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
@@ -114,11 +132,13 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
     auto wrapped_structs = parse_wraps_decl();
     auto [members, methods] = parse_struct_body();
 
-    return std::make_unique<Nodes::StructDecl>(
+    auto res = std::make_unique<Nodes::StructDecl>(
         std::move(identifier),
         std::move(members),
         std::move(methods),
         std::move(wrapped_structs));
+    _structs_decls.push_back(res.get());
+    return std::move(res);
 }
 
 Parser::Parser::unique_vec<Parser::Nodes::Identifier> Parser::Parser::parse_wraps_decl() {
@@ -241,6 +261,7 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
         return nullptr;
     }
     if(parse_token(Lexer::Token::Id::Semicolon)) {
+        _function_protos.push_back(header.get());
         return std::move(header);
     }
     auto body = parse_code_block();
@@ -251,8 +272,10 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
             "Missing semicolon after function prototype");
         return std::move(header);
     }
-    return std::make_unique<Nodes::FunctionDef>(
+    auto res = std::make_unique<Nodes::FunctionDef>(
         std::move(header), std::move(body));
+    _function_defs.push_back(res.get());
+    return std::move(res);
 }
 
 std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header() {
