@@ -11,8 +11,6 @@ tablica ascii na funkcje zamiast mapy
 //
 do zapytania
 
-type modifiers (const, &(as ptr), [] array?)
-parsing struct body with type modifiers
 errors for lexer
 postfixes
 prefixes
@@ -21,7 +19,14 @@ prefixes
 //
 DO ZROBIENIA
 
-zbieranie informacji w trakcie parsowania
+
+ast error handling <- teraz mamy po prostu throw
+
+lexer error handling
+parser testy
+ast testy
+
+struct keyword zostawiamy?
 
 lexowanie komentarzy
 lexowanie floatów
@@ -33,6 +38,44 @@ refacotorowac parsowanie ciala struktury
 wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
 
 
+    Może warto zaimplementować jumpy i labele i transpilacje?
+    Przykład transpilacji poniżej
 
-    ? for <- serio?
+
+    ? for <- serio? (dałoby się to zrobić jako whila? )
+
+    for(init_expr; cond; step_expr) {
+        body;
+    }
+
+    VVVVVVVVVVVV
+
+
+    {
+        init_expr;
+        while cond {
+            body;
+            step_expr;
+        }
+    }
+
+    ? todo do zapytania
+    ? Jakbyśmy mieli etykiety i goto to: (np. label ident; i jump ident;)
+    to można zrobić whila jako ifa i jumpa
+
+    while cond {
+        body
+    }
+
+    VVVVVVVVVVVVVVVVVVVVV
+
+    {
+        label while;
+        if cond {
+            body;
+            jump while;
+        }
+    }
+
+
     throw, catch? <- eeeeee?
