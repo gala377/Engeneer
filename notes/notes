@@ -30,7 +30,6 @@ lexowanie escapowania w stringach ?
 
 skończyc parsowanie expression <- dodanie operacji modulo
 refacotorowac parsowanie ciala struktury
-typ tablicowy
 wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
 
 

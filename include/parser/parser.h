@@ -31,6 +31,11 @@ namespace Parser {
         AST parse();
     protected:
         Lexer::Lexer _lexer;
+
+        AST::symbol_map<Nodes::FunctionProt*> function_protos;
+        AST::symbol_map<Nodes::FunctionDef*> function_defs;
+        AST::symbol_map<Nodes::GlobVariableDecl*> glob_var_decls;
+        AST::symbol_map<Nodes::StructDecl*> structs_decls;
         // Parsers
 
         // End
