@@ -12,7 +12,7 @@
 
 namespace Parser::Types {
 
-    class SimpleType: public BasicType {
+    class SimpleType: public BaseType {
     public:
         explicit SimpleType(std::unique_ptr<Nodes::Identifier>&& ident);
 
@@ -21,7 +21,7 @@ namespace Parser::Types {
         const Nodes::Identifier& identifier() const override;
     };
 
-    class ComplexType: public BasicType {
+    class ComplexType: public BaseType {
     public:
         // true if type is const of underlying type
         // if it's ptr as well its a const ptr.
@@ -29,9 +29,19 @@ namespace Parser::Types {
         // true if type is ptr to underlying type
         bool is_ptr{false};
         // Type to which the modifiers should be applied to
-        std::unique_ptr<BasicType> underlying_type{nullptr};
+        std::unique_ptr<BaseType> underlying_type{nullptr};
 
         const Nodes::Identifier& identifier() const override;
+    };
+
+    class ArrayType: public BaseType {
+    public:
+        ArrayType(const uint32_t& size, std::unique_ptr<BaseType>&& underlying_type);
+
+        uint32_t size;
+        std::unique_ptr<BaseType> underlying_type{nullptr};
+
+        const Nodes::Identifier &identifier() const override;
     };
 }
 

@@ -17,24 +17,9 @@ int main() {
     Lexer::Source::String s(R"(
     struct A wraps B, C {
 
-        bar &int;
+        bar [60]char;
         cos A;
 
-        int test(a int, b int) {
-            if a > b {
-                return a;
-            } else if a == b {
-                return a + b;
-            } else {
-                while a < b {
-                    b = b + 1;
-                    a = a - 1;
-                    break;
-                    continue;
-                }
-            }
-            return b;
-        }
 
         foo Test;
     }

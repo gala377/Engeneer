@@ -11,7 +11,7 @@
 #include <lexer/token.h>
 
 namespace Parser::Types {
-    class BasicType {
+    class BaseType {
     public:
         virtual const Nodes::Identifier& identifier() const = 0;
     };
@@ -45,11 +45,11 @@ namespace Parser::Nodes {
     public:
         GlobVariableDecl(
             std::unique_ptr<Identifier>&& identifier,
-            std::unique_ptr<Types::BasicType> &&type,
+            std::unique_ptr<Types::BaseType> &&type,
             std::unique_ptr<Expression>&& init_expr = nullptr);
 
         std::unique_ptr<Identifier> identifier;
-        std::unique_ptr<Types::BasicType> type;
+        std::unique_ptr<Types::BaseType> type;
         std::unique_ptr<Expression> init_expr;
 
         void set_depth(std::uint32_t depth) override;
@@ -67,11 +67,11 @@ namespace Parser::Nodes {
     public:
         FunctionProt(
                 std::unique_ptr<Identifier>&& identifier,
-                std::unique_ptr<Types::BasicType>&& type,
+                std::unique_ptr<Types::BaseType>&& type,
                 std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
 
         std::unique_ptr<Identifier> identifier;;
-        std::unique_ptr<Types::BasicType> type;
+        std::unique_ptr<Types::BaseType> type;
         std::vector<std::unique_ptr<VariableDecl>> arg_list;
 
         void accept(Parser::Visitor &v) const override;
@@ -125,11 +125,11 @@ namespace Parser::Nodes {
     public:
         VariableDecl(
             std::unique_ptr<Identifier>&& identifier,
-            std::unique_ptr<Types::BasicType> &&type,
+            std::unique_ptr<Types::BaseType> &&type,
             std::unique_ptr<Expression>&& init_expr = nullptr);
 
         std::unique_ptr<Identifier> identifier;
-        std::unique_ptr<Types::BasicType> type;
+        std::unique_ptr<Types::BaseType> type;
         std::unique_ptr<Expression> init_expr;
 
         void set_depth(std::uint32_t depth) override;

@@ -101,7 +101,10 @@ namespace Parser {
         using arg_list_t = unique_vec<Nodes::VariableDecl>;
         std::optional<arg_list_t> parse_func_arg_list();
 
-        std::unique_ptr<Types::BasicType> parse_type();
+        std::unique_ptr<Types::BaseType> parse_type();
+        std::unique_ptr<Types::ComplexType> parse_complex_type();
+        std::unique_ptr<Types::ArrayType> parse_array_type();
+        std::unique_ptr<Types::SimpleType> parse_simple_type();
 
         unique_vec<Nodes::Identifier> parse_wraps_decl();
 

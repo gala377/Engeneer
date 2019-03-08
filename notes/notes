@@ -34,8 +34,6 @@ typ tablicowy
 wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
 
 
-wraps powinno pozwalac na wiecej niz jedna strukture, obecnie jest tylko jedna
-
 
     ? for <- serio?
     throw, catch? <- eeeeee?

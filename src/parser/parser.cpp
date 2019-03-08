@@ -1117,7 +1117,15 @@ std::optional<Lexer::Token> Parser::Parser::parse_relational_op() {
             make_tok_parser(Lexer::Token::Id::LessEq));
 }
 
-std::unique_ptr<Parser::Types::BasicType> Parser::Parser::parse_type() {
+std::unique_ptr<Parser::Types::BaseType> Parser::Parser::parse_type() {
+    return one_of<Types::BaseType>(
+        &Parser::parse_complex_type,
+        &Parser::parse_array_type,
+        &Parser::parse_simple_type);
+
+}
+
+std::unique_ptr<Parser::Types::ComplexType> Parser::Parser::parse_complex_type() {
     auto complex = std::make_unique<Types::ComplexType>();
     if(parse_token(Lexer::Token::Id::Const)) {
         complex->is_const = true;
@@ -1130,17 +1138,46 @@ std::unique_ptr<Parser::Types::BasicType> Parser::Parser::parse_type() {
         if(!underlying_type) {
             abort<Exception::BaseSyntax>(
                 _lexer.curr_token(),
-                "No type to apply identifiers to");
+                    "No type to apply identifiers to");
         }
         complex->underlying_type = std::move(underlying_type);
         return complex;
     }
+    return nullptr;
+}
+
+std::unique_ptr<Parser::Types::ArrayType> Parser::Parser::parse_array_type() {
+    if(!parse_token(Lexer::Token::Id::LeftSquareBracket)) {
+        return nullptr;
+    }
+    // todo for now just integers, later maybe expressions which are consts
+    // todo that would be nice
+    auto size = parse_int();
+    if(!size) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "Array size needs to be a positive integer");
+    }
+    if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
+        return nullptr;
+    }
+    auto underlying_type = parse_type();
+    if(!underlying_type) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "No type after array declaration");
+    }
+    return std::make_unique<Types::ArrayType>(
+        (unsigned int)size->value,
+        std::move(underlying_type));
+}
+
+std::unique_ptr<Parser::Types::SimpleType> Parser::Parser::parse_simple_type() {
     auto res = parse_ident();
     if(!res) {
         return nullptr;
     }
     return std::make_unique<Types::SimpleType>(std::move(res));
-
 }
 
 std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make_tok_parser(Lexer::Token::Id id) {

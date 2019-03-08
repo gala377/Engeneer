@@ -386,7 +386,7 @@ void Visitor::Stringify::add_margin(std::uint32_t depth) {
     }
 }
 
-std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::BasicType> &type) {
+std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::BaseType> &type) {
     if(auto complex = dynamic_cast<Parser::Types::ComplexType*>(type.get()); complex) {
         std::string mess = complex->is_const ? "const ": "";
         mess += complex->is_ptr ? "&" : "";
@@ -395,6 +395,10 @@ std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::B
     }
     if(auto simple = dynamic_cast<Parser::Types::SimpleType*>(type.get()); simple) {
         return simple->identifier().symbol;
+    }
+    if(auto array = dynamic_cast<Parser::Types::ArrayType*>(type.get()); array) {
+        std::string mess = "[" + std::to_string(array->size) + "]";
+        return mess + strf_type(array->underlying_type);
     }
     throw std::runtime_error("StringifyVisitor: Passed type is neither complex nor simple");
 }
