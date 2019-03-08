@@ -111,25 +111,40 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
             "Struct name expected");
     }
 
-    std::optional<std::string> wrapped_id;
-    if(parse_token(Lexer::Token::Id::Wraps)) {
-        auto id = parse_token(Lexer::Token::Id::Identifier);
-        if(!id) {
-            abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
-                _lexer.curr_token(),
-                "Struct identifier expected after wraps keyword");
-        }
-        wrapped_id = id->symbol;
-    }
-
+    auto wrapped_structs = parse_wraps_decl();
     auto [members, methods] = parse_struct_body();
 
     return std::make_unique<Nodes::StructDecl>(
         std::move(identifier),
         std::move(members),
         std::move(methods),
-        wrapped_id);
+        std::move(wrapped_structs));
+}
+
+Parser::Parser::unique_vec<Parser::Nodes::Identifier> Parser::Parser::parse_wraps_decl() {
+    unique_vec<Nodes::Identifier> wrapped_structs;
+    if(!parse_token(Lexer::Token::Id::Wraps)) {
+        return std::move(wrapped_structs);
+    }
+    auto ident = parse_ident();
+    if(!ident) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+            "List of identifiers expected after wraps keyword");
+    }
+    wrapped_structs.emplace_back(std::move(ident));
+    fold(
+        make_tok_parser(Lexer::Token::Id::Comma),
+        [this, &wrapped_structs](auto&& res) {
+            auto id = parse_ident();
+            if(!id) {
+                abort<Exception::BaseSyntax>(
+                    _lexer.curr_token(),
+                    "Identifier expected");
+            }
+            wrapped_structs.emplace_back(std::move(id));
+        });
+    return std::move(wrapped_structs);
 }
 
 // todo refactor
@@ -203,10 +218,10 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
                 Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
                 _lexer.curr_token(),
                 "Missing semicolon");
-            members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-                std::move(first_id),
-                std::make_unique<Types::SimpleType>(std::move(second_id))));
         }
+        members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+            std::move(first_id),
+            std::make_unique<Types::SimpleType>(std::move(second_id))));
     }
 
     if(!parse_token(Lexer::Token::Id::RightBrace)) {

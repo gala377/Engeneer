@@ -15,20 +15,28 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    int test(a int, b int) {
-        if a > b {
-            return a;
-        } else if a == b {
-            return a + b;
-        } else {
-            while a < b {
-                b = b + 1;
-                a = a - 1;
-                break;
-                continue;
+    struct A wraps B, C {
+
+        bar &int;
+        cos A;
+
+        int test(a int, b int) {
+            if a > b {
+                return a;
+            } else if a == b {
+                return a + b;
+            } else {
+                while a < b {
+                    b = b + 1;
+                    a = a - 1;
+                    break;
+                    continue;
+                }
             }
+            return b;
         }
-        return b;
+
+        foo Test;
     }
 )");
     Visitor::Stringify v;

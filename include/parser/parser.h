@@ -103,6 +103,8 @@ namespace Parser {
 
         std::unique_ptr<Types::BasicType> parse_type();
 
+        unique_vec<Nodes::Identifier> parse_wraps_decl();
+
         // single expr parser
         std::unique_ptr<Nodes::InclusiveOrExpr> parse_single_inclusive_or_expr();
         std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();

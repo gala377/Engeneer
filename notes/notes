@@ -32,12 +32,10 @@ skończyc parsowanie expression <- dodanie operacji modulo
 refacotorowac parsowanie ciala struktury
 typ tablicowy
 wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
+
+
 wraps powinno pozwalac na wiecej niz jedna strukture, obecnie jest tylko jedna
 
-    if else
-    while
+
     ? for <- serio?
-    return
     throw, catch? <- eeeeee?
-    break; continue <- to chwila
-    code blocki itd

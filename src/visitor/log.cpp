@@ -33,8 +33,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::GlobVariableDecl &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
     std::string mess = "StructDecl: " + node.identifier->symbol;
-    if(node.wrapped_struct) {
-        mess += " wraps " + node.wrapped_struct.value();
+    if(!node.wrapped_structs.empty()) {
+        mess += " wraps ";
+        for(auto& s: node.wrapped_structs) {
+            mess += s->symbol + ", ";
+        }
     }
     stringify(node, std::move(mess));
 

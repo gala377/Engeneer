@@ -95,12 +95,12 @@ namespace Parser::Nodes {
             std::unique_ptr<Identifier>&& identifier,
             std::vector<std::unique_ptr<VariableDecl>>&& members,
             std::vector<std::unique_ptr<FunctionDecl>>&& methods,
-            const std::optional<std::string>& wrapped_struct = std::nullopt);
+            std::vector<std::unique_ptr<Identifier>>&& wrapped_structs);
 
         std::unique_ptr<Identifier> identifier;;
         std::vector<std::unique_ptr<VariableDecl>> members;
         std::vector<std::unique_ptr<FunctionDecl>> methods;
-        std::optional<std::string> wrapped_struct;
+        std::vector<std::unique_ptr<Identifier>> wrapped_structs;
 
         void set_depth(std::uint32_t depth) override;
 

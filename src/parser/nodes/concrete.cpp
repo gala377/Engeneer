@@ -90,11 +90,11 @@ void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
 Parser::Nodes::StructDecl::StructDecl(std::unique_ptr<Identifier>&& identifier,
                                       std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>>&& members,
                                       std::vector<std::unique_ptr<Parser::Nodes::FunctionDecl>>&& methods,
-                                      const std::optional<std::string>& wrapped_struct):
+                                      std::vector<std::unique_ptr<Identifier>>&& wrapped_structs):
                                       identifier{std::move(identifier)},
                                       members{std::move(members)},
                                       methods{std::move(methods)},
-                                      wrapped_struct{wrapped_struct} {}
+                                      wrapped_structs{std::move(wrapped_structs)} {}
 
 void Parser::Nodes::StructDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
