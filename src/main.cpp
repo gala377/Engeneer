@@ -16,15 +16,17 @@
 int main() {
     Lexer::Source::String s(R"(
     struct A wraps B, C {
+        # nice inline comment
+        # because why not?
 
         bar [60]char;
+        cos A;
         cos A;
 
 
         foo Test;
     }
 
-    int test() {}
     int test() {}
 )");
     Visitor::LLVM comp;

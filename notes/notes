@@ -33,6 +33,11 @@ lexowanie floatów
 lexowanie escapowania w stringach ?
 
 
+nie pozwalanie na 2 metody o takiej samej nazwie w obrębie struktury
+nie pozwalanie na 2 zmienne o takiej samej nazwie w obrębie struktury
+scopy? 
+
+
 skończyc parsowanie expression <- dodanie operacji modulo
 refacotorowac parsowanie ciala struktury
 wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
