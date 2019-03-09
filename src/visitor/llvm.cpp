@@ -22,8 +22,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
 // Program
 void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
-    std::cout << "Program node\n";
-    std::cout << "Program compilation started\n";
+    //std::cout << "Program node\n";
+    //std::cout << "Program compilation started\n";
 
     node.accept_children(*this);
 }
@@ -32,12 +32,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Top Level
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
-    std::cout << "FunctionProt\n";
+    //std::cout << "FunctionProt\n";
     if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Usage of unsupported return type " + node.type->identifier().symbol);
     }
-    std::cout << "Compiling arg list\n";
-    std::cout << "Arg list size is " << node.arg_list.size() << "\n";
+    //std::cout << "Compiling arg list\n";
+    //std::cout << "Arg list size is " << node.arg_list.size() << "\n";
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
         if(_basic_types.count(arg->type->identifier().symbol) == 0) {
@@ -48,14 +48,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
         args_types.push_back(llvm::Type::getIntNTy(_context, int_info.size));
     }
     // return type is int. todo Later needs to use more than one type
-    std::cout << "Func arg types size: " << args_types.size() << "\n";
-    std::cout << "Compiling func type\n";
+    //std::cout << "Func arg types size: " << args_types.size() << "\n";
+    //std::cout << "Compiling func type\n";
     auto int_info = _int_types[node.type->identifier().symbol];
     llvm::FunctionType* func_t = llvm::FunctionType::get(
             llvm::Type::getIntNTy(_context, int_info.size),
             args_types,
             false);
-    std::cout << "Compiling func header\n";
+    //std::cout << "Compiling func header\n";
     llvm::Function* func = llvm::Function::Create(
             func_t,
             llvm::Function::ExternalLinkage,
@@ -67,21 +67,21 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     }
 
     // todo its ugly, lets make it enumerate
-    std::cout << "Setting func arg names\n";
+    //std::cout << "Setting func arg names\n";
     unsigned int i = 0;
     for(auto& arg: func->args()) {
-        std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier->symbol << "\n";
+        //std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier->symbol << "\n";
         arg.setName(node.arg_list[i++]->identifier->symbol);
     }
-    std::cout << "Printing func IR\n";
+    //std::cout << "Printing func IR\n";
     // todo its just temporary
     _ret_func = func;
     func->print(llvm::outs());
-    std::cout << "\n";
+    //std::cout << "\n";
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
-    std::cout << "FuncDef\n";
+    //std::cout << "FuncDef\n";
     // todo there is a bug with redefining function with different arg names
 
     auto func = _module->getFunction(node.declaration->identifier->symbol);
@@ -139,7 +139,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
-    std::cout << "Var decl\n";
+    ////std::cout << "Var decl\n";
     llvm::Value *v = _named_values[node.identifier->symbol];
     if(v) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
@@ -197,11 +197,37 @@ void Visitor::LLVM::visit(const Parser::Nodes::EqualityExpr &node) {
     node.lhs->accept(*this);
 }
 
+
+// todo for now only signed cmp
+// todo we dont now how to make unsigned ints
+// todo in future versions we need to know the type of the lhs
+// todo and the rhs to make appropriate cmp
 void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
+    //std::cout << "Relational expr\n";
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    llvm::Value* rhs = nullptr;
+    if(node.rhs) {
+        node.rhs->accept(*this); rhs = _ret_value;
     }
-    node.lhs->accept(*this);
+    switch(node.op.id) {
+        case Lexer::Token::Id::LessThan:
+            _ret_value = _builder.CreateICmpSLT(lhs, rhs, "__cmptemp");
+            break;
+        case Lexer::Token::Id::GreaterThan:
+            _ret_value = _builder.CreateICmpSGT(lhs, rhs, "__cmptemp");
+            break;
+        case Lexer::Token::Id::LessEq:
+            _ret_value = _builder.CreateICmpSLE(lhs, rhs, "__cmptemp");
+            break;
+        case Lexer::Token::Id::GreaterEq:
+            _ret_value = _builder.CreateICmpSGE(lhs, rhs, "__cmptemp");
+            break;
+        case Lexer::Token::Id::None:
+            _ret_value = lhs;
+            break;
+        default:
+            throw std::runtime_error("Unexpected operator during addition operator");
+    }
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::ShiftExpr &node) {
@@ -212,7 +238,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::ShiftExpr &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
-    std::cout << "Assig expr\n";
+    //std::cout << "Assig expr\n";
     // Compute left and right if needed
     node.lhs->accept(*this); auto lhs = _ret_value;
     //llvm::Value* rhs = nullptr;
@@ -227,7 +253,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
     // Compute left and right if needed
-    std::cout << "Add expr\n";
+    //std::cout << "Add expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     llvm::Value* rhs = nullptr;
     if(node.rhs) {
@@ -249,7 +275,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    std::cout << "Mult expr\n";
+    //std::cout << "Mult expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     llvm::Value* rhs = nullptr;
     if(node.rhs) {
@@ -275,7 +301,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 
 // Unary
 void Visitor::LLVM::visit(const Parser::Nodes::UnaryExpr &node) {
-    std::cout << "Unary\n";
+    //std::cout << "Unary\n";
     if(node.op.id != Lexer::Token::Id::None) {
         throw std::runtime_error("Unsupported unary operator");
     }
@@ -285,18 +311,48 @@ void Visitor::LLVM::visit(const Parser::Nodes::UnaryExpr &node) {
 
 // Postfix
 void Visitor::LLVM::visit(const Parser::Nodes::PostfixExpr &node) {
-    std::cout << "Postifx\n";
+    //std::cout << "Postifx\n";
     node.lhs->accept(*this);
 }
 
+// Todo for now its just for the identifiers
+// todo I have no idea how to do this for the chained calls
+// todo as we need a function name
+void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
+    //std::cout << "call expr";
+    // todo for now we assume lhs can only be an identifier
+    node.lhs->accept(*this); auto symbol = _ret_symbol;
+
+    auto callee = _module->getFunction(symbol);
+    if(!callee) {
+        throw std::runtime_error("Use of undeclared function");
+    }
+
+    if(callee->arg_size() != node.args.size()) {
+        throw std::runtime_error("Incorrect # arguments passed");
+    }
+
+    std::vector<llvm::Value*> args_v;
+    for(uint32_t i = 0; i != node.args.size(); ++i) {
+        node.args[i]->accept(*this); auto arg = _ret_value;
+        args_v.push_back(arg);
+        if(!args_v.back()) {
+            throw std::runtime_error("Could not emit function call argument");
+        }
+    }
+
+    _ret_value = _builder.CreateCall(callee, args_v, "__calltmp");
+}
 
 // Primary
 void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
-    std::cout << "IdentifierExpr\n";
-    // lookup variable
+    //std::cout << "IdentifierExpr\n";
     llvm::Value *v = _named_values[node.symbol];
     if(!v) {
-        throw std::runtime_error("Use of undeclared variable! " + node.symbol);
+        // possible function call, we pass the identifier
+        // todo make it work somehow later
+        _ret_symbol = node.symbol;
+        return;
     }
     _ret_value = v;
 }
@@ -308,9 +364,10 @@ void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
 
 // Consts
 void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
-    std::cout << "ConstInt\n";
+    //std::cout << "ConstInt\n";
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
 }
+
 
 
 

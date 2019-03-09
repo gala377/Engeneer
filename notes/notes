@@ -36,7 +36,7 @@ lexowanie escapowania w stringach ?
 nie pozwalanie na 2 metody o takiej samej nazwie w obrębie struktury
 nie pozwalanie na 2 zmienne o takiej samej nazwie w obrębie struktury
 scopy?
-
+typ wskaźników na funkcje <- fn(type, ...)->type
 
 skończyc parsowanie expression <- dodanie operacji modulo
 refacotorowac parsowanie ciala struktury

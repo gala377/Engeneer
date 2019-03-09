@@ -55,6 +55,7 @@ namespace Visitor {
 
         // Postfix
         void visit(const Parser::Nodes::PostfixExpr &node) override;
+        void visit(const Parser::Nodes::CallExpr &node) override;
 
         // Primary
         void visit(const Parser::Nodes::Identifier &node) override;
@@ -74,6 +75,7 @@ namespace Visitor {
 
         llvm::Value* _ret_value;
         llvm::Function* _ret_func;
+        std::string _ret_symbol;
 
         struct IntTypeInfo {
             bool is_signed;

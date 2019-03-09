@@ -16,24 +16,12 @@
 int main() {
     Lexer::Source::String s(R"(
 
-    struct Test {
+    int64 test(a int64, b int64) {
+        return a + b;
+    }
 
-        foo &int32;
-        bar [10]const int64;
-
-        [10][10]uint64 tabliczka_mnozenia() {
-            let tabliczka [10][10]int;
-            let i int32 = 0;
-            while (i < 10) {
-                let j int32 = 0;
-                while j < 10 {
-                    tabliczka[i][j] = i * j;
-                    j = j + 1;
-                };
-                i = i + 1;
-            };
-            return tabliczka;
-        }
+    int64 main() {
+        return test(10, 20);
     }
 )");
     Visitor::LLVM comp;
@@ -52,9 +40,9 @@ int main() {
     std::cout << "Code parsed!\n\n""";
     std::cout << v.repr();
 //
-//    std::cout << "\nCompiling\n";
-//    ast.accept(comp);
-//    std::cout << "Compiled\n";
+    std::cout << "\nCompiling\n";
+    ast.accept(comp);
+    std::cout << "Compiled\n";
 
     return 0;
 }
