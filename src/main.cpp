@@ -15,13 +15,28 @@
 
 int main() {
     Lexer::Source::String s(R"(
+    int32 putchar(_ int32);
 
-    int64 test(a int64, b int64) {
-        return a + b;
+    int32 print_hello() {
+        putchar(72); putchar(101); putchar(108); putchar(108); putchar(111);
+        #   H           E               L            L             O
+        return 0;
     }
 
-    int64 main() {
-        return test(10, 20);
+    int32 print_space() {
+        putchar(32);
+        return 0;
+    }
+
+    int32 print_world() {
+        putchar(87); putchar(111); putchar(114); putchar(108); putchar(100);
+        #   W           O               R            L              D
+        return 0;
+    }
+
+    int32 main() {
+        print_hello(); print_space(); print_world();
+        return 0;
     }
 )");
     Visitor::LLVM comp;

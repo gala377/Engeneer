@@ -26,6 +26,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     //std::cout << "Program compilation started\n";
 
     node.accept_children(*this);
+
+    std::cout << "Printing module\n\n\n";
+    _module->print(llvm::outs(), nullptr);
 }
 
 
@@ -365,7 +368,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
 // Consts
 void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     //std::cout << "ConstInt\n";
-    _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(64, uint64_t(node.value)));
+    _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
 
 
