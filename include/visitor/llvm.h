@@ -5,6 +5,8 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <set>
+
 #include <parser/visitor.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
@@ -31,7 +33,7 @@ namespace Visitor {
         // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
-
+        void visit(const Parser::Nodes::ReturnStmt &node) override;
 
         // Expression
         // Binary
@@ -73,6 +75,30 @@ namespace Visitor {
         llvm::Value* _ret_value;
         llvm::Function* _ret_func;
 
+        struct IntTypeInfo {
+            bool is_signed;
+            uint32_t size;
+        };
+
+        std::map<std::string, IntTypeInfo> _int_types{
+                {"int8", {true, 8}},
+                {"int16", {true, 16}},
+                {"int32", {true, 32}},
+                {"int64", {true, 64}},
+
+                {"uint8", {false, 8}},
+                {"uint16", {false, 16}},
+                {"uint32", {false, 32}},
+                {"uint64", {false, 64}},
+
+                {"byte", {false, 8}},
+        };
+
+        std::set<std::string> _basic_types{
+           "byte",
+           "int8", "int16", "int32", "int64",
+           "uint8", "uint16", "uint32", "uint64",
+        };
     };
 }
 

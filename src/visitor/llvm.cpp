@@ -33,24 +33,26 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     std::cout << "FunctionProt\n";
-    if(node.type->identifier().symbol != "int") {
+    if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Usage of unsupported return type " + node.type->identifier().symbol);
     }
     std::cout << "Compiling arg list\n";
     std::cout << "Arg list size is " << node.arg_list.size() << "\n";
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
-        if(arg->type->identifier().symbol != "int") {
+        if(_basic_types.count(arg->type->identifier().symbol) == 0) {
             throw std::runtime_error("Usage of undeclared type " + arg->type->identifier().symbol);
         }
         // add int64 type. todo need more types
-        args_types.push_back(llvm::Type::getInt64Ty(_context));
+        auto int_info = _int_types[arg->type->identifier().symbol];
+        args_types.push_back(llvm::Type::getIntNTy(_context, int_info.size));
     }
     // return type is int. todo Later needs to use more than one type
     std::cout << "Func arg types size: " << args_types.size() << "\n";
     std::cout << "Compiling func type\n";
+    auto int_info = _int_types[node.type->identifier().symbol];
     llvm::FunctionType* func_t = llvm::FunctionType::get(
-            llvm::Type::getInt64Ty(_context),
+            llvm::Type::getIntNTy(_context, int_info.size),
             args_types,
             false);
     std::cout << "Compiling func header\n";
@@ -120,17 +122,19 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     func->print(llvm::outs());
 }
 
+void Visitor::LLVM::visit(const Parser::Nodes::ReturnStmt &node) {
+    _ret_value = nullptr;
+    node.expr->accept(*this);
+    if(_ret_value) {
+        _builder.CreateRet(_ret_value);
+    }
+}
 
 // Statement
 void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
     _ret_value = nullptr;
     for(auto& ch: node.children()) {
         ch->accept(*this);
-        if (_ret_value) {
-            // does it work?
-            // todo change it but we have no variables yet
-            _builder.CreateRet(_ret_value);
-        }
     }
 }
 
@@ -140,7 +144,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     if(v) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
-    if(node.type->identifier().symbol != "int") {
+    if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
     }
     // add variable with default value
