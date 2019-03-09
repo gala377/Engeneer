@@ -73,7 +73,7 @@ Lexer::Lexer::Lexer(Source::Base &source):
     _init_curr_token();
 }
 
-// todo how to? 
+// todo how to?
 Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h):
     HandlingMixin(h),
     _source(source),
@@ -96,6 +96,8 @@ void Lexer::Lexer::_init_token_assemblers() {
         &Lexer::_process_blank_char, this, std::placeholders::_1);
     _token_assemblers[TokenAssemblerId::Eof] = std::bind(
         &Lexer::_process_eof, this, std::placeholders::_1);
+    _token_assemblers[TokenAssemblerId::Comment] = std::bind(
+         &Lexer::_process_comment, this, std::placeholders::_1);
 }
 
 void Lexer::Lexer::_init_curr_token() {
@@ -119,7 +121,10 @@ const Lexer::Token Lexer::Lexer::next_token() {
     auto ch = _source.curr_char();
     auto asm_id = char_to_assembler_id(ch);
 
-    while(asm_id == TokenAssemblerId::Blank) {
+    while(asm_id == TokenAssemblerId::Blank || asm_id == TokenAssemblerId::Comment) {
+        if(asm_id == TokenAssemblerId::Comment) {
+            _assemble_comment(ch);
+        }
         ch = _source.next_char();
         asm_id = char_to_assembler_id(ch);
     }
@@ -154,6 +159,8 @@ Lexer::Lexer::TokenAssemblerId Lexer::Lexer::char_to_assembler_id(const char &ch
         return TokenAssemblerId::String;
     } else if(is_eof(ch)) {
         return TokenAssemblerId::Eof;
+    } else if(is_comment(ch)) {
+        return TokenAssemblerId::Comment;
     }
     throw std::runtime_error("Unknown character!");
 }
@@ -190,6 +197,11 @@ Lexer::Token Lexer::Lexer::_process_operator(char ch) {
 Lexer::Token Lexer::Lexer::_process_string(char ch) {
     auto symbol = _assemble_string(ch);
     return Token{Token::Id::String, symbol};
+}
+
+Lexer::Token Lexer::Lexer::_process_comment(char ch) {
+    auto symbol = _assemble_comment(ch);
+    return Token{Token::Id::Comment, symbol};
 }
 
 // todo now assembles only integers. Floats, hex octagonal and so on needed
@@ -246,10 +258,21 @@ std::string Lexer::Lexer::_assemble_string(char current) {
         symbol += current;
         current = _source.next_char();
     }
+    // eating ' " ' character
     _source.next_char();
     return symbol;
 }
 
 Lexer::Token Lexer::Lexer::_process_eof(char current) {
     return Token{Token::Id::End, {current}};
+}
+
+std::string Lexer::Lexer::_assemble_comment(char ch) {
+    std::string symbol;
+    ch = _source.next_char();
+    while(!(is_new_line(ch) || is_eof(ch))) {
+        symbol += ch;
+        ch =  _source.next_char();
+    }
+    return symbol;
 }

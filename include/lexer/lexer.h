@@ -38,6 +38,7 @@ namespace Lexer {
             //Char,
             Blank,
             Eof,
+            Comment,
         };
         using TokenAssembler = std::function<const Token(char)>;
         using AssemblersMap = std::map<TokenAssemblerId, TokenAssembler>;
@@ -64,11 +65,13 @@ namespace Lexer {
         Token _process_operator(char ch);
         Token _process_string(char ch);
         Token _process_eof(char ch);
+        Token _process_comment(char ch);
 
         std::string _assemble_numeric(char ch);
         std::string _assemble_identifier(char ch);
         std::string _assemble_operator(char ch);
         std::string _assemble_string(char ch);
+        std::string _assemble_comment(char ch);
 
     };
 

@@ -140,4 +140,27 @@ BOOST_AUTO_TEST_SUITE()
         BOOST_CHECK_EQUAL(tok.symbol, "hello");
     }
 
+    BOOST_AUTO_TEST_CASE(comments_are_skipped_as_they_should_be) {
+        Lexer::Source::String s(R"(if #this is a comment
+1)");
+        Lexer::Lexer l(s);
+        auto tok = l.next_token();
+        BOOST_CHECK_EQUAL(tok.id, Lexer::Token::Id::Integer);
+    }
+
+    BOOST_AUTO_TEST_CASE(comments_are_skipped_if_they_are_first) {
+        Lexer::Source::String s(R"(#this is a comment
+1)");
+        Lexer::Lexer l(s);
+        auto tok = l.curr_token();
+        BOOST_CHECK_EQUAL(tok.id, Lexer::Token::Id::Integer);
+    }
+
+    BOOST_AUTO_TEST_CASE(comments_are_skipped_if_they_are_last) {
+        Lexer::Source::String s(R"(#this is a comment)");
+        Lexer::Lexer l(s);
+        auto tok = l.curr_token();
+        BOOST_CHECK_EQUAL(tok.id, Lexer::Token::Id::End);
+    }
+
 BOOST_AUTO_TEST_SUITE_END()

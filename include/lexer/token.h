@@ -89,6 +89,7 @@ namespace Lexer {
             Space,
 
             None,
+            Comment,
             End,
         };
 
