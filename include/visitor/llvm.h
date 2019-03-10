@@ -8,14 +8,19 @@
 #include <set>
 
 #include <parser/visitor.h>
+
+#include <llvm/Pass.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
-#include "base.h"
+#include <llvm/IR/LegacyPassManager.h>
+
+#include <visitor/base.h>
 
 namespace Visitor {
 
     class LLVM: public Visitor::Base {
     public:
+
         // Visitor
         // Base
         void visit(const Parser::Nodes::Base &node) override;
@@ -34,6 +39,10 @@ namespace Visitor {
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
         void visit(const Parser::Nodes::ReturnStmt &node) override;
+
+        void visit(const Parser::Nodes::BlockStmt &node) override;
+
+        void visit(const Parser::Nodes::IfStmt &node) override;
 
         // Expression
         // Binary
@@ -69,7 +78,12 @@ namespace Visitor {
     private:
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder{_context};
+        // todo more modules and linking against them
         std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("TestJit", _context);
+        // todo pass manager per module? Its marked as legacy?
+        // todo its legacy and we cannot find the passes so
+        // todo maybe it changed and the tutorial hasn't been updated?
+        std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
         std::map<std::string, llvm::Value*> _named_values;
 

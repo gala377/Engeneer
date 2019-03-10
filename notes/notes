@@ -16,6 +16,16 @@ postfixes
 prefixes
 
 
+
+// LLVM
+	COMDAT i rozne opcje linkera
+
+	Sa wyjatki dzieki Invoke, ktore dostaje 2 bloki, co jak bedzie wyjatek, co jak nie
+
+	Opcja parametru "byval" <- mozna uzyc na ptr zeby zrobic pod spodem kopie
+								glownie zeby przesylac kopie struktur i tablic 
+
+	 
 //
 DO ZROBIENIA
 

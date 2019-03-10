@@ -3,6 +3,8 @@
 //
 
 #include <visitor/llvm.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
+
 #include <parser/nodes/concrete.h>
 
 #include <iostream>
@@ -11,6 +13,8 @@
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
+
+
 
 // Base
 void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
@@ -141,6 +145,11 @@ void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
     }
 }
 
+
+void Visitor::LLVM::visit(const Parser::Nodes::BlockStmt &node) {
+    node.body->accept(*this);
+}
+
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     ////std::cout << "Var decl\n";
     llvm::Value *v = _named_values[node.identifier->symbol];
@@ -153,6 +162,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     // add variable with default value
     // _named_values[node.identifier] = llvm::?
     // return it
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
+    // todo implementation in tutorial only supports a single value
+    // todo and they always want an else block
+    throw std::runtime_error("Unimplemented!");
 }
 
 
@@ -370,6 +385,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     //std::cout << "ConstInt\n";
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
+
+
+
 
 
 

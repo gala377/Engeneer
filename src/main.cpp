@@ -34,8 +34,41 @@ int main() {
         return 0;
     }
 
+    int32 cond_hello(a int32) {
+        if a > 5 {
+            print_hello();
+        };
+        print_world();
+        return 0;
+    }
+
+    int32 if_else_hello(a int32) {
+        if a > 5 {
+            print_hello();
+        } else {
+            print_world();
+        };
+        return 0;
+    }
+
+    #int32 if_else_if_else_hello(a int32) {
+    #    if(a > 5) {
+    #        if(a > 10) {
+    #            print_hello();
+    #        } else if a > 15 {
+    #            print_world();
+    #        };
+    #        print_hello();
+    #    };
+    #    return 0;
+    #}
+
     int32 main() {
-        print_hello(); print_space(); print_world();
+        if_else_hello(2);
+        #if_else_if_else_hello(2);
+        #if_else_if_else_hello(6);
+        #if_else_if_else_hello(11);
+        #if_else_if_else_hello(16);
         return 0;
     }
 )");
