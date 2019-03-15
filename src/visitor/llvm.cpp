@@ -15,6 +15,8 @@
 #include <llvm/ADT/STLExtras.h>
 
 
+// todo allocas only in the first block
+
 
 // Base
 void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
@@ -107,7 +109,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     // todo why do we clear it?
     _named_values.clear();
     for(auto& arg: func->args()) {
-        _named_values[arg.getName()] = &arg;
+        _named_values[arg.getName()] = _builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
+
     }
 
     // visit the body
@@ -150,24 +153,61 @@ void Visitor::LLVM::visit(const Parser::Nodes::BlockStmt &node) {
     node.body->accept(*this);
 }
 
+// todo this should work?
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     ////std::cout << "Var decl\n";
-    llvm::Value *v = _named_values[node.identifier->symbol];
+    auto v = _named_values[node.identifier->symbol];
     if(v) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
     if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
     }
-    // add variable with default value
-    // _named_values[node.identifier] = llvm::?
-    // return it
+    // todo for now only int32
+    // todo later to_llvm_type function
+    _named_values[node.identifier->symbol] = _builder.CreateAlloca(
+        llvm::Type::getInt32Ty(_context),
+        nullptr,
+        node.identifier->symbol);
+    if(node.init_expr) {
+        node.init_expr->accept(*this); auto init = _ret_value;
+        if(!init) {
+            throw std::runtime_error("Could not compile variable init expr");
+        }
+        _builder.CreateStore(init, _named_values[node.identifier->symbol]);
+    }
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
-    // todo implementation in tutorial only supports a single value
-    // todo and they always want an else block
-    throw std::runtime_error("Unimplemented!");
+    node.cond->accept(*this); auto cond = _ret_value;
+    auto func = _builder.GetInsertBlock()->getParent();
+    auto then = llvm::BasicBlock::Create(_context, "then", func);
+
+    llvm::BasicBlock* else_clause = nullptr;
+    if (node.else_clause) {
+        else_clause = llvm::BasicBlock::Create(_context, "else", func);
+    }
+    auto merge = llvm::BasicBlock::Create(_context, "merge", func);
+
+    if(else_clause) {
+        _builder.CreateCondBr(cond, then, else_clause);
+    } else {
+        _builder.CreateCondBr(cond, then, merge);
+    }
+
+    _builder.SetInsertPoint(then);
+    node.body->accept(*this);
+    _builder.CreateBr(merge);
+    then = _builder.GetInsertBlock();
+
+    if(node.else_clause) {
+        _builder.SetInsertPoint(else_clause);
+        node.else_clause->accept(*this);
+        _builder.CreateBr(merge);
+        else_clause = _builder.GetInsertBlock();
+    }
+
+    _builder.SetInsertPoint(merge);
 }
 
 
@@ -257,16 +297,28 @@ void Visitor::LLVM::visit(const Parser::Nodes::ShiftExpr &node) {
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     //std::cout << "Assig expr\n";
-    // Compute left and right if needed
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    //llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        throw std::runtime_error("Assignment not supported");
-        //node.rhs->accept(*this); rhs = _ret_value;
+    // todo for now only identifier
+    // todo support for access and indexing operators
+
+    if (node.rhs) {
+        // its assignment
+        _skip_load = true;
+        node.lhs->accept(*this); auto lhs = _ret_value;
+        if (!lhs) {
+            throw std::runtime_error("Could not compile lhs of an assignment");
+        }
+        _skip_load = false;
+        node.rhs->accept(*this); auto rhs = _ret_value;
+        if (!rhs) {
+            throw std::runtime_error("Could not compile left side of the assignment");
+        }
+        _builder.CreateStore(rhs, lhs);
+        // leaving lhs in _ret_value, so assignment evaluates to it
+    } else {
+        // its just some random expr
+        // just pass it
+        node.lhs->accept(*this);
     }
-    // todo temporary
-    _ret_value = lhs;
-//    lhs->print(llvm::errs());
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
@@ -370,9 +422,15 @@ void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
         // possible function call, we pass the identifier
         // todo make it work somehow later
         _ret_symbol = node.symbol;
+        _ret_value = nullptr;
         return;
     }
-    _ret_value = v;
+    if(_skip_load) {
+        _ret_value = v;
+    } else {
+        _ret_value = _builder.CreateLoad(v, node.symbol);
+    }
+
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {

@@ -85,7 +85,7 @@ namespace Visitor {
         // todo maybe it changed and the tutorial hasn't been updated?
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
-        std::map<std::string, llvm::Value*> _named_values;
+        std::map<std::string, llvm::AllocaInst*> _named_values;
 
         llvm::Value* _ret_value;
         llvm::Function* _ret_func;
@@ -115,6 +115,8 @@ namespace Visitor {
            "int8", "int16", "int32", "int64",
            "uint8", "uint16", "uint32", "uint64",
         };
+
+        bool _skip_load = false;
     };
 }
 

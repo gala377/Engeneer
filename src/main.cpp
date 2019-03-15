@@ -17,59 +17,21 @@ int main() {
     Lexer::Source::String s(R"(
     int32 putchar(_ int32);
 
-    int32 print_hello() {
-        putchar(72); putchar(101); putchar(108); putchar(108); putchar(111);
-        #   H           E               L            L             O
-        return 0;
+    int32 add(a int32, b int32) {
+        return a + b;
     }
-
-    int32 print_space() {
-        putchar(32);
-        return 0;
-    }
-
-    int32 print_world() {
-        putchar(87); putchar(111); putchar(114); putchar(108); putchar(100);
-        #   W           O               R            L              D
-        return 0;
-    }
-
-    int32 cond_hello(a int32) {
-        if a > 5 {
-            print_hello();
-        };
-        print_world();
-        return 0;
-    }
-
-    int32 if_else_hello(a int32) {
-        if a > 5 {
-            print_hello();
-        } else {
-            print_world();
-        };
-        return 0;
-    }
-
-    #int32 if_else_if_else_hello(a int32) {
-    #    if(a > 5) {
-    #        if(a > 10) {
-    #            print_hello();
-    #        } else if a > 15 {
-    #            print_world();
-    #        };
-    #        print_hello();
-    #    };
-    #    return 0;
-    #}
 
     int32 main() {
-        if_else_hello(2);
-        #if_else_if_else_hello(2);
-        #if_else_if_else_hello(6);
-        #if_else_if_else_hello(11);
-        #if_else_if_else_hello(16);
-        return 0;
+        let a int32 = 5;
+
+        let b int32 = a * 2;
+
+        if a > 5 {
+            return add(a, b);
+        } else {
+            return b;
+        }
+        return a;
     }
 )");
     Visitor::LLVM comp;

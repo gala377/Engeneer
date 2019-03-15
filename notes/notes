@@ -1,12 +1,3 @@
-poprawki
-
-get_next_token_with_blank
-
-json.org lexowanie floata
-
-tabela ascii etx zamiast '\0'
-
-tablica ascii na funkcje zamiast mapy
 
 //
 do zapytania
@@ -18,6 +9,7 @@ prefixes
 
 
 // LLVM
+
 	COMDAT i rozne opcje linkera
 
 	Sa wyjatki dzieki Invoke, ktore dostaje 2 bloki, co jak bedzie wyjatek, co jak nie
@@ -31,6 +23,8 @@ DO ZROBIENIA
 
 
 ast error handling <- teraz mamy po prostu throw
+compiler error handling
+lexer error handling?
 
 lexer error handling
 parser testy
@@ -46,7 +40,7 @@ lexowanie escapowania w stringach ?
 nie pozwalanie na 2 metody o takiej samej nazwie w obrębie struktury
 nie pozwalanie na 2 zmienne o takiej samej nazwie w obrębie struktury
 scopy?
-typ wskaźników na funkcje <- fn(type, ...)->type
+typ wskaźników na funkcje <- func(type, ...)->type
 
 skończyc parsowanie expression <- dodanie operacji modulo
 refacotorowac parsowanie ciala struktury
@@ -99,3 +93,29 @@ wyznaczyc typy podstawowe (uint8-64, int8-64, float64-256, chaaaar??? )
 
 
     throw, catch? <- eeeeee?
+
+
+
+
+
+
+Notatki ze spotkania 15.03
+
+poprawki
+
+
+get_next_token_with_blank
+
+json.org lexowanie floata
+
+tabela ascii etx zamiast '\0'
+
+tablica ascii na funkcje zamiast mapy
+
+
+
+Olać bezpieczeństwo typów. ret Expression
+
+Source <- metody do pobierania fragmentu sourca od wskaźnika
+
+Przepisywać konstrukcje językowe na prostsze ich wersje
