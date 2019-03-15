@@ -110,6 +110,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     _named_values.clear();
     for(auto& arg: func->args()) {
         _named_values[arg.getName()] = _builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
+        _builder.CreateStore(&arg, _named_values[arg.getName()]);
 
     }
 
@@ -181,13 +182,13 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
 void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
     node.cond->accept(*this); auto cond = _ret_value;
     auto func = _builder.GetInsertBlock()->getParent();
-    auto then = llvm::BasicBlock::Create(_context, "then", func);
+    auto then = llvm::BasicBlock::Create(_context, "then");
 
     llvm::BasicBlock* else_clause = nullptr;
     if (node.else_clause) {
-        else_clause = llvm::BasicBlock::Create(_context, "else", func);
+        else_clause = llvm::BasicBlock::Create(_context, "else");
     }
-    auto merge = llvm::BasicBlock::Create(_context, "merge", func);
+    auto merge = llvm::BasicBlock::Create(_context, "merge");
 
     if(else_clause) {
         _builder.CreateCondBr(cond, then, else_clause);
@@ -195,19 +196,27 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
         _builder.CreateCondBr(cond, then, merge);
     }
 
+
+
+    // then body
+    then->insertInto(func);
     _builder.SetInsertPoint(then);
     node.body->accept(*this);
     _builder.CreateBr(merge);
     then = _builder.GetInsertBlock();
 
-    if(node.else_clause) {
+    // else body
+    if(else_clause) {
+        else_clause->insertInto(func);
         _builder.SetInsertPoint(else_clause);
         node.else_clause->accept(*this);
         _builder.CreateBr(merge);
-        else_clause = _builder.GetInsertBlock();
     }
 
+    merge->insertInto(func);
     _builder.SetInsertPoint(merge);
+
+
 }
 
 

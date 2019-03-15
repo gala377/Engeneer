@@ -17,21 +17,41 @@ int main() {
     Lexer::Source::String s(R"(
     int32 putchar(_ int32);
 
+    int32 put(v int32) {
+        return putchar(65 + v);
+    }
+
     int32 add(a int32, b int32) {
         return a + b;
     }
 
     int32 main() {
-        let a int32 = 5;
+        let a int32 = 0;
+        let b int32 = a;
 
-        let b int32 = a * 2;
+        put(a);
+        put(b);
 
         if a > 5 {
-            return add(a, b);
+            a = 1;
+        } else if a >= 5 {
+            a = 2;
+        } else if a < 5 {
+            a = 3;
         } else {
-            return b;
-        }
+            a = 4;
+        };
+
+        put(a);
+
+        b = add(11, b)
+        if b > 10 {
+            a = 5;
+        };
+
+        put(a);
         return a;
+
     }
 )");
     Visitor::LLVM comp;
