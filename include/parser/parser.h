@@ -109,10 +109,14 @@ namespace Parser {
         using arg_list_t = unique_vec<Nodes::VariableDecl>;
         std::optional<arg_list_t> parse_func_arg_list();
 
-        // Struct gelpers
+        // Struct helpers
         unique_vec<Nodes::Identifier> parse_wraps_decl();
         using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDecl>>;
         struct_body_parse_res_t parse_struct_body();
+
+        // Stmt helpers
+        std::unique_ptr<Nodes::Statement> parse_semicolon_terminated_stmt();
+        std::unique_ptr<Nodes::Statement> parse_code_block_terminated_stmt();
 
         // type parsers
         std::unique_ptr<Types::BaseType> parse_type();

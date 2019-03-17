@@ -29,7 +29,7 @@ int main() {
         let a int32 = 0;
         let b int32 = a;
 
-        put(a)
+        put(a);
         put(b);
 
         if a > 5 {
@@ -42,16 +42,17 @@ int main() {
             a = 4;
         }
 
-        put(a)
+        put(a);
 
-        b = add(11, b)
+        b = add(11, b);
         if b > 10 {
             a = 5;
-        };
+        }
 
-        put(a);
-        return ;
-
+        {
+            put(a);
+            return a;
+        }
     }
 )");
     Visitor::LLVM comp;

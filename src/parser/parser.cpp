@@ -340,14 +340,18 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
 
 // Statement
 std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
+    return one_of<Nodes::Statement>(
+            &Parser::parse_semicolon_terminated_stmt,
+            &Parser::parse_code_block_terminated_stmt);
+}
+
+std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_semicolon_terminated_stmt() {
     auto res = one_of<Nodes::Statement>(
-        &Parser::parse_var_decl,
-        &Parser::parse_expr,
-        &Parser::parse_if_stmt,
-        &Parser::parse_while_stmt,
-        &Parser::parse_return_stmt,
-        &Parser::parse_break_stmt,
-        &Parser::parse_continue_stmt);
+            &Parser::parse_var_decl,
+            &Parser::parse_expr,
+            &Parser::parse_return_stmt,
+            &Parser::parse_break_stmt,
+            &Parser::parse_continue_stmt);
     if(!res) {
         return nullptr;
     }
@@ -358,6 +362,13 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
                 "Missing semicolon");
     }
     return res;
+}
+
+std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_code_block_terminated_stmt() {
+    return one_of<Nodes::Statement>(
+            &Parser::parse_if_stmt,
+            &Parser::parse_while_stmt,
+            &Parser::parse_block_stmt);
 }
 
 std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
