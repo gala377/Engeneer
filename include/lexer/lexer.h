@@ -69,7 +69,7 @@ namespace Lexer {
         Token _process_eof(char ch);
         Token _process_comment(char ch);
 
-        std::string _assemble_numeric(char ch);
+        std::tuple<bool, std::string> _assemble_numeric(char ch);
         std::string _assemble_identifier(char ch);
         std::string _assemble_operator(char ch);
         std::string _assemble_string(char ch);

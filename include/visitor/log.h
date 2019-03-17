@@ -86,6 +86,7 @@ namespace Visitor {
         // Consts
         void visit(const Parser::Nodes::IntConstant &node) override;
         void visit(const Parser::Nodes::StringConstant &node) override;
+        void visit(const Parser::Nodes::FloatConstant &node) override;
 
         // Class Interface
         std::string repr();

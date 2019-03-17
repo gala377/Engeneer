@@ -206,3 +206,7 @@ void Visitor::Base::visit(const Parser::Nodes::IntConstant &node) {
 void Visitor::Base::visit(const Parser::Nodes::StringConstant &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
+
+void Visitor::Base::visit(const Parser::Nodes::FloatConstant &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}

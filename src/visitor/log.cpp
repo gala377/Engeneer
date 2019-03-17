@@ -393,7 +393,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::StringConstant &node) {
     stringify(node, "StringConst: " + node.value);
 }
 
-
+void Visitor::Stringify::visit(const Parser::Nodes::FloatConstant &node) {
+    std::string mess = "FloatConst: " + std::to_string(node.value);
+    stringify(node, std::move(mess));
+}
 
 // Class Interface
 std::string Visitor::Stringify::repr() {
@@ -427,3 +430,5 @@ std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::B
     }
     throw std::runtime_error("StringifyVisitor: Passed type is neither complex nor simple");
 }
+
+

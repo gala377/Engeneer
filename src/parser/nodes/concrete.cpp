@@ -441,3 +441,9 @@ void Parser::Nodes::StringConstant::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+
+Parser::Nodes::FloatConstant::FloatConstant(double value): value(value) {}
+
+void Parser::Nodes::FloatConstant::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}

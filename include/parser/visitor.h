@@ -80,6 +80,7 @@ namespace Parser {
         class IntConstant;
         class ParenthesisExpr;
         class StringConstant;
+        class FloatConstant;
 
     }
 
@@ -156,6 +157,7 @@ namespace Parser {
         virtual void visit(const Nodes::Constant& node) = 0;
         virtual void visit(const Nodes::IntConstant& node) = 0;
         virtual void visit(const Nodes::StringConstant& node) = 0;
+        virtual void visit(const Nodes::FloatConstant& node) = 0;
     };
 }
 

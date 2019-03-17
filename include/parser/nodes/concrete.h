@@ -431,6 +431,15 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    class FloatConstant: public Constant {
+    public:
+        explicit FloatConstant(double value);
+
+        double value;
+
+        void accept(Parser::Visitor &v) const override;
+    };
+
 }
 
 #endif //TKOM2_CONCRETE_H

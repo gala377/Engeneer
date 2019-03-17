@@ -181,8 +181,12 @@ Lexer::Token Lexer::Lexer::_process_blank_char(char ch) {
 // todo integer and float distinction later maybe double and so on
 // because now it returns just integers
 Lexer::Token Lexer::Lexer::_process_numeric(char ch) {
-    auto symbol = _assemble_numeric(ch);
-    return Token{Token::Id::Integer, symbol, _source};
+    auto [is_float, symbol] = _assemble_numeric(ch);
+    return Token {
+        is_float ? Token::Id::Float : Token::Id::Integer,
+        symbol,
+        _source
+    };
 }
 
 Lexer::Token Lexer::Lexer::_process_identifier(char ch) {
@@ -209,19 +213,41 @@ Lexer::Token Lexer::Lexer::_process_comment(char ch) {
     return Token{Token::Id::Comment, symbol, _source};
 }
 
-// todo now assembles only integers. Floats, hex octagonal and so on needed
-std::string Lexer::Lexer::_assemble_numeric(char current) {
+std::tuple<bool, std::string> Lexer::Lexer::_assemble_numeric(char current) {
     std::string symbol;
-    while(is_digit(current)) {
+    bool is_float = false;
+
+    if(current != '0') {
+        while (is_digit(current)) {
+            symbol += std::exchange(current, _source.next_char());
+            if (is_alpha(current)) {
+                throw std::runtime_error("Expected numeric value got " + std::string{current});
+            }
+        }
+    } else {
         symbol += std::exchange(current, _source.next_char());
-        if(is_alpha(current)) {
-            throw std::runtime_error("Expected numeric value got " + std::string{current});
+        if(is_digit(current)) {
+            throw std::runtime_error("Integers cannot begin with 0");
+        }
+    }
+    if(current == '.') {
+        is_float = true;
+        symbol += std::exchange(current, _source.next_char());
+        if(!is_digit(current)) {
+            throw std::runtime_error("Expected at least one digit after '.'");
+        }
+        while (is_digit(current)) {
+            symbol += std::exchange(current, _source.next_char());
+            if (is_alpha(current)) {
+                throw std::runtime_error("Expected numeric value got " + std::string{current});
+            }
         }
     }
     if(symbol.empty()) {
         throw std::runtime_error("Could not assemble const expr!");
     }
-    return symbol;
+
+    return std::make_tuple(is_float, symbol);
 }
 
 std::string Lexer::Lexer::_assemble_identifier(char current) {

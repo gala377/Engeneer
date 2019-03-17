@@ -99,6 +99,7 @@ namespace Parser {
         std::unique_ptr<Nodes::Expression> parse_const();
         std::unique_ptr<Nodes::Expression> parse_int();
         std::unique_ptr<Nodes::Expression> parse_string();
+        std::unique_ptr<Nodes::Expression> parse_float();
 
 
         // helper parsers

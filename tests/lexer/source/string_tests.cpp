@@ -101,7 +101,7 @@ BOOST_FIXTURE_TEST_SUITE(string_source_tests, StringSourceExamples)
     }
 
     BOOST_AUTO_TEST_CASE(after_some_reads_position_is_correct) {
-        Lexer::Source::File s(example_message);
+        Lexer::Source::String s(example_message);
         for(unsigned int i = 0; i < strlen("Exam"); ++i) {
             char c;
             c << s;

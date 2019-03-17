@@ -929,7 +929,8 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_parenthesis() {
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_const() {
     return one_of<Nodes::Expression>(
             &Parser::parse_int,
-            &Parser::parse_string);
+            &Parser::parse_string,
+            &Parser::parse_float);
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_int() {
@@ -944,6 +945,10 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_string() {
     return res ? std::make_unique<Nodes::StringConstant>(res->symbol) : nullptr;
 }
 
+std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_float() {
+    auto res = parse_token(Lexer::Token::Id::Integer);
+    return res ? std::make_unique<Nodes::IntConstant>(std::stod(res->symbol)) : nullptr;
+}
 
 // Token Parsers
 std::optional<Lexer::Token> Parser::Parser::parse_token(Lexer::Token::Id id) {
