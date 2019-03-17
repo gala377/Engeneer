@@ -77,14 +77,14 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
     auto identifier= parse_cast<Nodes::Identifier>(&Parser::parse_ident);
     if(!identifier) {
         abort<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::Identifier, ""},
+            _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                 _lexer.curr_token(),
                 "Expected variable name after let");
     }
     auto type = parse_type();
     if(!type) {
         abort<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::Identifier, ""},
+            _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                 _lexer.curr_token(),
                 "Expected type after variable name");
     }
@@ -101,7 +101,7 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
 
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         error<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+            _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
             _lexer.curr_token(),
             "Missing semicolon");
     }
@@ -124,7 +124,7 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
     auto identifier = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
     if(!identifier) {
         abort<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::Identifier, ""},
+            _lexer.make_token(Lexer::Token::Id::Identifier, ""),
             _lexer.curr_token(),
             "Struct name expected");
     }
@@ -173,7 +173,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     unique_vec<Nodes::FunctionDecl> methods;
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::LeftBrace, "{"},
+                _lexer.make_token(Lexer::Token::Id::LeftBrace, "{"),
                 _lexer.curr_token(),
                 "Struct body is expected to be a code block");
     }
@@ -199,7 +199,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
             }
             if(!parse_token(Lexer::Token::Id::Semicolon)) {
                 error<Exception::ExpectedToken>(
-                    Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                    _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
                     _lexer.curr_token(),
                     "Missing semicolon after member declarations");
             }
@@ -218,7 +218,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
             if(!body) {
                 if(!parse_token(Lexer::Token::Id::Semicolon)) {
                     error<Exception::ExpectedToken>(
-                        Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                        _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
                         _lexer.curr_token(),
                         "Missing semicolon after method prototype");
                 }
@@ -235,7 +235,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
         // variable decl
         if(!parse_token(Lexer::Token::Id::Semicolon)) {
             error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
                 _lexer.curr_token(),
                 "Missing semicolon");
         }
@@ -246,7 +246,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
 
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
         error<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
+            _lexer.make_token(Lexer::Token::Id::RightBrace, "}"),
             _lexer.curr_token(),
             "Struct body not closed");
     }
@@ -267,7 +267,7 @@ std::unique_ptr<Parser::Nodes::FunctionDecl> Parser::Parser::parse_func_decl() {
     auto body = parse_code_block();
     if(!body) {
         error<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+            _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
             _lexer.curr_token(),
             "Missing semicolon after function prototype");
         return std::move(header);
@@ -286,14 +286,14 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::parse_func_header()
     auto identifier = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
     if(!identifier) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                 _lexer.curr_token(),
                 "Function name expected");
     }
     auto arg_list = parse_func_arg_list();
     if(!arg_list) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::LeftParenthesis, "("},
+                _lexer.make_token(Lexer::Token::Id::LeftParenthesis, "("),
                 _lexer.curr_token());
     }
     return std::make_unique<Nodes::FunctionProt>(
@@ -314,7 +314,7 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
         auto type = parse_type();
         if(!type) {
             abort<Exception::ExpectedToken>(
-                    Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                    _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                     _lexer.curr_token(),
                     "Expected type after variable name");
         }
@@ -324,14 +324,14 @@ std::optional<Parser::Parser::arg_list_t> Parser::Parser::parse_func_arg_list() 
             ident = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
             if(!ident) {
                 abort<Exception::ExpectedToken>(
-                        Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                        _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                         _lexer.curr_token());
             }
         }
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::RightParenthesis, ")"},
+                _lexer.make_token(Lexer::Token::Id::RightParenthesis, ")"),
                 _lexer.curr_token());
     }
     return std::optional(std::move(arg_list));
@@ -353,7 +353,7 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
     }
     if(!parse_token(Lexer::Token::Id::Semicolon)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Semicolon, ";"},
+                _lexer.make_token(Lexer::Token::Id::Semicolon, ";"),
                 _lexer.curr_token(),
                 "Missing semicolon");
     }
@@ -372,7 +372,7 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
         });
     if(!parse_token(Lexer::Token::Id::RightBrace)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::RightBrace, "}"},
+                _lexer.make_token(Lexer::Token::Id::RightBrace, "}"),
                 _lexer.curr_token(),
                 "Code block left open");
     }
@@ -386,14 +386,14 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
     auto identifier= parse_cast<Nodes::Identifier>(&Parser::parse_ident);
     if(!identifier) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                 _lexer.curr_token(),
                 "Expected variable name after let");
     }
     auto type = parse_type();
     if(!type) {
         abort<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::Identifier, ""},
+                _lexer.make_token(Lexer::Token::Id::Identifier, ""),
                 _lexer.curr_token(),
                 "Expected type after variable name");
     }
@@ -727,7 +727,8 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_unary_expr() {
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negative_expr() {
-    if(!parse_token(Lexer::Token::Id::Minus)) {
+    auto tok = parse_token(Lexer::Token::Id::Minus);
+    if(!tok) {
         return nullptr;
     }
     // note: double unary only after parenthesis
@@ -738,11 +739,13 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negative_expr()
                 "Primary expression expected after unary - operator "
                 "(use parenthesis for multiple unary operators)");
     }
-    return std::make_unique<Nodes::NegativeExpr>(std::move(rhs));
+    return std::make_unique<Nodes::NegativeExpr>(
+            tok.value(), std::move(rhs));
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negation_expr() {
-    if(!parse_token(Lexer::Token::Id::Negation)) {
+    auto tok = parse_token(Lexer::Token::Id::Negation);
+    if(!tok) {
         return nullptr;
     }
     auto rhs = parse_postfix_expr();
@@ -752,7 +755,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negation_expr()
                 "Primary expression expected after unary ! operator "
                 "(use parenthesis for multiple unary operators)");
     }
-    return std::make_unique<Nodes::NegationExpr>(std::move(rhs));
+    return std::make_unique<Nodes::NegationExpr>(tok.value(), std::move(rhs));
 }
 
 // Postfix
@@ -839,7 +842,7 @@ std::optional<Parser::Parser::call_args_t> Parser::Parser::parse_call_parameters
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         error<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::RightParenthesis, ")"},
+            _lexer.make_token(Lexer::Token::Id::RightParenthesis, ")"),
             _lexer.curr_token(),
             "Call argument list unclosed");
     }
@@ -858,7 +861,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_parameter
     }
     if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
         error<Exception::ExpectedToken>(
-            Lexer::Token{Lexer::Token::Id::RightSquareBracket, "]"},
+            _lexer.make_token(Lexer::Token::Id::RightSquareBracket, "]"),
             _lexer.curr_token(),
             "Indexing not closed");
     }
@@ -904,7 +907,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_parenthesis() {
     }
     if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
         error<Exception::ExpectedToken>(
-                Lexer::Token{Lexer::Token::Id::RightParenthesis, ")"},
+                _lexer.make_token(Lexer::Token::Id::RightParenthesis, ")"),
                 _lexer.curr_token());
     }
     return std::make_unique<Nodes::ParenthesisExpr>(std::move(expr));

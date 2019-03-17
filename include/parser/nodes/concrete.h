@@ -316,14 +316,14 @@ namespace Parser::Nodes {
 
     class NegativeExpr: public UnaryExpr {
     public:
-        NegativeExpr(std::unique_ptr<Expression>&& rhs);
+        NegativeExpr(const Lexer::Token& op, std::unique_ptr<Expression>&& rhs);
 
         void accept(Parser::Visitor &v) const override;
     };
 
     class NegationExpr: public UnaryExpr {
     public:
-        NegationExpr(std::unique_ptr<Expression>&& rhs);
+        NegationExpr(const Lexer::Token& op, std::unique_ptr<Expression>&& rhs);
 
         void accept(Parser::Visitor& v) const override;
     };

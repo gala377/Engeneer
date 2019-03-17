@@ -6,6 +6,7 @@
 #define TKOM2_STRING_H
 
 #include <lexer/source/base.h>
+#include <vector>
 
 namespace Lexer::Source {
 
@@ -13,7 +14,7 @@ namespace Lexer::Source {
     public:
         class StringPointer: public Pointer {
         public:
-            StringPointer(uint32_t i): i(i) {}
+            StringPointer(uint32_t i, String& s): Pointer(s), i(i) {}
 
             uint32_t i;
         };
@@ -34,7 +35,7 @@ namespace Lexer::Source {
 
         const char *name() const override;
 
-        std::unique_ptr<Base::pointer> current_pointer() override;
+        Base::const_pointer& current_pointer() override;
         std::string source_around(Base::const_pointer &p, uint32_t size = 10) override;
         virtual std::string source_around(const_pointer &p, uint32_t size = 10);
     private:
@@ -44,6 +45,7 @@ namespace Lexer::Source {
         std::uint32_t _curr_line = 1;
         std::uint32_t _in_line_pos = 1;
 
+        std::vector<StringPointer> _ptrs;
     };
 
 }

@@ -312,16 +312,19 @@ void Parser::Nodes::UnaryExpr::accept(Parser::Visitor &v) const {
 }
 
 
-Parser::Nodes::NegativeExpr::NegativeExpr(std::unique_ptr<Parser::Nodes::Expression> &&rhs):
-        UnaryExpr(Lexer::Token{Lexer::Token::Id::Minus, "-"}, std::move(rhs)){}
+Parser::Nodes::NegativeExpr::NegativeExpr(const Lexer::Token &op, std::unique_ptr<Parser::Nodes::Expression> &&rhs)
+        : UnaryExpr(op, std::move(rhs)) {
+
+}
 
 void Parser::Nodes::NegativeExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+Parser::Nodes::NegationExpr::NegationExpr(const Lexer::Token &op, std::unique_ptr<Parser::Nodes::Expression> &&rhs)
+        : UnaryExpr(op, std::move(rhs)) {
 
-Parser::Nodes::NegationExpr::NegationExpr(std::unique_ptr<Parser::Nodes::Expression> &&rhs):
-    UnaryExpr(Lexer::Token{Lexer::Token::Id::Negation, "!"}, std::move(rhs)) {}
+}
 
 void Parser::Nodes::NegationExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);

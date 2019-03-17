@@ -10,6 +10,7 @@
 
 #include <boost/format.hpp>
 #include <lexer/token.h>
+#include <lexer/source/base.h>
 
 
 namespace Exception {
@@ -42,6 +43,7 @@ namespace Exception {
             std::string file,
             std::uint32_t line,
             std::uint32_t in_line,
+            Lexer::Source::Base::const_pointer& ptr,
             const std::string& mess);
     };
 
@@ -51,6 +53,7 @@ namespace Exception {
             std::string file,
             std::uint32_t line,
             std::uint32_t in_line,
+            Lexer::Source::Base::const_pointer& ptr,
             const std::string& mess);
 
         BaseSyntax(const Lexer::Token& tok, const std::string& mess);

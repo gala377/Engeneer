@@ -4,11 +4,6 @@
 
 #include <lexer/token.h>
 
-Lexer::Token::Token(Id id, const std::string& symbol):
-        id{id},
-        symbol{symbol},
-        span{{"Undefined source"}, 0, 0, 0} {}
-
 std::string Lexer::str(Lexer::Token::Id id) {
     switch(id) {
         case Token::Id::Identifier:
@@ -105,3 +100,17 @@ std::string Lexer::str(Lexer::Token::Id id) {
             return "Undefined";
     }
 }
+
+Lexer::Token::Token(
+        Lexer::Token::Id id,
+        const std::string &symbol,
+        Lexer::Source::Base &s):
+        id(id),
+        symbol(symbol),
+        span({
+            s.name(),
+            s.curr_line(),
+            s.curr_in_line_position(),
+            s.curr_in_line_position(),
+            s.current_pointer()
+        }) {}

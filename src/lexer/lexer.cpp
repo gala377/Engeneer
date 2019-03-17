@@ -67,7 +67,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
 Lexer::Lexer::Lexer(Source::Base &source):
     HandlingMixin(),
     _source(source),
-    _curr_token(Token{Token::Id::End, ""}),
+    _curr_token(Token{Token::Id::End, "", _source}),
     _next_token(_curr_token) {
     _init_token_assemblers();
     _init_curr_token();
@@ -77,7 +77,7 @@ Lexer::Lexer::Lexer(Source::Base &source):
 Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h):
     HandlingMixin(h),
     _source(source),
-    _curr_token(Token{Token::Id::End, ""}),
+    _curr_token(Token{Token::Id::End, "", _source}),
     _next_token(_curr_token) {
     _init_token_assemblers();
     _init_curr_token();
@@ -130,16 +130,21 @@ const Lexer::Token Lexer::Lexer::next_token() {
     }
 
     auto saved_pos = _source.curr_source_position();
-    _curr_token = std::exchange(_next_token, _token_assemblers[asm_id](ch));
+    _curr_token = std::move(std::exchange(_next_token, _token_assemblers[asm_id](ch)));
     auto curr_pos = _source.curr_source_position();
 
-    _next_token.span = Token::Span {
+    _next_token.span = std::move(Token::Span {
         _source.name(),
         std::get<0>(saved_pos),
         std::get<1>(saved_pos),
         std::get<1>(curr_pos),
-     };
+        _source.current_pointer(),
+     });
     return _curr_token;
+}
+
+const Lexer::Token Lexer::Lexer::make_token(Token::Id id, const std::string &symbol) {
+    return Token{id, symbol, _source};
 }
 
 std::tuple<std::uint32_t, std::uint32_t> Lexer::Lexer::in_source_pos() const {
@@ -168,40 +173,40 @@ Lexer::Lexer::TokenAssemblerId Lexer::Lexer::char_to_assembler_id(const char &ch
 
 Lexer::Token Lexer::Lexer::_process_blank_char(char ch) {
     if(is_new_line(ch)) {
-        return Token{Token::Id::NewLine, {ch}};
+        return Token{Token::Id::NewLine, {ch}, _source};
     }
-    return Token{Token::Id::Space, {ch}};
+    return Token{Token::Id::Space, {ch}, _source};
 }
 
 // todo integer and float distinction later maybe double and so on
 // because now it returns just integers
 Lexer::Token Lexer::Lexer::_process_numeric(char ch) {
     auto symbol = _assemble_numeric(ch);
-    return Token{Token::Id::Integer, symbol};
+    return Token{Token::Id::Integer, symbol, _source};
 }
 
 Lexer::Token Lexer::Lexer::_process_identifier(char ch) {
     auto symbol = _assemble_identifier(ch);
     if(_KEYWORDS.find(symbol) != _KEYWORDS.end()) {
-        return Token{(*_KEYWORDS.find(symbol)).second, symbol};
+        return Token{(*_KEYWORDS.find(symbol)).second, symbol, _source};
     }
-    return Token{Token::Id::Identifier, symbol};
+    return Token{Token::Id::Identifier, symbol, _source};
 }
 
 
 Lexer::Token Lexer::Lexer::_process_operator(char ch) {
     auto symbol = _assemble_operator(ch);
-    return Token{(*_OPERATORS.find(symbol)).second, symbol};
+    return Token{(*_OPERATORS.find(symbol)).second, symbol, _source};
 }
 
 Lexer::Token Lexer::Lexer::_process_string(char ch) {
     auto symbol = _assemble_string(ch);
-    return Token{Token::Id::String, symbol};
+    return Token{Token::Id::String, symbol, _source};
 }
 
 Lexer::Token Lexer::Lexer::_process_comment(char ch) {
     auto symbol = _assemble_comment(ch);
-    return Token{Token::Id::Comment, symbol};
+    return Token{Token::Id::Comment, symbol, _source};
 }
 
 // todo now assembles only integers. Floats, hex octagonal and so on needed
@@ -264,7 +269,11 @@ std::string Lexer::Lexer::_assemble_string(char current) {
 }
 
 Lexer::Token Lexer::Lexer::_process_eof(char current) {
-    return Token{Token::Id::End, {current}};
+    return Token{
+        Token::Id::End,
+        {current},
+        _source,
+    };
 }
 
 std::string Lexer::Lexer::_assemble_comment(char ch) {

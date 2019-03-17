@@ -6,6 +6,7 @@
 #define TKOM2_TOKEN_H
 
 #include <string>
+#include <lexer/source/base.h>
 
 namespace Lexer {
 
@@ -93,22 +94,21 @@ namespace Lexer {
             End,
         };
 
-        Token(Id id, const std::string& symbol);
-
         struct Span {
             std::string source_name;
             std::uint32_t line;
             std::uint32_t beg_pos;
             std::uint32_t end_pos;
+            std::reference_wrapper<Source::Base::const_pointer> ptr;
         };
 
         Id id;
         std::string symbol;
         Span span;
+
+        Token(Id id, const std::string& symbol, Source::Base& s);
     };
 
-
-    static Token none_tok = Token{Token::Id::None, ""};
     std::string str(Token::Id id);
 }
 

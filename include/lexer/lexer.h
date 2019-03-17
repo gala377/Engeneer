@@ -28,6 +28,8 @@ namespace Lexer {
 
         const Token next_token();
 
+        const Token make_token(Token::Id id, const std::string& symbol);
+
         std::tuple<std::uint32_t, std::uint32_t> in_source_pos() const;
     private:
         enum class TokenAssemblerId {

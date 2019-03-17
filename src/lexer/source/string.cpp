@@ -45,8 +45,9 @@ const char *Lexer::Source::String::name() const {
     return "str source";
 }
 
-std::unique_ptr<Lexer::Source::Base::pointer> Lexer::Source::String::current_pointer() {
-    return std::make_unique<StringPointer>((uint32_t)_curr_index);
+Lexer::Source::Base::const_pointer& Lexer::Source::String::current_pointer() {
+    _ptrs.emplace_back(StringPointer((uint32_t)std::max(_curr_index, 0), *this));
+    return _ptrs.back();
 }
 
 std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_pointer &p, uint32_t size) {

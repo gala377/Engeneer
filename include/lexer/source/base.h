@@ -16,7 +16,15 @@ namespace Lexer::Source {
 
         class Pointer {
         public:
+            Pointer(Base& source): source(source) {};
             virtual ~Pointer() = default;
+
+            virtual std::string source_around(std::uint32_t size = 10) {
+                return source.source_around(*this, size);
+            }
+
+        protected:
+            Base& source;
         };
 
         typedef Pointer pointer;
@@ -46,7 +54,7 @@ namespace Lexer::Source {
         // Returns the name of the source
         virtual const char* name() const = 0;
 
-        virtual std::unique_ptr<pointer> current_pointer() = 0;
+        virtual const_pointer& current_pointer() = 0;
         virtual std::string source_around(const_pointer& p, std::uint32_t size = 10) = 0;
     };
 
