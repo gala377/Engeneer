@@ -36,8 +36,8 @@ namespace Lexer::Source {
         const char *name() const override;
 
         Base::const_pointer& current_pointer() override;
-        std::string source_around(Base::const_pointer &p, uint32_t size = 10) override;
-        virtual std::string source_around(const_pointer &p, uint32_t size = 10);
+        std::string source_around(Base::const_pointer &p, uint32_t size = 10) const override;
+        virtual std::string source_around(const_pointer &p, uint32_t size = 10) const;
     private:
         std::string _raw;
         std::int32_t  _curr_index = -1;

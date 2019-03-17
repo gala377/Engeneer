@@ -50,11 +50,11 @@ Lexer::Source::Base::const_pointer& Lexer::Source::String::current_pointer() {
     return _ptrs.back();
 }
 
-std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_pointer &p, uint32_t size) {
+std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_pointer &p, uint32_t size) const {
     auto ptr = dynamic_cast<const_pointer&>(p);
     return source_around(ptr, size);
 }
 
-std::string Lexer::Source::String::source_around(Lexer::Source::String::const_pointer &p, uint32_t size) {
+std::string Lexer::Source::String::source_around(Lexer::Source::String::const_pointer &p, uint32_t size) const {
     return _raw.substr(std::min((std::uint32_t)0, p.i - size), size);
 }

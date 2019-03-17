@@ -29,7 +29,7 @@ int main() {
         let a int32 = 0;
         let b int32 = a;
 
-        put(a);
+        put(a)
         put(b);
 
         if a > 5 {
@@ -40,9 +40,9 @@ int main() {
             a = 3;
         } else {
             a = 4;
-        };
+        }
 
-        put(a);
+        put(a)
 
         b = add(11, b)
         if b > 10 {
@@ -50,7 +50,7 @@ int main() {
         };
 
         put(a);
-        return a;
+        return ;
 
     }
 )");
