@@ -393,6 +393,7 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
 
 }
 
+// todo add floats, ptr types, array types, and some kind of implicit dereferencing
 llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
     // getPointer for pointer types
     // const doesnt matter
