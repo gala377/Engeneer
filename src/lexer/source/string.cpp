@@ -15,7 +15,7 @@ Lexer::Source::String::String(std::string &&raw): _raw(raw) {
 }
 
 const char Lexer::Source::String::curr_char() {
-    return _curr_index < _raw.length() ? _raw[_curr_index] : '\0' ;
+    return _curr_index < _raw.length() ? _raw[_curr_index] : (char)'\0' ;
 }
 
 const char Lexer::Source::String::next_char() {
@@ -30,7 +30,7 @@ const char Lexer::Source::String::next_char() {
 }
 
 const char Lexer::Source::String::peek() {
-    return (_curr_index + 1) < _raw.length() ? _raw[_curr_index+1] : '\0' ;
+    return (_curr_index + 1) < _raw.length() ? _raw[_curr_index+1] : (char)'\0' ;
 }
 
 const uint32_t Lexer::Source::String::curr_line() const {
