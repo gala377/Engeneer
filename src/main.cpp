@@ -22,7 +22,23 @@ int main() {
     }
 
     int32 main() {
-        return !(put(2+2*2) && a < b[2 + 2])
+        let i int32 = 0;
+
+        while i < 10 {
+            let j int32 = 0;
+            while j < 5 {
+                j = j + 1;
+                if j < 3 {
+                    continue;
+                }
+                put(i*5+j);
+            }
+            i = i + 1;
+            if i > 1 {
+                break;
+            }
+        }
+        return 0;
     }
 )");
     Visitor::LLVM comp;

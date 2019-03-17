@@ -149,6 +149,52 @@ void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
     }
 }
 
+void Visitor::LLVM::visit(const Parser::Nodes::WhileStmt &node) {
+    auto func = _builder.GetInsertBlock()->getParent();
+    auto old_loop = _curr_loop;
+    auto old_loop_contr = _curr_loop_contr;
+
+    auto header_block = llvm::BasicBlock::Create(_context, "__whilecond");
+    auto loop_block = llvm::BasicBlock::Create(_context, "__while");
+    auto merge_block = llvm::BasicBlock::Create(_context, "__whilecontr");
+
+    _curr_loop = header_block;
+    _curr_loop_contr = merge_block;
+
+    _builder.CreateBr(header_block);
+    // Condition
+    header_block->insertInto(func);
+    _builder.SetInsertPoint(header_block);
+    node.cond->accept(*this); auto cond = _ret_value;
+    _builder.CreateCondBr(cond, loop_block, merge_block);
+
+    // Body
+    loop_block->insertInto(func);
+    _builder.SetInsertPoint(loop_block);
+    node.body->accept(*this);
+    _builder.CreateBr(header_block);
+
+    // merge
+    merge_block->insertInto(func);
+    _builder.SetInsertPoint(merge_block);
+
+    _curr_loop = old_loop;
+    _curr_loop_contr = old_loop_contr;
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::BreakStmt &node) {
+    if(!_curr_loop_contr) {
+        throw std::runtime_error("Cannot break outside of loop");
+    }
+    _builder.CreateBr(_curr_loop_contr);
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::ContinueStmt &node) {
+    if(!_curr_loop) {
+        throw std::runtime_error("Cannot continue outside of loop");
+    }
+    _builder.CreateBr(_curr_loop);
+}
 
 void Visitor::LLVM::visit(const Parser::Nodes::BlockStmt &node) {
     node.body->accept(*this);
@@ -166,10 +212,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     }
     // todo for now only int32
     // todo later to_llvm_type function
-    _named_values[node.identifier->symbol] = _builder.CreateAlloca(
-        llvm::Type::getInt32Ty(_context),
-        nullptr,
-        node.identifier->symbol);
+    _named_values[node.identifier->symbol] = create_alloca(
+            *_builder.GetInsertBlock()->getParent(), node);
     if(node.init_expr) {
         node.init_expr->accept(*this); auto init = _ret_value;
         if(!init) {
@@ -182,21 +226,19 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
 void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
     node.cond->accept(*this); auto cond = _ret_value;
     auto func = _builder.GetInsertBlock()->getParent();
-    auto then = llvm::BasicBlock::Create(_context, "then");
+    auto then = llvm::BasicBlock::Create(_context, "__iftrue");
 
     llvm::BasicBlock* else_clause = nullptr;
     if (node.else_clause) {
-        else_clause = llvm::BasicBlock::Create(_context, "else");
+        else_clause = llvm::BasicBlock::Create(_context, "__iffalse");
     }
-    auto merge = llvm::BasicBlock::Create(_context, "merge");
+    auto merge = llvm::BasicBlock::Create(_context, "__ifcontr");
 
     if(else_clause) {
         _builder.CreateCondBr(cond, then, else_clause);
     } else {
         _builder.CreateCondBr(cond, then, merge);
     }
-
-
 
     // then body
     then->insertInto(func);
@@ -215,55 +257,11 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
 
     merge->insertInto(func);
     _builder.SetInsertPoint(merge);
-
-
 }
 
 
 // Expression
 // Binary
-void Visitor::LLVM::visit(const Parser::Nodes::LogicalOrExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::LogicalAndExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::InclusiveOrExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::AndExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::EqualityExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
-}
-
 
 // todo for now only signed cmp
 // todo we dont now how to make unsigned ints
@@ -289,19 +287,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
         case Lexer::Token::Id::GreaterEq:
             _ret_value = _builder.CreateICmpSGE(lhs, rhs, "__cmptemp");
             break;
-        case Lexer::Token::Id::None:
-            _ret_value = lhs;
-            break;
         default:
             throw std::runtime_error("Unexpected operator during addition operator");
     }
-}
-
-void Visitor::LLVM::visit(const Parser::Nodes::ShiftExpr &node) {
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported binary operator");
-    }
-    node.lhs->accept(*this);
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
@@ -309,44 +297,31 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     // todo for now only identifier
     // todo support for access and indexing operators
 
-    if (node.rhs) {
-        // its assignment
-        _skip_load = true;
-        node.lhs->accept(*this); auto lhs = _ret_value;
-        if (!lhs) {
-            throw std::runtime_error("Could not compile lhs of an assignment");
-        }
-        _skip_load = false;
-        node.rhs->accept(*this); auto rhs = _ret_value;
-        if (!rhs) {
-            throw std::runtime_error("Could not compile left side of the assignment");
-        }
-        _builder.CreateStore(rhs, lhs);
-        // leaving lhs in _ret_value, so assignment evaluates to it
-    } else {
-        // its just some random expr
-        // just pass it
-        node.lhs->accept(*this);
+    _skip_load = true;
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    if (!lhs) {
+        throw std::runtime_error("Could not compile lhs of an assignment");
     }
+    _skip_load = false;
+    node.rhs->accept(*this); auto rhs = _ret_value;
+    if (!rhs) {
+        throw std::runtime_error("Could not compile left side of the assignment");
+    }
+    _builder.CreateStore(rhs, lhs);
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
     // Compute left and right if needed
     //std::cout << "Add expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
-    llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        node.rhs->accept(*this); rhs = _ret_value;
-    }
+    node.rhs->accept(*this); auto rhs = _ret_value;
+
     switch(node.op.id) {
         case Lexer::Token::Id::Plus:
             _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
             break;
         case Lexer::Token::Id::Minus:
             _ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
-            break;
-        case Lexer::Token::Id::None:
-            _ret_value = lhs;
             break;
         default:
             throw std::runtime_error("Unexpected operator during addition operator");
@@ -356,10 +331,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     //std::cout << "Mult expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
-    llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        node.rhs->accept(*this); rhs = _ret_value;
-    }
+    node.rhs->accept(*this); auto rhs = _ret_value;
     switch(node.op.id) {
         case Lexer::Token::Id::Multiplication:
             _ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
@@ -369,9 +341,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
             // but its kinda more comlpicated
             _ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
             break;
-        case Lexer::Token::Id::None:
-            _ret_value = lhs;
-            break;
         default:
             throw std::runtime_error("Unexpected operator during addition operator");
     }
@@ -379,20 +348,8 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 
 
 // Unary
-void Visitor::LLVM::visit(const Parser::Nodes::UnaryExpr &node) {
-    //std::cout << "Unary\n";
-    if(node.op.id != Lexer::Token::Id::None) {
-        throw std::runtime_error("Unsupported unary operator");
-    }
-    node.rhs->accept(*this);
-}
-
 
 // Postfix
-void Visitor::LLVM::visit(const Parser::Nodes::PostfixExpr &node) {
-    //std::cout << "Postifx\n";
-    node.lhs->accept(*this);
-}
 
 // Todo for now its just for the identifiers
 // todo I have no idea how to do this for the chained calls
@@ -452,6 +409,18 @@ void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     //std::cout << "ConstInt\n";
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
+
+
+// todo for now just int32
+llvm::AllocaInst *Visitor::LLVM::create_alloca(
+        llvm::Function& func,
+        const Parser::Nodes::VariableDecl &node) {
+    llvm::IRBuilder<> tmp_b(
+            &func.getEntryBlock(),
+            func.getEntryBlock().begin());
+    return tmp_b.CreateAlloca(llvm::Type::getInt32Ty(_context), nullptr, node.identifier->symbol);
+}
+
 
 
 

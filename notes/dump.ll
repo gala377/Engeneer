@@ -10,82 +10,62 @@ entry:
   ret i32 %__calltmp
 }
 
-define i32 @add(i32 %a, i32 %b) {
-entry:
-  %a1 = alloca i32
-  store i32 %a, i32* %a1
-  %b2 = alloca i32
-  store i32 %b, i32* %b2
-  %a3 = load i32, i32* %a1
-  %b4 = load i32, i32* %b2
-  %__addtmp = add i32 %a3, %b4
-  ret i32 %__addtmp
-}
-
 define i32 @main() {
 entry:
-  %a = alloca i32
-  store i32 0, i32* %a
-  %b = alloca i32
-  %a1 = load i32, i32* %a
-  store i32 %a1, i32* %b
-  %a2 = load i32, i32* %a
-  %__calltmp = call i32 @put(i32 %a2)
-  %b3 = load i32, i32* %b
-  %__calltmp4 = call i32 @put(i32 %b3)
-  %a5 = load i32, i32* %a
-  %__cmptemp = icmp sgt i32 %a5, 5
-  br i1 %__cmptemp, label %then, label %else
+  %j = alloca i32
+  %i = alloca i32
+  store i32 0, i32* %i
+  br label %__whilecond
 
-then:                                             ; preds = %entry
-  store i32 1, i32* %a
-  br label %merge15
+__whilecond:                                      ; preds = %__ifcontr17, %entry
+  %i1 = load i32, i32* %i
+  %__cmptemp = icmp slt i32 %i1, 10
+  br i1 %__cmptemp, label %__while, label %__whilecontr18
 
-else:                                             ; preds = %entry
-  %a6 = load i32, i32* %a
-  %__cmptemp7 = icmp sge i32 %a6, 5
-  br i1 %__cmptemp7, label %then8, label %else9
+__while:                                          ; preds = %__whilecond
+  store i32 0, i32* %j
+  br label %__whilecond2
 
-then8:                                            ; preds = %else
-  store i32 2, i32* %a
-  br label %merge14
+__whilecond2:                                     ; preds = %__ifcontr, %__iftrue, %__while
+  %j3 = load i32, i32* %j
+  %__cmptemp4 = icmp slt i32 %j3, 5
+  br i1 %__cmptemp4, label %__while5, label %__whilecontr
 
-else9:                                            ; preds = %else
-  %a10 = load i32, i32* %a
-  %__cmptemp11 = icmp slt i32 %a10, 5
-  br i1 %__cmptemp11, label %then12, label %else13
+__while5:                                         ; preds = %__whilecond2
+  %j6 = load i32, i32* %j
+  %__addtmp = add i32 %j6, 1
+  store i32 %__addtmp, i32* %j
+  %j7 = load i32, i32* %j
+  %__cmptemp8 = icmp slt i32 %j7, 3
+  br i1 %__cmptemp8, label %__iftrue, label %__ifcontr
 
-then12:                                           ; preds = %else9
-  store i32 3, i32* %a
-  br label %merge
+__iftrue:                                         ; preds = %__while5
+  br label %__whilecond2
+  br label %__ifcontr
 
-else13:                                           ; preds = %else9
-  store i32 4, i32* %a
-  br label %merge
+__ifcontr:                                        ; preds = %__iftrue, %__while5
+  %i9 = load i32, i32* %i
+  %__multmp = mul i32 %i9, 5
+  %j10 = load i32, i32* %j
+  %__addtmp11 = add i32 %__multmp, %j10
+  %__calltmp = call i32 @put(i32 %__addtmp11)
+  br label %__whilecond2
 
-merge:                                            ; preds = %else13, %then12
-  br label %merge14
+__whilecontr:                                     ; preds = %__whilecond2
+  %i12 = load i32, i32* %i
+  %__addtmp13 = add i32 %i12, 1
+  store i32 %__addtmp13, i32* %i
+  %i14 = load i32, i32* %i
+  %__cmptemp15 = icmp sgt i32 %i14, 1
+  br i1 %__cmptemp15, label %__iftrue16, label %__ifcontr17
 
-merge14:                                          ; preds = %merge, %then8
-  br label %merge15
+__iftrue16:                                       ; preds = %__whilecontr
+  br label %__whilecontr18
+  br label %__ifcontr17
 
-merge15:                                          ; preds = %merge14, %then
-  %a16 = load i32, i32* %a
-  %__calltmp17 = call i32 @put(i32 %a16)
-  %b18 = load i32, i32* %b
-  %__calltmp19 = call i32 @add(i32 11, i32 %b18)
-  store i32 %__calltmp19, i32* %b
-  %b20 = load i32, i32* %b
-  %__cmptemp21 = icmp sgt i32 %b20, 10
-  br i1 %__cmptemp21, label %then22, label %merge23
+__ifcontr17:                                      ; preds = %__iftrue16, %__whilecontr
+  br label %__whilecond
 
-then22:                                           ; preds = %merge15
-  store i32 5, i32* %a
-  br label %merge23
-
-merge23:                                          ; preds = %then22, %merge15
-  %a24 = load i32, i32* %a
-  %__calltmp25 = call i32 @put(i32 %a24)
-  %a26 = load i32, i32* %a
-  ret i32 %a26
+__whilecontr18:                                   ; preds = %__iftrue16, %__whilecond
+  ret i32 0
 }

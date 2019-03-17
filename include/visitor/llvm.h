@@ -40,30 +40,23 @@ namespace Visitor {
         void visit(const Parser::Nodes::VariableDecl &node) override;
         void visit(const Parser::Nodes::ReturnStmt &node) override;
 
+        void visit(const Parser::Nodes::WhileStmt &node) override;
         void visit(const Parser::Nodes::BlockStmt &node) override;
-
         void visit(const Parser::Nodes::IfStmt &node) override;
+
+        void visit(const Parser::Nodes::BreakStmt &node) override;
+        void visit(const Parser::Nodes::ContinueStmt &node) override;
 
         // Expression
         // Binary
-        void visit(const Parser::Nodes::LogicalOrExpr &node) override;
-        void visit(const Parser::Nodes::LogicalAndExpr &node) override;
-        void visit(const Parser::Nodes::InclusiveOrExpr &node) override;
-        void visit(const Parser::Nodes::ExclusiveOrExpr &node) override;
-        void visit(const Parser::Nodes::AndExpr &node) override;
-        void visit(const Parser::Nodes::EqualityExpr &node) override;
         void visit(const Parser::Nodes::RelationalExpr &node) override;
-        void visit(const Parser::Nodes::ShiftExpr &node) override;
-
         void visit(const Parser::Nodes::AssignmentExpr &node) override;
         void visit(const Parser::Nodes::AdditiveExpr &node) override;
         void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
 
         // Unary
-        void visit(const Parser::Nodes::UnaryExpr &node) override;
 
         // Postfix
-        void visit(const Parser::Nodes::PostfixExpr &node) override;
         void visit(const Parser::Nodes::CallExpr &node) override;
 
         // Primary
@@ -87,9 +80,14 @@ namespace Visitor {
 
         std::map<std::string, llvm::AllocaInst*> _named_values;
 
+        llvm::AllocaInst* create_alloca(llvm::Function& func, const Parser::Nodes::VariableDecl& node);
+
         llvm::Value* _ret_value;
         llvm::Function* _ret_func;
         std::string _ret_symbol;
+
+        llvm::BasicBlock* _curr_loop = nullptr;
+        llvm::BasicBlock* _curr_loop_contr = nullptr;
 
         struct IntTypeInfo {
             bool is_signed;
