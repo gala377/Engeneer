@@ -32,7 +32,6 @@ ast testy
 
 struct keyword zostawiamy?
 
-lexowanie komentarzy
 lexowanie floatów
 lexowanie escapowania w stringach ?
 
@@ -115,6 +114,6 @@ tablica ascii na funkcje zamiast mapy
 
 
 
-Source <- metody do pobierania fragmentu sourca od wskaźnika
+FileSource <- metody do pobierania fragmentu sourca od wskaźnika
 
 Przepisywać konstrukcje językowe na prostsze ich wersje
