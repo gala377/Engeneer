@@ -6,11 +6,22 @@
 #define TKOM2_SOURCE_H
 
 #include <tuple>
+#include <memory>
+#include <bits/unique_ptr.h>
 
 namespace Lexer::Source {
 
     class Base {
     public:
+
+        class Pointer {
+        public:
+            virtual ~Pointer() = default;
+        };
+
+        typedef Pointer pointer;
+        typedef const Pointer const_pointer;
+
         // Returns current character.
         // It's the one before the position of the next character to read.
         virtual const char curr_char() = 0;
@@ -34,6 +45,9 @@ namespace Lexer::Source {
 
         // Returns the name of the source
         virtual const char* name() const = 0;
+
+        virtual std::unique_ptr<pointer> current_pointer() = 0;
+        virtual std::string source_around(const_pointer& p, std::uint32_t size = 10) = 0;
     };
 
     // Assigns current char to ch.

@@ -3,6 +3,7 @@
 //
 
 #include <lexer/source/string.h>
+#include <algorithm>
 
 
 Lexer::Source::String::String(const std::string &raw): _raw(raw) {
@@ -42,4 +43,17 @@ const uint32_t Lexer::Source::String::curr_in_line_position() const {
 
 const char *Lexer::Source::String::name() const {
     return "str source";
+}
+
+std::unique_ptr<Lexer::Source::Base::pointer> Lexer::Source::String::current_pointer() {
+    return std::make_unique<StringPointer>((uint32_t)_curr_index);
+}
+
+std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_pointer &p, uint32_t size) {
+    auto ptr = dynamic_cast<const_pointer&>(p);
+    return source_around(ptr, size);
+}
+
+std::string Lexer::Source::String::source_around(Lexer::Source::String::const_pointer &p, uint32_t size) {
+    return _raw.substr(std::min((std::uint32_t)0, p.i - size), size);
 }

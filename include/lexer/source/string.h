@@ -11,6 +11,16 @@ namespace Lexer::Source {
 
     class String: public Base {
     public:
+        class StringPointer: public Pointer {
+        public:
+            StringPointer(uint32_t i): i(i) {}
+
+            uint32_t i;
+        };
+
+        typedef StringPointer pointer;
+        typedef const StringPointer const_pointer;
+
         explicit String(const std::string& raw);
         explicit String(std::string&& raw);
 
@@ -24,6 +34,9 @@ namespace Lexer::Source {
 
         const char *name() const override;
 
+        std::unique_ptr<Base::pointer> current_pointer() override;
+        std::string source_around(Base::const_pointer &p, uint32_t size = 10) override;
+        virtual std::string source_around(const_pointer &p, uint32_t size = 10);
     private:
         std::string _raw;
         std::int32_t  _curr_index = -1;
