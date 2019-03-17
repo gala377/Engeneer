@@ -19,7 +19,7 @@ Exception::BaseFilePositioned::BaseFilePositioned(
     std::uint32_t line,
     std::uint32_t in_line,
     Lexer::Source::Base::const_pointer& ptr,
-    const std::string& mess): BaseFormatted("[%1% %2%:%3%] %4%\n %5%", file, line, in_line, mess, ptr.source_around(50)) {}
+    const std::string& mess): BaseFormatted("[%1% %2%:%3%] %4%\n %5%", file, line, in_line, mess, ptr.source_around(25)) {}
 
 Exception::BaseSyntax::BaseSyntax(
     std::string file,

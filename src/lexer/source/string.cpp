@@ -4,7 +4,7 @@
 
 #include <lexer/source/string.h>
 #include <algorithm>
-
+#include <iostream>
 
 Lexer::Source::String::String(const std::string &raw): _raw(raw) {
     next_char();
@@ -56,5 +56,5 @@ std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_poin
 }
 
 std::string Lexer::Source::String::source_around(Lexer::Source::String::const_pointer &p, uint32_t size) const {
-    return _raw.substr(std::min((std::uint32_t)0, p.i - size), size);
+    return _raw.substr(std::max((std::uint32_t)0, p.i - size), 2*size);
 }
