@@ -28,9 +28,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
 // Program
 void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
-    //std::cout << "Program node\n";
-    //std::cout << "Program compilation started\n";
-
     node.accept_children(*this);
 
     std::cout << "Printing module\n\n\n";
@@ -41,12 +38,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Top Level
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
-    //std::cout << "FunctionProt\n";
     if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Usage of unsupported return type " + node.type->identifier().symbol);
     }
-    //std::cout << "Compiling arg list\n";
-    //std::cout << "Arg list size is " << node.arg_list.size() << "\n";
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
         if(_basic_types.count(arg->type->identifier().symbol) == 0) {
@@ -57,80 +51,59 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
         args_types.push_back(llvm::Type::getIntNTy(_context, int_info.size));
     }
     // return type is int. todo Later needs to use more than one type
-    //std::cout << "Func arg types size: " << args_types.size() << "\n";
-    //std::cout << "Compiling func type\n";
     auto int_info = _int_types[node.type->identifier().symbol];
     llvm::FunctionType* func_t = llvm::FunctionType::get(
             llvm::Type::getIntNTy(_context, int_info.size),
             args_types,
             false);
-    //std::cout << "Compiling func header\n";
     llvm::Function* func = llvm::Function::Create(
             func_t,
             llvm::Function::ExternalLinkage,
             node.identifier->symbol,
             _module.get());
-
     if(!func) {
         throw std::runtime_error("Could not compile function!");
     }
-
-    // todo its ugly, lets make it enumerate
-    //std::cout << "Setting func arg names\n";
     unsigned int i = 0;
     for(auto& arg: func->args()) {
-        //std::cout << "Setting name of arg: " << i << " " << node.arg_list[i]->identifier->symbol << "\n";
         arg.setName(node.arg_list[i++]->identifier->symbol);
     }
-    //std::cout << "Printing func IR\n";
-    // todo its just temporary
-    _ret_func = func;
-    func->print(llvm::outs());
-    //std::cout << "\n";
+
+    _functions[node.identifier->symbol] = FuncProtWrapper{&node, func};
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
-    //std::cout << "FuncDef\n";
-    // todo there is a bug with redefining function with different arg names
+    auto func_name = node.declaration->identifier->symbol;
+    auto func_w = _functions.find(func_name);
+    if(func_w == _functions.end()) {
+        node.declaration->accept(*this);
+        func_w = _functions.find(func_name);
+    }
 
-    auto func = _module->getFunction(node.declaration->identifier->symbol);
-    if(!func) {
-        node.declaration->accept(*this); func = _ret_func;
-    }
-    if(!func) {
-        throw std::runtime_error("Could not compile func prototype! " + node.declaration->identifier->symbol);
-    }
-    if(!func->empty()) {
+    auto llvm_func = func_w->second.llvm_func;
+    if(!llvm_func->empty()) {
         throw std::runtime_error("Redefinition of func " + node.declaration->identifier->symbol);
     }
-    auto basic_block = llvm::BasicBlock::Create(_context, "entry", func);
+
+    auto basic_block = llvm::BasicBlock::Create(_context, "entry", llvm_func);
     _builder.SetInsertPoint(basic_block);
+    _local_variables.clear();
 
-    // todo why do we clear it?
-    _named_values.clear();
-    for(auto& arg: func->args()) {
-        _named_values[arg.getName()] = _builder.CreateAlloca(arg.getType(), nullptr, arg.getName());
-        _builder.CreateStore(&arg, _named_values[arg.getName()]);
-
+    unsigned i = 0;
+    for(auto& arg: llvm_func->args()) {
+        auto var = create_local_var(*llvm_func, *func_w->second.func->arg_list[i]);
+        _builder.CreateStore(&arg, var.llvm_alloca);
+        ++i;
     }
 
-    // visit the body
     // todo actually should subclass codeblock to function body
     // todo no func body parsing for now
     node.body->accept(*this);
-
-
     if(_ret_value) {
-        //_builder.CreateRet(_ret_value);
-        // no return here
-        llvm::verifyFunction(*func);
-        _ret_func = func;
+        llvm::verifyFunction(*llvm_func);
     } else {
-        // error on body, remove function
-        func->eraseFromParent();
-        _ret_func = nullptr;
+        llvm_func->eraseFromParent();
     }
-    func->print(llvm::outs());
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::ReturnStmt &node) {
@@ -200,26 +173,20 @@ void Visitor::LLVM::visit(const Parser::Nodes::BlockStmt &node) {
     node.body->accept(*this);
 }
 
-// todo this should work?
 void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
-    ////std::cout << "Var decl\n";
-    auto v = _named_values[node.identifier->symbol];
-    if(v) {
+    if(auto v = _local_variables.find(node.identifier->symbol); v != _local_variables.end()) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
     if(_basic_types.count(node.type->identifier().symbol) == 0) {
         throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
     }
-    // todo for now only int32
-    // todo later to_llvm_type function
-    _named_values[node.identifier->symbol] = create_alloca(
-            *_builder.GetInsertBlock()->getParent(), node);
+    auto var = create_local_var(*_builder.GetInsertBlock()->getParent(), node);
     if(node.init_expr) {
         node.init_expr->accept(*this); auto init = _ret_value;
         if(!init) {
             throw std::runtime_error("Could not compile variable init expr");
         }
-        _builder.CreateStore(init, _named_values[node.identifier->symbol]);
+        _builder.CreateStore(init, var.llvm_alloca);
     }
 }
 
@@ -382,21 +349,20 @@ void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
 
 // Primary
 void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
-    //std::cout << "IdentifierExpr\n";
-    llvm::Value *v = _named_values[node.symbol];
-    if(!v) {
+    auto var = _local_variables.find(node.symbol);
+    if(var == _local_variables.end()) {
         // possible function call, we pass the identifier
         // todo make it work somehow later
         _ret_symbol = node.symbol;
         _ret_value = nullptr;
         return;
     }
+    llvm::Value* v = var->second.llvm_alloca;
     if(_skip_load) {
         _ret_value = v;
     } else {
         _ret_value = _builder.CreateLoad(v, node.symbol);
     }
-
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
@@ -412,13 +378,26 @@ void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
 
 
 // todo for now just int32
-llvm::AllocaInst *Visitor::LLVM::create_alloca(
-        llvm::Function& func,
+Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
+        llvm::Function &func,
         const Parser::Nodes::VariableDecl &node) {
-    llvm::IRBuilder<> tmp_b(
-            &func.getEntryBlock(),
-            func.getEntryBlock().begin());
-    return tmp_b.CreateAlloca(llvm::Type::getInt32Ty(_context), nullptr, node.identifier->symbol);
+
+    if(_local_variables.count(node.identifier->symbol) > 0) {
+        throw std::runtime_error("Variable redeclaration " + node.identifier->symbol);
+    }
+    llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
+    auto alloca = tmp_b.CreateAlloca(llvm::Type::getInt32Ty(_context), nullptr, node.identifier->symbol);
+
+    _local_variables[node.identifier->symbol] = VarWrapper{&node, alloca};
+    return _local_variables[node.identifier->symbol];
+
+}
+
+llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
+    // getPointer for pointer types
+    // const doesnt matter
+    // array is made through alloca size (dont now how to do this :P)
+    return nullptr;
 }
 
 

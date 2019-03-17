@@ -76,19 +76,31 @@ namespace Visitor {
         // todo pass manager per module? Its marked as legacy?
         // todo its legacy and we cannot find the passes so
         // todo maybe it changed and the tutorial hasn't been updated?
+        // todo remember about mem2reg for alloca optimalizations
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
-        std::map<std::string, llvm::AllocaInst*> _named_values;
+        struct VarWrapper {
+            const Parser::Nodes::VariableDecl* var;
+            llvm::AllocaInst* llvm_alloca;
+        };
+        std::map<std::string, VarWrapper> _local_variables;
 
-        llvm::AllocaInst* create_alloca(llvm::Function& func, const Parser::Nodes::VariableDecl& node);
+        struct FuncProtWrapper {
+            const Parser::Nodes::FunctionProt* func;
+            llvm::Function* llvm_func;
+        };
+        std::map<std::string, FuncProtWrapper> _functions;
 
+        // Returns
         llvm::Value* _ret_value;
-        llvm::Function* _ret_func;
         std::string _ret_symbol;
 
+        // Context
         llvm::BasicBlock* _curr_loop = nullptr;
         llvm::BasicBlock* _curr_loop_contr = nullptr;
+        bool _skip_load = false;
 
+        // Type information
         struct IntTypeInfo {
             bool is_signed;
             uint32_t size;
@@ -109,12 +121,19 @@ namespace Visitor {
         };
 
         std::set<std::string> _basic_types{
-           "byte",
-           "int8", "int16", "int32", "int64",
-           "uint8", "uint16", "uint32", "uint64",
+                "void",
+
+                "byte",
+                "int8", "int16", "int32", "int64",
+                "uint8", "uint16", "uint32", "uint64",
+
+                "float32", "float64", "float128",
         };
 
-        bool _skip_load = false;
+        // methods
+        VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
+
+        llvm::Type* to_llvm_type(const Parser::Types::BaseType& type);
     };
 }
 

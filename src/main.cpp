@@ -56,7 +56,7 @@ int main() {
     ast.accept(v);
     std::cout << "Code parsed!\n\n""";
     std::cout << v.repr();
-//
+
     std::cout << "\nCompiling\n";
     ast.accept(comp);
     std::cout << "Compiled\n";
