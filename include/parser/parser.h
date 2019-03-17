@@ -68,37 +68,37 @@ namespace Parser {
         // Binary
 
         // Logical
-        std::unique_ptr<Nodes::LogicalOrExpr> parse_logical_or_expr();
-        std::unique_ptr<Nodes::LogicalAndExpr> parse_logical_and_expr();
-        std::unique_ptr<Nodes::InclusiveOrExpr> parse_inclusive_or_expr();
-        std::unique_ptr<Nodes::ExclusiveOrExpr> parse_exclusive_or_expr();
-        std::unique_ptr<Nodes::AndExpr> parse_and_expr();
-        std::unique_ptr<Nodes::EqualityExpr> parse_equality_expr();
-        std::unique_ptr<Nodes::RelationalExpr> parse_relational_expr();
-        std::unique_ptr<Nodes::ShiftExpr> parse_shift_expr();
+        std::unique_ptr<Nodes::Expression> parse_logical_or_expr();
+        std::unique_ptr<Nodes::Expression> parse_logical_and_expr();
+        std::unique_ptr<Nodes::Expression> parse_inclusive_or_expr();
+        std::unique_ptr<Nodes::Expression> parse_exclusive_or_expr();
+        std::unique_ptr<Nodes::Expression> parse_and_expr();
+        std::unique_ptr<Nodes::Expression> parse_equality_expr();
+        std::unique_ptr<Nodes::Expression> parse_relational_expr();
+        std::unique_ptr<Nodes::Expression> parse_shift_expr();
 
         // Arithmetic
-        std::unique_ptr<Nodes::AssignmentExpr> parse_assig_expr();
-        std::unique_ptr<Nodes::AdditiveExpr> parse_add_expr();
-        std::unique_ptr<Nodes::MultiplicativeExpr> parse_mult_expr();
+        std::unique_ptr<Nodes::Expression> parse_assig_expr();
+        std::unique_ptr<Nodes::Expression> parse_add_expr();
+        std::unique_ptr<Nodes::Expression> parse_mult_expr();
 
         // Unary
-        std::unique_ptr<Nodes::UnaryExpr> parse_unary_expr();
-        std::unique_ptr<Nodes::NegativeExpr> parse_negative_expr();
-        std::unique_ptr<Nodes::NegationExpr> parse_negation_expr();
+        std::unique_ptr<Nodes::Expression> parse_unary_expr();
+        std::unique_ptr<Nodes::Expression> parse_negative_expr();
+        std::unique_ptr<Nodes::Expression> parse_negation_expr();
 
         // Postfix
-        std::unique_ptr<Nodes::PostfixExpr> parse_postfix_expr();
+        std::unique_ptr<Nodes::Expression> parse_postfix_expr();
 
         // Primary
-        std::unique_ptr<Nodes::PrimaryExpr> parse_prim_expr();
-        std::unique_ptr<Nodes::Identifier> parse_ident();
-        std::unique_ptr<Nodes::ParenthesisExpr> parse_parenthesis();
+        std::unique_ptr<Nodes::Expression> parse_prim_expr();
+        std::unique_ptr<Nodes::Expression> parse_ident();
+        std::unique_ptr<Nodes::Expression> parse_parenthesis();
 
         // Const
-        std::unique_ptr<Nodes::Constant> parse_const();
-        std::unique_ptr<Nodes::IntConstant> parse_int();
-        std::unique_ptr<Nodes::StringConstant> parse_string();
+        std::unique_ptr<Nodes::Expression> parse_const();
+        std::unique_ptr<Nodes::Expression> parse_int();
+        std::unique_ptr<Nodes::Expression> parse_string();
 
 
         // helper parsers
@@ -120,30 +120,15 @@ namespace Parser {
         std::unique_ptr<Types::ArrayType> parse_array_type();
         std::unique_ptr<Types::SimpleType> parse_simple_type();
 
-        // single expr parser
-        std::unique_ptr<Nodes::InclusiveOrExpr> parse_single_inclusive_or_expr();
-        std::unique_ptr<Nodes::AdditiveExpr> parse_single_add_expr();
-        std::unique_ptr<Nodes::MultiplicativeExpr> parse_single_mult_expr();
-        std::unique_ptr<Nodes::PostfixExpr> parse_single_postfix_expr();
-        std::unique_ptr<Nodes::ShiftExpr> parse_single_shift_expr();
-        std::unique_ptr<Nodes::RelationalExpr> parse_single_relational_expr();
-        std::unique_ptr<Nodes::EqualityExpr> parse_single_equality_expr();
-        std::unique_ptr<Nodes::AndExpr> parse_single_and_expr();
-        std::unique_ptr<Nodes::ExclusiveOrExpr> parse_single_exclusive_or_expr();
-        std::unique_ptr<Nodes::LogicalAndExpr> parse_single_logical_and_expr();
-        std::unique_ptr<Nodes::LogicalOrExpr> parse_single_logical_or_expr();
-
-        std::unique_ptr<Nodes::UnaryExpr> parse_postfix_to_unary_expr();
-
         // postfix helpers
         using call_args_t = unique_vec<Nodes::Expression>;
         std::optional<call_args_t> parse_call_parameters();
         std::unique_ptr<Nodes::Expression> parse_index_parameters();
         std::unique_ptr<Nodes::Identifier> parse_access_parameters();
 
-        std::unique_ptr<Nodes::CallExpr> parse_call_expr(std::unique_ptr<Nodes::PostfixExpr>& lhs);
-        std::unique_ptr<Nodes::IndexExpr> parse_index_expr(std::unique_ptr<Nodes::PostfixExpr>& lhs);
-        std::unique_ptr<Nodes::AccessExpr> parse_access_expr(std::unique_ptr<Nodes::PostfixExpr>& lhs);
+        std::unique_ptr<Nodes::Expression> parse_call_expr(std::unique_ptr<Nodes::Expression>& lhs);
+        std::unique_ptr<Nodes::Expression> parse_index_expr(std::unique_ptr<Nodes::Expression>& lhs);
+        std::unique_ptr<Nodes::Expression> parse_access_expr(std::unique_ptr<Nodes::Expression>& lhs);
 
         // Token parsers
         std::optional<Lexer::Token> parse_token(Lexer::Token::Id id);
@@ -177,6 +162,13 @@ namespace Parser {
             for(auto res = wrap_p(); res; res = wrap_p()) {
                 f(std::move(res));
             }
+        }
+
+        template <typename T, typename Parser>
+        std::unique_ptr<T> parse_cast(Parser&& p) {
+            auto res = std::move(std::bind(p, this)());
+            return std::unique_ptr<T>(
+                    dynamic_cast<T*>(res.release()));
         }
     };
 
