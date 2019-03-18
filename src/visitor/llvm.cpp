@@ -467,7 +467,6 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
 
 }
 
-// todo does this even work?
 llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
     auto to_type = to->getType();
     if(llvm::dyn_cast<llvm::AllocaInst>(to) || llvm::dyn_cast<llvm::StoreInst>(to)) {
@@ -484,27 +483,21 @@ llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
     if(from_type == to_type) {
         return from;
     }
-    if(from_type->isFloatingPointTy() && to_type->isIntegerTy()) {
-        // float -> int
-        return _builder.CreateFPToSI(from, to_type, "__cast_tmp");
+    if(!llvm::CastInst::isCastable(from_type, to_type)) {
+        throw std::runtime_error("Cannot cast types");
     }
-    if(from_type->isIntegerTy() && to_type->isFloatingPointTy()) {
-        // int -> float
-        return _builder.CreateSIToFP(from, to_type, "__cast_tmp");
+    // true means they are signed
+    auto cast = _builder.CreateCast(
+        llvm::CastInst::getCastOpcode(
+            from, true,
+            to_type, true),
+        from,
+        to_type,
+        "__cast_tmp");
+    if(!cast) {
+        throw std::runtime_error("Could not compile cast");
     }
-    if(from_type->isIntegerTy() && to_type->isIntegerTy()) {
-        // int -> int
-        return _builder.CreateIntCast(from, to_type, true, "__cast_tmp");
-    }
-    if(from_type->isFloatingPointTy() && to_type->isFloatingPointTy()) {
-        // float -> float
-        return _builder.CreateFPCast(from, to_type, "__cast_tmp");
-    }
-    std::string mess = from_type->isIntegerTy() ? "from is interger" : "from is not an integer";
-    std::cout << mess << "\n";
-    mess = to_type->isIntegerTy() ? "to is interger" : "to is not an integer";
-    std::cout << mess << "\n";
-    throw std::runtime_error("Unknown cast!");
+    return cast;
 }
 
 // todo const and some kind of implicit dereferencing
