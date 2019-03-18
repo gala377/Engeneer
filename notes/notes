@@ -105,8 +105,6 @@ poprawki
 
 get_next_token_with_blank
 
-json.org lexowanie floata
-
 tabela ascii etx zamiast '\0'
 
 tablica ascii na funkcje zamiast mapy

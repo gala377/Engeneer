@@ -198,7 +198,9 @@ void Parser::Nodes::ReturnStmt::accept(Parser::Visitor &v) const {
 
 void Parser::Nodes::ReturnStmt::set_depth(std::uint32_t depth) {
     Base::set_depth(depth);
-    expr->set_depth(_depth+1);
+    if(expr) {
+        expr->set_depth(_depth + 1);
+    }
 }
 
 

@@ -6,6 +6,7 @@
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 
 #include <parser/nodes/concrete.h>
+#include <parser/type.h>
 
 #include <iostream>
 #include <cstdio>
@@ -13,6 +14,7 @@
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
+#include <parser/type.h>
 
 
 // todo allocas only in the first block
@@ -27,6 +29,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
 // End
 // Program
 void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
+    init_type_handlers();
     // todo maybe init module here ?
     node.accept_children(*this);
 
@@ -38,22 +41,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Top Level
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
-    if(_basic_types.count(node.type->identifier().symbol) == 0) {
-        throw std::runtime_error("Usage of unsupported return type " + node.type->identifier().symbol);
-    }
+    auto ret_type = to_llvm_type(*node.type);
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
-        if(_basic_types.count(arg->type->identifier().symbol) == 0) {
-            throw std::runtime_error("Usage of undeclared type " + arg->type->identifier().symbol);
-        }
-        // add int64 type. todo need more types
-        auto int_info = _int_types[arg->type->identifier().symbol];
-        args_types.push_back(llvm::Type::getIntNTy(_context, int_info.size));
+        args_types.push_back(to_llvm_type(*arg->type));
     }
-    // return type is int. todo Later needs to use more than one type
-    auto int_info = _int_types[node.type->identifier().symbol];
+
     llvm::FunctionType* func_t = llvm::FunctionType::get(
-            llvm::Type::getIntNTy(_context, int_info.size),
+            ret_type,
             args_types,
             false);
     llvm::Function* func = llvm::Function::Create(
@@ -99,6 +94,10 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     // todo actually should subclass codeblock to function body
     // todo no func body parsing for now
     node.body->accept(*this);
+
+    if(func_w->second.func->type->identifier().symbol == "void") {
+        _builder.CreateRetVoid();
+    }
     if(_ret_value) {
         llvm::verifyFunction(*llvm_func);
     } else {
@@ -108,9 +107,13 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
 
 void Visitor::LLVM::visit(const Parser::Nodes::ReturnStmt &node) {
     _ret_value = nullptr;
-    node.expr->accept(*this);
-    if(_ret_value) {
-        _builder.CreateRet(_ret_value);
+    if(node.expr) {
+        node.expr->accept(*this);
+        if(_ret_value) {
+            _builder.CreateRet(_ret_value);
+        }
+    } else {
+        _builder.CreateRetVoid();
     }
 }
 
@@ -177,14 +180,15 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     if(auto v = _local_variables.find(node.identifier->symbol); v != _local_variables.end()) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
-    if(_basic_types.count(node.type->identifier().symbol) == 0) {
-        throw std::runtime_error("Use of undeclared type " + node.type->identifier().symbol);
-    }
     auto var = create_local_var(*_builder.GetInsertBlock()->getParent(), node);
     if(node.init_expr) {
         node.init_expr->accept(*this); auto init = _ret_value;
         if(!init) {
             throw std::runtime_error("Could not compile variable init expr");
+        }
+        if(init->getType() != var.llvm_alloca->getType()) {
+            std::cout << "Implicit casting...\n";
+            init = cast(init, var.llvm_alloca);
         }
         _builder.CreateStore(init, var.llvm_alloca);
     }
@@ -212,7 +216,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
     _builder.SetInsertPoint(then);
     node.body->accept(*this);
     _builder.CreateBr(merge);
-    then = _builder.GetInsertBlock();
 
     // else body
     if(else_clause) {
@@ -235,35 +238,51 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
 // todo in future versions we need to know the type of the lhs
 // todo and the rhs to make appropriate cmp
 void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
-    //std::cout << "Relational expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
-    llvm::Value* rhs = nullptr;
-    if(node.rhs) {
-        node.rhs->accept(*this); rhs = _ret_value;
+    node.rhs->accept(*this); auto rhs = _ret_value;
+    // todo float compares
+    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+            switch(node.op.id) {
+            case Lexer::Token::Id::LessThan:
+                _ret_value = _builder.CreateICmpSLT(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::GreaterThan:
+                _ret_value = _builder.CreateICmpSGT(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::LessEq:
+                _ret_value = _builder.CreateICmpSLE(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::GreaterEq:
+                _ret_value = _builder.CreateICmpSGE(lhs, rhs, "__cmptemp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
     }
-    switch(node.op.id) {
-        case Lexer::Token::Id::LessThan:
-            _ret_value = _builder.CreateICmpSLT(lhs, rhs, "__cmptemp");
-            break;
-        case Lexer::Token::Id::GreaterThan:
-            _ret_value = _builder.CreateICmpSGT(lhs, rhs, "__cmptemp");
-            break;
-        case Lexer::Token::Id::LessEq:
-            _ret_value = _builder.CreateICmpSLE(lhs, rhs, "__cmptemp");
-            break;
-        case Lexer::Token::Id::GreaterEq:
-            _ret_value = _builder.CreateICmpSGE(lhs, rhs, "__cmptemp");
-            break;
-        default:
-            throw std::runtime_error("Unexpected operator during addition operator");
+    if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        switch(node.op.id) {
+            case Lexer::Token::Id::LessThan:
+                _ret_value = _builder.CreateFCmpULT(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::GreaterThan:
+                _ret_value = _builder.CreateFCmpUGT(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::LessEq:
+                _ret_value = _builder.CreateFCmpULE(lhs, rhs, "__cmptemp");
+                break;
+            case Lexer::Token::Id::GreaterEq:
+                _ret_value = _builder.CreateFCmpUGE(lhs, rhs, "__cmptemp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
     }
+    // todo float int, int float and casting
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
-    //std::cout << "Assig expr\n";
     // todo for now only identifier
     // todo support for access and indexing operators
-
     _skip_load = true;
     node.lhs->accept(*this); auto lhs = _ret_value;
     if (!lhs) {
@@ -274,43 +293,79 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     if (!rhs) {
         throw std::runtime_error("Could not compile left side of the assignment");
     }
+    if(lhs->getType() != rhs->getType()) {
+        std::cout << "Types not the same, implicit casting..." << "\n";
+        rhs = cast(rhs, lhs);
+    }
+
     _builder.CreateStore(rhs, lhs);
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
-    // Compute left and right if needed
-    //std::cout << "Add expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     node.rhs->accept(*this); auto rhs = _ret_value;
-
-    switch(node.op.id) {
-        case Lexer::Token::Id::Plus:
-            _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
-            break;
-        case Lexer::Token::Id::Minus:
-            _ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
-            break;
-        default:
-            throw std::runtime_error("Unexpected operator during addition operator");
+    // todo based on type create float add
+    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+        switch (node.op.id) {
+            case Lexer::Token::Id::Plus:
+                _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
+                break;
+            case Lexer::Token::Id::Minus:
+                _ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
     }
+    if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        switch (node.op.id) {
+            case Lexer::Token::Id::Plus:
+                _ret_value = _builder.CreateFAdd(lhs, rhs, "__addtmp");
+                break;
+            case Lexer::Token::Id::Minus:
+                _ret_value = _builder.CreateFSub(lhs, rhs, "__addtmp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
+    }
+    // todo float int, int float and casting
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    //std::cout << "Mult expr\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     node.rhs->accept(*this); auto rhs = _ret_value;
-    switch(node.op.id) {
-        case Lexer::Token::Id::Multiplication:
-            _ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
-            break;
-        case Lexer::Token::Id::Division:
-            // todo for now its unsigned division, we can do signed division
-            // but its kinda more comlpicated
-            _ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
-            break;
-        default:
-            throw std::runtime_error("Unexpected operator during addition operator");
+    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+        // both integers
+        switch (node.op.id) {
+            case Lexer::Token::Id::Multiplication:
+                _ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
+                break;
+            case Lexer::Token::Id::Division:
+                // todo for now its unsigned division, we can do signed division
+                // but its kinda more comlpicated
+                _ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
     }
+    if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        // both floats
+        switch (node.op.id) {
+            case Lexer::Token::Id::Multiplication:
+                _ret_value = _builder.CreateFMul(lhs, rhs, "__multmp");
+                break;
+            case Lexer::Token::Id::Division:
+                // todo for now its unsigned division, we can do signed division
+                // but its kinda more comlpicated
+                _ret_value = _builder.CreateFDiv(lhs, rhs, "__multmp");
+                break;
+            default:
+                throw std::runtime_error("Unexpected operator during addition operator");
+        }
+    }
+    // todo float int, int float and casting
 }
 
 
@@ -344,7 +399,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
         }
     }
 
-    _ret_value = _builder.CreateCall(callee, args_v, "__calltmp");
+    if(callee->getReturnType() == llvm::Type::getVoidTy(_context)) {
+        _builder.CreateCall(callee, args_v);
+        _ret_value = nullptr;
+    } else {
+        _ret_value = _builder.CreateCall(callee, args_v, "__calltmp");
+    }
 }
 
 // Primary
@@ -373,11 +433,23 @@ void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
 // Consts
 void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     //std::cout << "ConstInt\n";
+    // todo for now ints are just 32 bits
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
 
 
-// todo for now just int32
+void Visitor::LLVM::visit(const Parser::Nodes::StringConstant &node) {
+    throw std::runtime_error("No string support yet");
+}
+
+void Visitor::LLVM::visit(const Parser::Nodes::FloatConstant &node) {
+    // todo for now just doubles
+    _ret_value = llvm::ConstantFP::get(_context, llvm::APFloat(node.value));
+}
+
+
+
+
 Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
         llvm::Function &func,
         const Parser::Nodes::VariableDecl &node) {
@@ -386,25 +458,117 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
         throw std::runtime_error("Variable redeclaration " + node.identifier->symbol);
     }
     llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
-    auto alloca = tmp_b.CreateAlloca(llvm::Type::getInt32Ty(_context), nullptr, node.identifier->symbol);
-
+    auto alloca = tmp_b.CreateAlloca(
+        to_llvm_type(*node.type),
+        nullptr,
+        node.identifier->symbol);
     _local_variables[node.identifier->symbol] = VarWrapper{&node, alloca};
     return _local_variables[node.identifier->symbol];
 
 }
 
-// todo add floats, ptr types, array types, and some kind of implicit dereferencing
-llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
-    // getPointer for pointer types
-    // const doesnt matter
-    // array is made through alloca size (dont now how to do this :P)
-    return nullptr;
+// todo does this even work?
+llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
+    if(from->getType() == to->getType()) {
+        return from;
+    }
+    if(!llvm::CastInst::isCastable(from->getType(), to->getType())) {
+        throw std::runtime_error("Cannot cast types");
+    }
+    // true means they are signed
+    auto cast = _builder.CreateCast(
+            llvm::CastInst::getCastOpcode(
+                from, true,
+                to->getType(), true),
+            from,
+            to->getType(),
+            "__cast_tmp");
+    if(!cast) {
+        throw std::runtime_error("Could not compile cast");
+    }
+    return cast;
 }
 
+// todo const and some kind of implicit dereferencing
+llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
+    if(auto t = try_as_simple(type); t) {
+        return t;
+    }
+    if(auto t = try_as_complex(type); t) {
+        return t;
+    }
+    if(auto t = try_as_array(type); t) {
+        return t;
+    }
+    throw std::runtime_error("Unknown type: " + type.identifier().symbol);
+}
 
+llvm::Type *Visitor::LLVM::try_as_simple(const Parser::Types::BaseType &type) {
+    try {
+        const auto &primary = dynamic_cast<const Parser::Types::SimpleType&>(type);
+        if(auto it = _type_handlers.find(primary.ident->symbol); it != _type_handlers.end()) {
+            return it->second(type);
+        }
+        // todo possibly structure
+        return nullptr;
+    } catch (std::bad_cast&) {
+        return nullptr;
+    }
+}
 
+llvm::Type *Visitor::LLVM::try_as_array(const Parser::Types::BaseType &type) {
+    try {
+        const auto &array = dynamic_cast<const Parser::Types::ArrayType&>(type);
+        return llvm::ArrayType::get(to_llvm_type(*array.underlying_type), array.size);
+    } catch (std::bad_cast&) {
+        return nullptr;
+    }
+}
 
+llvm::Type *Visitor::LLVM::try_as_complex(const Parser::Types::BaseType &type) {
+    try {
+        const auto &complex = dynamic_cast<const Parser::Types::ComplexType&>(type);
+        if(complex.is_ptr) {
+            return llvm::PointerType::get(to_llvm_type(*complex.underlying_type), 0);
+        }
+    } catch (std::bad_cast&) {
+        return nullptr;
+    }
+}
 
+// todo no uints
+void Visitor::LLVM::init_type_handlers() {
+    _type_handlers["void"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getVoidTy(_context);
+    };
+    _type_handlers["bool"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt1Ty(_context);
+    };
+    _type_handlers["byte"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt8Ty(_context);
+    };
+    _type_handlers["int8"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt8Ty(_context);
+    };
+    _type_handlers["int16"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt16Ty(_context);
+    };
+    _type_handlers["int32"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt32Ty(_context);
+    };
+    _type_handlers["int64"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getInt64Ty(_context);
+    };
+    _type_handlers["float32"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getFloatTy(_context);
+    };
+    _type_handlers["float64"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getDoubleTy(_context);
+    };
+    _type_handlers["float128"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+        return llvm::Type::getFP128Ty(_context);
+    };
+}
 
 
 

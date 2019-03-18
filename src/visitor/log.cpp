@@ -132,7 +132,9 @@ void Visitor::Stringify::visit(const Parser::Nodes::WhileStmt &node) {
 
 void Visitor::Stringify::visit(const Parser::Nodes::ReturnStmt &node) {
     stringify(node, "ReturnStmt");
-    node.expr->accept(*this);
+    if(node.expr) {
+        node.expr->accept(*this);
+    }
 }
 
 void Visitor::Stringify::visit(const Parser::Nodes::BreakStmt &node) {

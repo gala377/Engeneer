@@ -22,22 +22,7 @@ int main() {
     }
 
     int32 main() {
-        let i int32 = 0;
-
-        while i < 10 {
-            let j int32 = 0;
-            while j < 5 {
-                j = j + 1;
-                if j < 3 {
-                    continue;
-                }
-                put(i*5+j);
-            }
-            i = i + 1;
-            if i > 1 {
-                break;
-            }
-        }
+        let a int64 = 0;
         return 0;
     }
 )");

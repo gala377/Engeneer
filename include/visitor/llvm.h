@@ -65,7 +65,8 @@ namespace Visitor {
 
         // Consts
         void visit(const Parser::Nodes::IntConstant &node) override;
-
+        void visit(const Parser::Nodes::StringConstant &node) override;
+        void visit(const Parser::Nodes::FloatConstant &node) override;
 
         // Class Interface
     private:
@@ -123,6 +124,8 @@ namespace Visitor {
         std::set<std::string> _basic_types{
                 "void",
 
+                "bool",
+
                 "byte",
                 "int8", "int16", "int32", "int64",
                 "uint8", "uint16", "uint32", "uint64",
@@ -133,7 +136,17 @@ namespace Visitor {
         // methods
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
 
+        llvm::Value* cast(llvm::Value* from, llvm::Value* to);
         llvm::Type* to_llvm_type(const Parser::Types::BaseType& type);
+
+        using type_handler = std::function<llvm::Type*(const Parser::Types::BaseType& type)>;
+        std::map<std::string, type_handler> _type_handlers;
+
+        llvm::Type* try_as_simple(const Parser::Types::BaseType& type);
+        llvm::Type* try_as_array(const Parser::Types::BaseType& type);
+        llvm::Type* try_as_complex(const Parser::Types::BaseType& type);
+
+        void init_type_handlers();
     };
 }
 

@@ -117,7 +117,7 @@ namespace Parser {
 
         // Stmt helpers
         std::unique_ptr<Nodes::Statement> parse_semicolon_terminated_stmt();
-        std::unique_ptr<Nodes::Statement> parse_code_block_terminated_stmt();
+        std::unique_ptr<Nodes::Statement> parse_custom_terminated_stmt();
 
         // type parsers
         std::unique_ptr<Types::BaseType> parse_type();
