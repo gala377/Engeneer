@@ -17,12 +17,15 @@ int main() {
     Lexer::Source::String s(R"(
     int32 putchar(_ int32);
 
-    int32 put(v int32) {
-        return putchar(65 + v);
+    void put(v int32) {
+        putchar(65 + v);
     }
 
     int32 main() {
-        let a int64 = 0;
+        let a byte = 0;
+        let b float128 = a;
+        let c int32 = b;
+        put(c);
         return 0;
     }
 )");

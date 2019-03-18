@@ -1,36 +1,28 @@
 declare i32 @putchar(i32)
 
-define i32 @put(i32 %v) {
+define void @put(i32 %v) {
 entry:
   %v1 = alloca i32
   store i32 %v, i32* %v1
   %v2 = load i32, i32* %v1
   %__addtmp = add i32 65, %v2
   %__calltmp = call i32 @putchar(i32 %__addtmp)
-  ret i32 %__calltmp
+  ret void
 }
 
 define i32 @main() {
 entry:
-  %c = alloca double
-  %b = alloca double
-  store double 0.000000e+00, double* %b
-  store double 1.000000e+00, double* %c
-  %b1 = load double, double* %b
-  %c2 = load double, double* %c
-  %__addtmp = fsub double %b1, %c2
-  %c3 = load double, double* %c
-  %__cmptemp = fcmp ult double %__addtmp, %c3
-  br i1 %__cmptemp, label %__iftrue, label %__iffalse
-
-__iftrue:                                         ; preds = %entry
-  %__calltmp = call i32 @put(i32 0)
-  br label %__ifcontr
-
-__iffalse:                                        ; preds = %entry
-  %__calltmp4 = call i32 @put(i32 1)
-  br label %__ifcontr
-
-__ifcontr:                                        ; preds = %__iffalse, %__iftrue
+  %c = alloca i32
+  %b = alloca fp128
+  %a = alloca i8
+  store i8 0, i8* %a
+  %a1 = load i8, i8* %a
+  %__cast_tmp = sitofp i8 %a1 to fp128
+  store fp128 %__cast_tmp, fp128* %b
+  %b2 = load fp128, fp128* %b
+  %__cast_tmp3 = fptosi fp128 %b2 to i32
+  store i32 %__cast_tmp3, i32* %c
+  %c4 = load i32, i32* %c
+  call void @put(i32 %c4)
   ret i32 0
 }

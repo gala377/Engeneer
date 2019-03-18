@@ -469,24 +469,42 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
 
 // todo does this even work?
 llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
-    if(from->getType() == to->getType()) {
+    auto to_type = to->getType();
+    if(llvm::dyn_cast<llvm::AllocaInst>(to) || llvm::dyn_cast<llvm::StoreInst>(to)) {
+        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(to_type);
+        to_type = type_tmp->getElementType();
+    }
+
+    auto from_type =  from->getType();
+    if(llvm::dyn_cast<llvm::AllocaInst>(from)) {
+        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(from_type);
+        from_type = type_tmp->getElementType();
+    }
+
+    if(from_type == to_type) {
         return from;
     }
-    if(!llvm::CastInst::isCastable(from->getType(), to->getType())) {
-        throw std::runtime_error("Cannot cast types");
+    if(from_type->isFloatingPointTy() && to_type->isIntegerTy()) {
+        // float -> int
+        return _builder.CreateFPToSI(from, to_type, "__cast_tmp");
     }
-    // true means they are signed
-    auto cast = _builder.CreateCast(
-            llvm::CastInst::getCastOpcode(
-                from, true,
-                to->getType(), true),
-            from,
-            to->getType(),
-            "__cast_tmp");
-    if(!cast) {
-        throw std::runtime_error("Could not compile cast");
+    if(from_type->isIntegerTy() && to_type->isFloatingPointTy()) {
+        // int -> float
+        return _builder.CreateSIToFP(from, to_type, "__cast_tmp");
     }
-    return cast;
+    if(from_type->isIntegerTy() && to_type->isIntegerTy()) {
+        // int -> int
+        return _builder.CreateIntCast(from, to_type, true, "__cast_tmp");
+    }
+    if(from_type->isFloatingPointTy() && to_type->isFloatingPointTy()) {
+        // float -> float
+        return _builder.CreateFPCast(from, to_type, "__cast_tmp");
+    }
+    std::string mess = from_type->isIntegerTy() ? "from is interger" : "from is not an integer";
+    std::cout << mess << "\n";
+    mess = to_type->isIntegerTy() ? "to is interger" : "to is not an integer";
+    std::cout << mess << "\n";
+    throw std::runtime_error("Unknown cast!");
 }
 
 // todo const and some kind of implicit dereferencing
