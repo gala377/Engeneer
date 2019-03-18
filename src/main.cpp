@@ -22,6 +22,7 @@ int main() {
     }
 
     int32 main() {
+        let array &int32;
         let a byte = 0;
         let b float128 = a;
         let c int32 = b;
