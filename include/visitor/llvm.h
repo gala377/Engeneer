@@ -59,6 +59,8 @@ namespace Visitor {
         // Postfix
         void visit(const Parser::Nodes::CallExpr &node) override;
 
+        void visit(const Parser::Nodes::IndexExpr &node) override;
+
         // Primary
         void visit(const Parser::Nodes::Identifier &node) override;
         void visit(const Parser::Nodes::ParenthesisExpr &node) override;

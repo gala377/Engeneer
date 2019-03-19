@@ -32,16 +32,16 @@ int main() {
     }
 
     i32 main() {
-        let a i32 = 2;
-        let b f32 = 1.5;
-        let c f32 = b + a;
-        if a < c {
-            put(0);
-        }
-        put(ftoi(b));
+        let a [2]i32;
+        a[0] = 0;
+        a[1] = 1;
         return 0;
     }
 )");
+    // todo cast makes to so int32 is casted to int32*
+    // todo I need to think about and implement some kind of
+    // todo an implicit pointer dereferencing and shit
+    // todo and control casting and promotion more
     Visitor::LLVM comp;
 
     Parser::Parser p(s);

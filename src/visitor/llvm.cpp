@@ -394,6 +394,17 @@ void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
     }
 }
 
+
+void Visitor::LLVM::visit(const Parser::Nodes::IndexExpr &node) {
+    std::cout << "Indexing\n";
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    node.index_expr->accept(*this); auto index = _ret_value;
+    std::vector<llvm::Value*> gep_indexes{
+        llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
+        index};
+    _ret_value = _builder.CreateGEP(lhs, gep_indexes, "__gep_tmp");
+}
+
 // Primary
 void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
     auto var = _local_variables.find(node.symbol);
@@ -613,7 +624,3 @@ void Visitor::LLVM::init_type_handlers() {
         return llvm::Type::getFP128Ty(_context);
     };
 }
-
-
-
-
