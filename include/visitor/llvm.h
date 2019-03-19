@@ -107,36 +107,29 @@ namespace Visitor {
             uint32_t size;
         };
 
-        std::map<std::string, IntTypeInfo> _int_types{
-                {"int8", {true, 8}},
-                {"int16", {true, 16}},
-                {"int32", {true, 32}},
-                {"int64", {true, 64}},
 
-                {"uint8", {false, 8}},
-                {"uint16", {false, 16}},
-                {"uint32", {false, 32}},
-                {"uint64", {false, 64}},
-
-                {"byte", {false, 8}},
-        };
-
-        std::set<std::string> _basic_types{
-                "void",
-
-                "bool",
-
-                "byte",
-                "int8", "int16", "int32", "int64",
-                "uint8", "uint16", "uint32", "uint64",
-
-                "float32", "float64", "float128",
-        };
+        const std::string void_id{"void"};
+        const std::string bool_id{"bool"};
+        const std::string byte_id{"byte"};
+        const std::string i8_id{"i8"};
+        const std::string i16_id{"i16"};
+        const std::string i32_id{"i32"};
+        const std::string i64_id{"i64"};
+        const std::string u8_id{"u8"};
+        const std::string u16_id{"u16"};
+        const std::string u32_id{"u32"};
+        const std::string u64_id{"u64"};
+        const std::string f32_id{"f32"};
+        const std::string f64_id{"f64"};
+        const std::string f128_id{"f128"};
 
         // methods
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
 
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
+        std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
+        std::uint32_t float_size(llvm::Type* f);
+
         llvm::Type* to_llvm_type(const Parser::Types::BaseType& type);
 
         using type_handler = std::function<llvm::Type*(const Parser::Types::BaseType& type)>;

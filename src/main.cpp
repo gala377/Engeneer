@@ -21,12 +21,20 @@ int main() {
         putchar(65 + v);
     }
 
+    float32 itof(i int32) {
+        let f float32 = i;
+        return f;
+    }
+
+    int32 ftoi(f float32) {
+        let i int32 = f;
+        return i;
+    }
+
     int32 main() {
-        let array &int32;
-        let a byte = 0;
-        let b float128 = a;
-        let c int32 = b;
-        put(c);
+        let a int32 = 0;
+        let b float32 = itof(a);
+        put(ftoi(b));
         return 0;
     }
 )");

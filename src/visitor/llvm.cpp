@@ -333,8 +333,10 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    node.rhs->accept(*this); auto rhs = _ret_value;
+    node.lhs->accept(*this);
+    auto lhs = _ret_value;
+    node.rhs->accept(*this);
+    auto rhs = _ret_value;
     if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
         // both integers
         switch (node.op.id) {
@@ -349,8 +351,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
             default:
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
-    }
-    if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+    } else if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        rhs = cast(rhs, lhs);
+    } else if (lhs->getType()->isIntegerTy() && rhs->getType()->isFloatingPointTy()) {
+
+
+    } else if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
         // both floats
         switch (node.op.id) {
             case Lexer::Token::Id::Multiplication:
@@ -365,7 +371,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    // todo float int, int float and casting
 }
 
 
@@ -374,8 +379,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
 // Postfix
 
 // Todo for now its just for the identifiers
-// todo I have no idea how to do this for the chained calls
-// todo as we need a function name
+// todo chained function calls on function pointers
 void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
     //std::cout << "call expr";
     // todo for now we assume lhs can only be an identifier
@@ -432,7 +436,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
 
 // Consts
 void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
-    //std::cout << "ConstInt\n";
     // todo for now ints are just 32 bits
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
@@ -500,6 +503,48 @@ llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
     return cast;
 }
 
+std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs, llvm::Value *rhs) {
+    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+       auto lhs_size = lhs->getType()->getIntegerBitWidth();
+       auto rhs_size = rhs->getType()->getIntegerBitWidth();
+       if(lhs_size > rhs_size) {
+            rhs = cast(rhs, lhs);
+       } else {
+            lhs = cast(lhs, rhs);
+       }
+    } else if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        rhs = cast(rhs, lhs);
+    } else if (lhs->getType()->isIntegerTy() && rhs->getType()->isFloatingPointTy()) {
+        lhs = cast(lhs, rhs);
+    } else if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+        auto lhs_size = float_size(lhs->getType());
+        auto rhs_size = float_size(rhs->getType());
+        if(lhs_size > rhs_size) {
+            rhs = cast(rhs, lhs);
+        } else {
+            lhs = cast(lhs, rhs);
+        }
+    }
+    return std::make_tuple(lhs, rhs);
+}
+
+
+std::uint32_t Visitor::LLVM::float_size(llvm::Type *f) {
+    if(f->isHalfTy()) {
+        return 16;
+    }
+    if(f->isFloatTy()) {
+        return 32;
+    }
+    if(f->isDoubleTy()) {
+        return 64;
+    }
+    if(f->isFP128Ty()) {
+        return 128;
+    }
+    throw std::runtime_error("Unknown float type");
+}
+
 // todo const and some kind of implicit dereferencing
 llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
     if(auto t = try_as_simple(type); t) {
@@ -549,34 +594,34 @@ llvm::Type *Visitor::LLVM::try_as_complex(const Parser::Types::BaseType &type) {
 
 // todo no uints
 void Visitor::LLVM::init_type_handlers() {
-    _type_handlers["void"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[void_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getVoidTy(_context);
     };
-    _type_handlers["bool"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[bool_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt1Ty(_context);
     };
-    _type_handlers["byte"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[byte_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt8Ty(_context);
     };
-    _type_handlers["int8"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[i8_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt8Ty(_context);
     };
-    _type_handlers["int16"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[i16_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt16Ty(_context);
     };
-    _type_handlers["int32"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[i32_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt32Ty(_context);
     };
-    _type_handlers["int64"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[i64_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getInt64Ty(_context);
     };
-    _type_handlers["float32"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[f32_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getFloatTy(_context);
     };
-    _type_handlers["float64"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[f64_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getDoubleTy(_context);
     };
-    _type_handlers["float128"] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
+    _type_handlers[f128_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
         return llvm::Type::getFP128Ty(_context);
     };
 }
