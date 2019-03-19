@@ -91,17 +91,9 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
         ++i;
     }
 
-    // todo actually should subclass codeblock to function body
-    // todo no func body parsing for now
     node.body->accept(*this);
-
-    if(func_w->second.func->type->identifier().symbol == "void") {
+    if(func_w->second.func->type->identifier().symbol == void_id) {
         _builder.CreateRetVoid();
-    }
-    if(_ret_value) {
-        llvm::verifyFunction(*llvm_func);
-    } else {
-        llvm_func->eraseFromParent();
     }
 }
 
@@ -187,7 +179,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
             throw std::runtime_error("Could not compile variable init expr");
         }
         if(init->getType() != var.llvm_alloca->getType()) {
-            std::cout << "Implicit casting...\n";
             init = cast(init, var.llvm_alloca);
         }
         _builder.CreateStore(init, var.llvm_alloca);
@@ -238,10 +229,11 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
 // todo in future versions we need to know the type of the lhs
 // todo and the rhs to make appropriate cmp
 void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    node.rhs->accept(*this); auto rhs = _ret_value;
-    // todo float compares
-    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+    node.lhs->accept(*this); auto t_lhs = _ret_value;
+    node.rhs->accept(*this); auto t_rhs = _ret_value;
+    auto [lhs, rhs] = promote(t_lhs, t_rhs);
+
+    if (lhs->getType()->isIntegerTy()) {
             switch(node.op.id) {
             case Lexer::Token::Id::LessThan:
                 _ret_value = _builder.CreateICmpSLT(lhs, rhs, "__cmptemp");
@@ -259,7 +251,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+    if (lhs->getType()->isFloatingPointTy()) {
         switch(node.op.id) {
             case Lexer::Token::Id::LessThan:
                 _ret_value = _builder.CreateFCmpULT(lhs, rhs, "__cmptemp");
@@ -277,7 +269,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    // todo float int, int float and casting
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
@@ -294,18 +285,17 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
         throw std::runtime_error("Could not compile left side of the assignment");
     }
     if(lhs->getType() != rhs->getType()) {
-        std::cout << "Types not the same, implicit casting..." << "\n";
         rhs = cast(rhs, lhs);
     }
-
     _builder.CreateStore(rhs, lhs);
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
-    node.lhs->accept(*this); auto lhs = _ret_value;
-    node.rhs->accept(*this); auto rhs = _ret_value;
-    // todo based on type create float add
-    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+    node.lhs->accept(*this); auto t_lhs = _ret_value;
+    node.rhs->accept(*this); auto t_rhs = _ret_value;
+    auto [lhs, rhs] = promote(t_lhs, t_rhs);
+
+    if (lhs->getType()->isIntegerTy()) {
         switch (node.op.id) {
             case Lexer::Token::Id::Plus:
                 _ret_value = _builder.CreateAdd(lhs, rhs, "__addtmp");
@@ -317,7 +307,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+    if (lhs->getType()->isFloatingPointTy()) {
         switch (node.op.id) {
             case Lexer::Token::Id::Plus:
                 _ret_value = _builder.CreateFAdd(lhs, rhs, "__addtmp");
@@ -329,15 +319,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    // todo float int, int float and casting
 }
 
 void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    node.lhs->accept(*this);
-    auto lhs = _ret_value;
-    node.rhs->accept(*this);
-    auto rhs = _ret_value;
-    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
+    node.lhs->accept(*this); auto tmp_lhs = _ret_value;
+    node.rhs->accept(*this); auto tmp_rhs = _ret_value;
+    auto [lhs, rhs] = promote(tmp_lhs, tmp_rhs);
+
+    if (lhs->getType()->isIntegerTy()) {
         // both integers
         switch (node.op.id) {
             case Lexer::Token::Id::Multiplication:
@@ -351,20 +340,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
             default:
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
-    } else if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
-        rhs = cast(rhs, lhs);
-    } else if (lhs->getType()->isIntegerTy() && rhs->getType()->isFloatingPointTy()) {
-
-
-    } else if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+    }
+    if(lhs->getType()) {
         // both floats
         switch (node.op.id) {
             case Lexer::Token::Id::Multiplication:
                 _ret_value = _builder.CreateFMul(lhs, rhs, "__multmp");
                 break;
             case Lexer::Token::Id::Division:
-                // todo for now its unsigned division, we can do signed division
-                // but its kinda more comlpicated
                 _ret_value = _builder.CreateFDiv(lhs, rhs, "__multmp");
                 break;
             default:
@@ -440,7 +423,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
 
-
 void Visitor::LLVM::visit(const Parser::Nodes::StringConstant &node) {
     throw std::runtime_error("No string support yet");
 }
@@ -449,6 +431,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FloatConstant &node) {
     // todo for now just doubles
     _ret_value = llvm::ConstantFP::get(_context, llvm::APFloat(node.value));
 }
+
 
 
 
@@ -470,19 +453,11 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
 
 }
 
+
+
 llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
-    auto to_type = to->getType();
-    if(llvm::dyn_cast<llvm::AllocaInst>(to) || llvm::dyn_cast<llvm::StoreInst>(to)) {
-        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(to_type);
-        to_type = type_tmp->getElementType();
-    }
-
-    auto from_type =  from->getType();
-    if(llvm::dyn_cast<llvm::AllocaInst>(from)) {
-        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(from_type);
-        from_type = type_tmp->getElementType();
-    }
-
+    auto to_type = strip_allocas_and_stores(to);
+    auto from_type =  strip_allocas_and_stores(from);
     if(from_type == to_type) {
         return from;
     }
@@ -504,22 +479,20 @@ llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
 }
 
 std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs, llvm::Value *rhs) {
-    if (lhs->getType()->isIntegerTy() && rhs->getType()->isIntegerTy()) {
-       auto lhs_size = lhs->getType()->getIntegerBitWidth();
-       auto rhs_size = rhs->getType()->getIntegerBitWidth();
-       if(lhs_size > rhs_size) {
+    auto l_type = strip_allocas_and_stores(lhs);
+    auto r_type = strip_allocas_and_stores(rhs);
+    if (l_type->isIntegerTy() && r_type->isIntegerTy()) {
+       if(int_size(l_type) > int_size(r_type)) {
             rhs = cast(rhs, lhs);
        } else {
             lhs = cast(lhs, rhs);
        }
-    } else if (lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
+    } else if (l_type->isFloatingPointTy() && r_type->isIntegerTy()) {
         rhs = cast(rhs, lhs);
-    } else if (lhs->getType()->isIntegerTy() && rhs->getType()->isFloatingPointTy()) {
+    } else if (l_type->isIntegerTy() && r_type->isFloatingPointTy()) {
         lhs = cast(lhs, rhs);
-    } else if(lhs->getType()->isFloatingPointTy() && rhs->getType()->isFloatingPointTy()) {
-        auto lhs_size = float_size(lhs->getType());
-        auto rhs_size = float_size(rhs->getType());
-        if(lhs_size > rhs_size) {
+    } else if(l_type->isFloatingPointTy() && r_type->isFloatingPointTy()) {
+        if(float_size(l_type) > float_size(r_type)) {
             rhs = cast(rhs, lhs);
         } else {
             lhs = cast(lhs, rhs);
@@ -528,22 +501,37 @@ std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs
     return std::make_tuple(lhs, rhs);
 }
 
+llvm::Type *Visitor::LLVM::strip_allocas_and_stores(llvm::Value *v) {
+    auto v_type = v->getType();
+    if(llvm::dyn_cast<llvm::AllocaInst>(v) || llvm::dyn_cast<llvm::StoreInst>(v)) {
+        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type);
+        v_type = type_tmp->getElementType();
+    }
+    return v_type;
+}
 
-std::uint32_t Visitor::LLVM::float_size(llvm::Type *f) {
-    if(f->isHalfTy()) {
+
+
+std::uint32_t Visitor::LLVM::float_size(llvm::Type *t) {
+    if(t->isHalfTy()) {
         return 16;
     }
-    if(f->isFloatTy()) {
+    if(t->isFloatTy()) {
         return 32;
     }
-    if(f->isDoubleTy()) {
+    if(t->isDoubleTy()) {
         return 64;
     }
-    if(f->isFP128Ty()) {
+    if(t->isFP128Ty()) {
         return 128;
     }
     throw std::runtime_error("Unknown float type");
 }
+
+std::uint32_t Visitor::LLVM::int_size(llvm::Type *t) {
+    return t->getIntegerBitWidth();
+}
+
 
 // todo const and some kind of implicit dereferencing
 llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {

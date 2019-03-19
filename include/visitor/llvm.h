@@ -102,12 +102,6 @@ namespace Visitor {
         bool _skip_load = false;
 
         // Type information
-        struct IntTypeInfo {
-            bool is_signed;
-            uint32_t size;
-        };
-
-
         const std::string void_id{"void"};
         const std::string bool_id{"bool"};
         const std::string byte_id{"byte"};
@@ -128,7 +122,10 @@ namespace Visitor {
 
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
-        std::uint32_t float_size(llvm::Type* f);
+        llvm::Type* strip_allocas_and_stores(llvm::Value* v);
+
+        std::uint32_t float_size(llvm::Type* t);
+        std::uint32_t int_size(llvm::Type* t);
 
         llvm::Type* to_llvm_type(const Parser::Types::BaseType& type);
 

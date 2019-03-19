@@ -36,14 +36,29 @@ entry:
 
 define i32 @main() {
 entry:
+  %c = alloca float
   %b = alloca float
   %a = alloca i32
-  store i32 0, i32* %a
-  %a1 = load i32, i32* %a
-  %__calltmp = call float @itof(i32 %a1)
-  store float %__calltmp, float* %b
-  %b2 = load float, float* %b
-  %__calltmp3 = call i32 @ftoi(float %b2)
-  call void @put(i32 %__calltmp3)
+  store i32 2, i32* %a
+  store float 1.500000e+00, float* %b
+  %b1 = load float, float* %b
+  %a2 = load i32, i32* %a
+  %__cast_tmp = sitofp i32 %a2 to float
+  %__addtmp = fadd float %b1, %__cast_tmp
+  store float %__addtmp, float* %c
+  %a3 = load i32, i32* %a
+  %c4 = load float, float* %c
+  %__cast_tmp5 = sitofp i32 %a3 to float
+  %__cmptemp = fcmp ult float %__cast_tmp5, %c4
+  br i1 %__cmptemp, label %__iftrue, label %__ifcontr
+
+__iftrue:                                         ; preds = %entry
+  call void @put(i32 0)
+  br label %__ifcontr
+
+__ifcontr:                                        ; preds = %__iftrue, %entry
+  %b6 = load float, float* %b
+  %__calltmp = call i32 @ftoi(float %b6)
+  call void @put(i32 %__calltmp)
   ret i32 0
 }

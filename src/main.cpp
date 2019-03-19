@@ -15,25 +15,29 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    int32 putchar(_ int32);
+    i32 putchar(_ i32);
 
-    void put(v int32) {
+    void put(v i32) {
         putchar(65 + v);
     }
 
-    float32 itof(i int32) {
-        let f float32 = i;
+    f32 itof(i i32) {
+        let f f32 = i;
         return f;
     }
 
-    int32 ftoi(f float32) {
-        let i int32 = f;
+    i32 ftoi(f f32) {
+        let i i32 = f;
         return i;
     }
 
-    int32 main() {
-        let a int32 = 0;
-        let b float32 = itof(a);
+    i32 main() {
+        let a i32 = 2;
+        let b f32 = 1.5;
+        let c f32 = b + a;
+        if a < c {
+            put(0);
+        }
         put(ftoi(b));
         return 0;
     }
