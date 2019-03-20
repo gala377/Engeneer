@@ -76,3 +76,97 @@ Visitor::LLVM::Type::TypeDeduction::TypeDeduction(
         const Compiler::func_map_t& functions,
         const Compiler::var_map_t& variables):
         _functions(functions), _variables(variables), Base() {}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::LogicalOrExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::LogicalAndExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::InclusiveOrExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::ExclusiveOrExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::AndExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::EqualityExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::RelationalExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::ShiftExpr &node) {
+    Base::visit(node);
+}
+
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::AdditiveExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::MultiplicativeExpr &node) {
+    Base::visit(node);
+}
+
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::NegativeExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::NegationExpr &node) {
+    Base::visit(node);
+}
+
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::CallExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::IndexExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::AccessExpr &node) {
+    Base::visit(node);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::Identifier &node) {
+    auto it = _variables.find(node.symbol);
+    if(it == _variables.end()) {
+        throw std::runtime_error("Variable doesn't exist: " + node.symbol);
+    }
+    auto t_copy = it->second.var->type.get();
+    // todo what todo what todo
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::ParenthesisExpr &node) {
+    node.expr->accept(*this);
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::IntConstant &node) {
+    _owned_type = std::make_unique<Parser::Types::SimpleType>(
+            std::make_unique<Parser::Nodes::Identifier>(i32_id));
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::StringConstant &node) {
+    _owned_type = std::make_unique<Parser::Types::ArrayType>(
+            node.value.size(),
+            std::make_unique<Parser::Types::SimpleType>(
+                    std::make_unique<Parser::Nodes::Identifier>(byte_id)));
+}
+
+void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::FloatConstant &node) {
+    _owned_type = std::make_unique<Parser::Types::SimpleType>(
+            std::make_unique<Parser::Nodes::Identifier>(f64_id));
+
+}

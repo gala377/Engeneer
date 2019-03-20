@@ -78,8 +78,8 @@ namespace Visitor::LLVM {
             llvm::Function* llvm_func;
         };
 
-        using func_map_t = std::map<std::string, VarWrapper>;
-        using var_map_t = std::map<std::string, FuncProtWrapper>;
+        using func_map_t = std::map<std::string, FuncProtWrapper>;
+        using var_map_t = std::map<std::string, VarWrapper>;
     private:
         Parser::AST& _ast;
 
@@ -94,8 +94,8 @@ namespace Visitor::LLVM {
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
         // Context
-        func_map_t _local_variables;
-        var_map_t _functions;
+        var_map_t _local_variables;
+        func_map_t _functions;
 
         // Returns
         llvm::Value* _ret_value;
