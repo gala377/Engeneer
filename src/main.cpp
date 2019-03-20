@@ -32,9 +32,10 @@ int main() {
     }
 
     i32 main() {
-        let a [2]i32;
-        a[0] = 0;
-        a[1] = 1;
+        let i i32 = 0;
+        while i < 10 {
+            put(i);
+        }
         return 0;
     }
 )");
@@ -42,7 +43,6 @@ int main() {
     // todo I need to think about and implement some kind of
     // todo an implicit pointer dereferencing and shit
     // todo and control casting and promotion more
-    Visitor::LLVM comp;
 
     Parser::Parser p(s);
     Parser::AST ast;
@@ -53,6 +53,7 @@ int main() {
         std::cout << "Parsing error\n";
         std::cout << e.what();
     }
+    Visitor::LLVM comp(ast);
     Visitor::Stringify v(ast);
     ast.accept(v);
     std::cout << "Code parsed!\n\n""";

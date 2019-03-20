@@ -1,5 +1,5 @@
 add_library(Visitors
-        log.cpp base.cpp llvm.cpp)
+        log.cpp base.cpp llvm.cpp type.cpp)
 
 find_package(LLVM REQUIRED CONFIG)
 

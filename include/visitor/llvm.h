@@ -8,18 +8,20 @@
 #include <set>
 
 #include <parser/visitor.h>
+#include <parser/ast.h>
+#include <visitor/base.h>
 
 #include <llvm/Pass.h>
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LegacyPassManager.h>
 
-#include <visitor/base.h>
 
 namespace Visitor {
 
     class LLVM: public Visitor::Base {
     public:
+        LLVM(Parser::AST& ast);
 
         // Visitor
         // Base
@@ -72,6 +74,8 @@ namespace Visitor {
 
         // Class Interface
     private:
+        Parser::AST& _ast;
+
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder{_context};
         // todo more modules and linking against them

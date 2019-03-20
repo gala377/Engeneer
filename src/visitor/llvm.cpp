@@ -17,8 +17,7 @@
 #include <parser/type.h>
 
 
-// todo allocas only in the first block
-
+Visitor::LLVM::LLVM(Parser::AST &ast): _ast(ast), Base() {}
 
 // Base
 void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
@@ -31,8 +30,16 @@ void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
 void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     init_type_handlers();
     // todo maybe init module here ?
-    node.accept_children(*this);
 
+    // precompile function protos
+    for(const auto& func_proto: _ast.iter_func_prot()) {
+        func_proto.second->accept(*this);
+    }
+    for(const auto& func_def: _ast.iter_func_def()) {
+        func_def.second->declaration->accept(*this);
+    }
+
+    node.accept_children(*this);
     std::cout << "Printing module\n\n\n";
     _module->print(llvm::outs(), nullptr);
 }
@@ -41,6 +48,10 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
 // Top Level
 // Function
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
+    if(_functions.count(node.identifier->symbol) > 0) {
+        return;
+    }
+
     auto ret_type = to_llvm_type(*node.type);
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
@@ -70,10 +81,6 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
 void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     auto func_name = node.declaration->identifier->symbol;
     auto func_w = _functions.find(func_name);
-    if(func_w == _functions.end()) {
-        node.declaration->accept(*this);
-        func_w = _functions.find(func_name);
-    }
 
     auto llvm_func = func_w->second.llvm_func;
     if(!llvm_func->empty()) {

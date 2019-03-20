@@ -3,6 +3,7 @@
 //
 
 #include <parser/type.h>
+#include <visitor/base.h>
 
 const Parser::Nodes::Identifier &Parser::Types::SimpleType::identifier() const {
     if(!ident) {
