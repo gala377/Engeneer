@@ -343,7 +343,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
                 throw std::runtime_error("Unexpected operator during addition operator");
         }
     }
-    if(lhs->getType()) {
+    if(lhs->getType()->isFloatingPointTy()) {
         // both floats
         switch (node.op.id) {
             case Lexer::Token::Id::Multiplication:

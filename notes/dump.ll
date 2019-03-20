@@ -1,3 +1,24 @@
+define i32 @factorial(i32 %n) {
+entry:
+  %n1 = alloca i32
+  store i32 %n, i32* %n1
+  %n2 = load i32, i32* %n1
+  %__cmptemp = icmp sle i32 %n2, 1
+  br i1 %__cmptemp, label %__iftrue, label %__ifcontr
+
+__iftrue:                                         ; preds = %entry
+  ret i32 1
+  br label %__ifcontr
+
+__ifcontr:                                        ; preds = %__iftrue, %entry
+  %n3 = load i32, i32* %n1
+  %n4 = load i32, i32* %n1
+  %__addtmp = sub i32 %n4, 1
+  %__calltmp = call i32 @factorial(i32 %__addtmp)
+  %__multmp = mul i32 %n3, %__calltmp
+  ret i32 %__multmp
+}
+
 define i32 @ftoi(float %f) {
 entry:
   %i = alloca i32
@@ -24,21 +45,8 @@ entry:
 
 define i32 @main() {
 entry:
-  %i = alloca i32
-  store i32 0, i32* %i
-  br label %__whilecond
-
-__whilecond:                                      ; preds = %__while, %entry
-  %i1 = load i32, i32* %i
-  %__cmptemp = icmp slt i32 %i1, 10
-  br i1 %__cmptemp, label %__while, label %__whilecontr
-
-__while:                                          ; preds = %__whilecond
-  %i2 = load i32, i32* %i
-  call void @put(i32 %i2)
-  br label %__whilecond
-
-__whilecontr:                                     ; preds = %__whilecond
+  %__calltmp = call i32 @factorial(i32 4)
+  call void @put(i32 %__calltmp)
   ret i32 0
 }
 

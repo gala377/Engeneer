@@ -70,3 +70,9 @@ std::uint32_t Visitor::LLVM::Type::float_size(llvm::Type *t) {
 std::uint32_t Visitor::LLVM::Type::int_size(llvm::Type *t) {
     return t->getIntegerBitWidth();
 }
+
+
+Visitor::LLVM::Type::TypeDeduction::TypeDeduction(
+        const Compiler::func_map_t& functions,
+        const Compiler::var_map_t& variables):
+        _functions(functions), _variables(variables), Base() {}

@@ -43,6 +43,18 @@ namespace Visitor::LLVM::Type {
         std::uint32_t float_size(llvm::Type* t);
         std::uint32_t int_size(llvm::Type* t);
 
+        class TypeDeduction: Base {
+        public:
+            TypeDeduction(const Compiler::func_map_t& functions, const Compiler::var_map_t& variables);
+
+        protected:
+            const Compiler::func_map_t& _functions;
+            const Compiler::var_map_t& _variables;
+        };
+
+        // todo
+        class Veryfier: Base {};
+
         static const handlers_map _type_handlers = {
                 {
                         void_id,

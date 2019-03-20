@@ -31,11 +31,15 @@ int main() {
         return i;
     }
 
-    i32 main() {
-        let i i32 = 0;
-        while i < 10 {
-            put(i);
+    i32 factorial(n i32) {
+        if n <= 1 {
+            return 1;
         }
+        return n * factorial(n-1);
+    }
+
+    i32 main() {
+        put(factorial(4));
         return 0;
     }
 )");
