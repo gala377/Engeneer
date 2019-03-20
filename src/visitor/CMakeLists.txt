@@ -1,6 +1,8 @@
 add_library(Visitors
-        log.cpp base.cpp llvm.cpp type.cpp)
-
+        log.cpp base.cpp
+        llvm/type.cpp
+        llvm/compiler.cpp
+        )
 find_package(LLVM REQUIRED CONFIG)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")

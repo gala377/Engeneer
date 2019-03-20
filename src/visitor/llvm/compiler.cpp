@@ -2,10 +2,10 @@
 // Created by igor on 17.02.19.
 //
 
-#include <visitor/llvm.h>
-#include <llvm/Transforms/InstCombine/InstCombine.h>
-
+#include <visitor/llvm/compiler.h>
+#include <visitor/llvm/type.h>
 #include <parser/nodes/concrete.h>
+#include <parser/type.h>
 #include <parser/type.h>
 
 #include <iostream>
@@ -14,21 +14,19 @@
 
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
-#include <parser/type.h>
+#include <llvm/Transforms/InstCombine/InstCombine.h>
 
-
-Visitor::LLVM::LLVM(Parser::AST &ast): _ast(ast), Base() {}
+// todo const and some kind of implicit dereferencing
+Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): _ast(ast), Base() {}
 
 // Base
-void Visitor::LLVM::visit(const Parser::Nodes::Base &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
     throw std::runtime_error("Cannot compile base node!");
 }
 
-
 // End
 // Program
-void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
-    init_type_handlers();
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
 
     // precompile function protos
@@ -44,18 +42,17 @@ void Visitor::LLVM::visit(const Parser::Nodes::Program &node) {
     _module->print(llvm::outs(), nullptr);
 }
 
-
 // Top Level
 // Function
-void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
     if(_functions.count(node.identifier->symbol) > 0) {
         return;
     }
 
-    auto ret_type = to_llvm_type(*node.type);
+    auto ret_type = Type::to_llvm(*node.type, _context);
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
-        args_types.push_back(to_llvm_type(*arg->type));
+        args_types.push_back(Type::to_llvm(*arg->type, _context));
     }
 
     llvm::FunctionType* func_t = llvm::FunctionType::get(
@@ -78,7 +75,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionProt &node) {
     _functions[node.identifier->symbol] = FuncProtWrapper{&node, func};
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     auto func_name = node.declaration->identifier->symbol;
     auto func_w = _functions.find(func_name);
 
@@ -99,12 +96,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::FunctionDef &node) {
     }
 
     node.body->accept(*this);
-    if(func_w->second.func->type->identifier().symbol == void_id) {
+    if(func_w->second.func->type->identifier().symbol == Type::void_id) {
         _builder.CreateRetVoid();
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::ReturnStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ReturnStmt &node) {
     _ret_value = nullptr;
     if(node.expr) {
         node.expr->accept(*this);
@@ -117,14 +114,14 @@ void Visitor::LLVM::visit(const Parser::Nodes::ReturnStmt &node) {
 }
 
 // Statement
-void Visitor::LLVM::visit(const Parser::Nodes::CodeBlock &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CodeBlock &node) {
     _ret_value = nullptr;
     for(auto& ch: node.children()) {
         ch->accept(*this);
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::WhileStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::WhileStmt &node) {
     auto func = _builder.GetInsertBlock()->getParent();
     auto old_loop = _curr_loop;
     auto old_loop_contr = _curr_loop_contr;
@@ -157,25 +154,25 @@ void Visitor::LLVM::visit(const Parser::Nodes::WhileStmt &node) {
     _curr_loop_contr = old_loop_contr;
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::BreakStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::BreakStmt &node) {
     if(!_curr_loop_contr) {
         throw std::runtime_error("Cannot break outside of loop");
     }
     _builder.CreateBr(_curr_loop_contr);
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::ContinueStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ContinueStmt &node) {
     if(!_curr_loop) {
         throw std::runtime_error("Cannot continue outside of loop");
     }
     _builder.CreateBr(_curr_loop);
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::BlockStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::BlockStmt &node) {
     node.body->accept(*this);
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
     if(auto v = _local_variables.find(node.identifier->symbol); v != _local_variables.end()) {
         throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
     }
@@ -192,7 +189,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::VariableDecl &node) {
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IfStmt &node) {
     node.cond->accept(*this); auto cond = _ret_value;
     auto func = _builder.GetInsertBlock()->getParent();
     auto then = llvm::BasicBlock::Create(_context, "__iftrue");
@@ -227,15 +224,13 @@ void Visitor::LLVM::visit(const Parser::Nodes::IfStmt &node) {
     _builder.SetInsertPoint(merge);
 }
 
-
 // Expression
 // Binary
-
 // todo for now only signed cmp
 // todo we dont now how to make unsigned ints
 // todo in future versions we need to know the type of the lhs
 // todo and the rhs to make appropriate cmp
-void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
     node.lhs->accept(*this); auto t_lhs = _ret_value;
     node.rhs->accept(*this); auto t_rhs = _ret_value;
     auto [lhs, rhs] = promote(t_lhs, t_rhs);
@@ -278,7 +273,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::RelationalExpr &node) {
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     // todo for now only identifier
     // todo support for access and indexing operators
     _skip_load = true;
@@ -297,7 +292,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AssignmentExpr &node) {
     _builder.CreateStore(rhs, lhs);
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
     node.lhs->accept(*this); auto t_lhs = _ret_value;
     node.rhs->accept(*this); auto t_rhs = _ret_value;
     auto [lhs, rhs] = promote(t_lhs, t_rhs);
@@ -328,7 +323,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::AdditiveExpr &node) {
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     node.lhs->accept(*this); auto tmp_lhs = _ret_value;
     node.rhs->accept(*this); auto tmp_rhs = _ret_value;
     auto [lhs, rhs] = promote(tmp_lhs, tmp_rhs);
@@ -363,14 +358,12 @@ void Visitor::LLVM::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     }
 }
 
-
 // Unary
 
 // Postfix
-
 // Todo for now its just for the identifiers
 // todo chained function calls on function pointers
-void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
     //std::cout << "call expr";
     // todo for now we assume lhs can only be an identifier
     node.lhs->accept(*this); auto symbol = _ret_symbol;
@@ -401,8 +394,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::CallExpr &node) {
     }
 }
 
-
-void Visitor::LLVM::visit(const Parser::Nodes::IndexExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
     std::cout << "Indexing\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     node.index_expr->accept(*this); auto index = _ret_value;
@@ -413,7 +405,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::IndexExpr &node) {
 }
 
 // Primary
-void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     auto var = _local_variables.find(node.symbol);
     if(var == _local_variables.end()) {
         // possible function call, we pass the identifier
@@ -430,22 +422,22 @@ void Visitor::LLVM::visit(const Parser::Nodes::Identifier &node) {
     }
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::ParenthesisExpr &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ParenthesisExpr &node) {
     node.expr->accept(*this);
 }
 
 
 // Consts
-void Visitor::LLVM::visit(const Parser::Nodes::IntConstant &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IntConstant &node) {
     // todo for now ints are just 32 bits
     _ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::StringConstant &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StringConstant &node) {
     throw std::runtime_error("No string support yet");
 }
 
-void Visitor::LLVM::visit(const Parser::Nodes::FloatConstant &node) {
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FloatConstant &node) {
     // todo for now just doubles
     _ret_value = llvm::ConstantFP::get(_context, llvm::APFloat(node.value));
 }
@@ -453,8 +445,7 @@ void Visitor::LLVM::visit(const Parser::Nodes::FloatConstant &node) {
 
 
 
-
-Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
+Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
         llvm::Function &func,
         const Parser::Nodes::VariableDecl &node) {
 
@@ -463,7 +454,7 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
     }
     llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
     auto alloca = tmp_b.CreateAlloca(
-        to_llvm_type(*node.type),
+        Type::to_llvm(*node.type, _context),
         nullptr,
         node.identifier->symbol);
     _local_variables[node.identifier->symbol] = VarWrapper{&node, alloca};
@@ -471,9 +462,7 @@ Visitor::LLVM::VarWrapper& Visitor::LLVM::create_local_var(
 
 }
 
-
-
-llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
+llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
     auto to_type = strip_allocas_and_stores(to);
     auto from_type =  strip_allocas_and_stores(from);
     if(from_type == to_type) {
@@ -496,11 +485,11 @@ llvm::Value *Visitor::LLVM::cast(llvm::Value *from, llvm::Value *to) {
     return cast;
 }
 
-std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs, llvm::Value *rhs) {
+std::tuple<llvm::Value*, llvm::Value*> Visitor::LLVM::Compiler::promote(llvm::Value *lhs, llvm::Value *rhs) {
     auto l_type = strip_allocas_and_stores(lhs);
     auto r_type = strip_allocas_and_stores(rhs);
     if (l_type->isIntegerTy() && r_type->isIntegerTy()) {
-       if(int_size(l_type) > int_size(r_type)) {
+       if(Type::int_size(l_type) > Type::int_size(r_type)) {
             rhs = cast(rhs, lhs);
        } else {
             lhs = cast(lhs, rhs);
@@ -510,7 +499,7 @@ std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs
     } else if (l_type->isIntegerTy() && r_type->isFloatingPointTy()) {
         lhs = cast(lhs, rhs);
     } else if(l_type->isFloatingPointTy() && r_type->isFloatingPointTy()) {
-        if(float_size(l_type) > float_size(r_type)) {
+        if(Type::float_size(l_type) > Type::float_size(r_type)) {
             rhs = cast(rhs, lhs);
         } else {
             lhs = cast(lhs, rhs);
@@ -519,115 +508,11 @@ std::tuple<llvm::Value *, llvm::Value *> Visitor::LLVM::promote(llvm::Value *lhs
     return std::make_tuple(lhs, rhs);
 }
 
-llvm::Type *Visitor::LLVM::strip_allocas_and_stores(llvm::Value *v) {
+llvm::Type *Visitor::LLVM::Compiler::strip_allocas_and_stores(llvm::Value *v) {
     auto v_type = v->getType();
     if(llvm::dyn_cast<llvm::AllocaInst>(v) || llvm::dyn_cast<llvm::StoreInst>(v)) {
         auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type);
         v_type = type_tmp->getElementType();
     }
     return v_type;
-}
-
-
-
-std::uint32_t Visitor::LLVM::float_size(llvm::Type *t) {
-    if(t->isHalfTy()) {
-        return 16;
-    }
-    if(t->isFloatTy()) {
-        return 32;
-    }
-    if(t->isDoubleTy()) {
-        return 64;
-    }
-    if(t->isFP128Ty()) {
-        return 128;
-    }
-    throw std::runtime_error("Unknown float type");
-}
-
-std::uint32_t Visitor::LLVM::int_size(llvm::Type *t) {
-    return t->getIntegerBitWidth();
-}
-
-
-// todo const and some kind of implicit dereferencing
-llvm::Type *Visitor::LLVM::to_llvm_type(const Parser::Types::BaseType &type) {
-    if(auto t = try_as_simple(type); t) {
-        return t;
-    }
-    if(auto t = try_as_complex(type); t) {
-        return t;
-    }
-    if(auto t = try_as_array(type); t) {
-        return t;
-    }
-    throw std::runtime_error("Unknown type: " + type.identifier().symbol);
-}
-
-llvm::Type *Visitor::LLVM::try_as_simple(const Parser::Types::BaseType &type) {
-    try {
-        const auto &primary = dynamic_cast<const Parser::Types::SimpleType&>(type);
-        if(auto it = _type_handlers.find(primary.ident->symbol); it != _type_handlers.end()) {
-            return it->second(type);
-        }
-        // todo possibly structure
-        return nullptr;
-    } catch (std::bad_cast&) {
-        return nullptr;
-    }
-}
-
-llvm::Type *Visitor::LLVM::try_as_array(const Parser::Types::BaseType &type) {
-    try {
-        const auto &array = dynamic_cast<const Parser::Types::ArrayType&>(type);
-        return llvm::ArrayType::get(to_llvm_type(*array.underlying_type), array.size);
-    } catch (std::bad_cast&) {
-        return nullptr;
-    }
-}
-
-llvm::Type *Visitor::LLVM::try_as_complex(const Parser::Types::BaseType &type) {
-    try {
-        const auto &complex = dynamic_cast<const Parser::Types::ComplexType&>(type);
-        if(complex.is_ptr) {
-            return llvm::PointerType::get(to_llvm_type(*complex.underlying_type), 0);
-        }
-    } catch (std::bad_cast&) {
-        return nullptr;
-    }
-}
-
-// todo no uints
-void Visitor::LLVM::init_type_handlers() {
-    _type_handlers[void_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getVoidTy(_context);
-    };
-    _type_handlers[bool_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt1Ty(_context);
-    };
-    _type_handlers[byte_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt8Ty(_context);
-    };
-    _type_handlers[i8_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt8Ty(_context);
-    };
-    _type_handlers[i16_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt16Ty(_context);
-    };
-    _type_handlers[i32_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt32Ty(_context);
-    };
-    _type_handlers[i64_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getInt64Ty(_context);
-    };
-    _type_handlers[f32_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getFloatTy(_context);
-    };
-    _type_handlers[f64_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getDoubleTy(_context);
-    };
-    _type_handlers[f128_id] = [this](const Parser::Types::BaseType& type) -> llvm::Type* {
-        return llvm::Type::getFP128Ty(_context);
-    };
 }

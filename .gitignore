@@ -3,3 +3,7 @@
 cmake-build-debug
 build
 *.swp
+
+notes/hello_world
+notes/example
+*.o

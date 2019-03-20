@@ -7,7 +7,7 @@
 #include <lexer/source/string.h>
 #include <visitor/log.h>
 #include <parser/parser.h>
-#include <visitor/llvm.h>
+#include <visitor/llvm/compiler.h>
 
 #include <exception/base.h>
 #include <exception/concrete.h>
@@ -53,7 +53,7 @@ int main() {
         std::cout << "Parsing error\n";
         std::cout << e.what();
     }
-    Visitor::LLVM comp(ast);
+    Visitor::LLVM::Compiler comp(ast);
     Visitor::Stringify v(ast);
     ast.accept(v);
     std::cout << "Code parsed!\n\n""";
