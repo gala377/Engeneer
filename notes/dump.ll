@@ -1,52 +1,46 @@
-define i32 @factorial(i32 %n) {
-entry:
-  %n1 = alloca i32
-  store i32 %n, i32* %n1
-  %n2 = load i32, i32* %n1
-  %__cmptemp = icmp sle i32 %n2, 1
-  br i1 %__cmptemp, label %__iftrue, label %__ifcontr
-
-__iftrue:                                         ; preds = %entry
-  ret i32 1
-  br label %__ifcontr
-
-__ifcontr:                                        ; preds = %__iftrue, %entry
-  %n3 = load i32, i32* %n1
-  %n4 = load i32, i32* %n1
-  %__addtmp = sub i32 %n4, 1
-  %__calltmp = call i32 @factorial(i32 %__addtmp)
-  %__multmp = mul i32 %n3, %__calltmp
-  ret i32 %__multmp
-}
-
-define i32 @ftoi(float %f) {
-entry:
-  %i = alloca i32
-  %f1 = alloca float
-  store float %f, float* %f1
-  %f2 = load float, float* %f1
-  %__cast_tmp = fptosi float %f2 to i32
-  store i32 %__cast_tmp, i32* %i
-  %i3 = load i32, i32* %i
-  ret i32 %i3
-}
-
-define float @itof(i32 %i) {
-entry:
-  %f = alloca float
-  %i1 = alloca i32
-  store i32 %i, i32* %i1
-  %i2 = load i32, i32* %i1
-  %__cast_tmp = sitofp i32 %i2 to float
-  store float %__cast_tmp, float* %f
-  %f3 = load float, float* %f
-  ret float %f3
-}
-
 define i32 @main() {
 entry:
-  %__calltmp = call i32 @factorial(i32 4)
-  call void @put(i32 %__calltmp)
+  %i = alloca i32
+  %a = alloca [4 x i32]
+  store i32 0, i32* %i
+  br label %__whilecond
+
+__whilecond:                                      ; preds = %__while, %entry
+  %i1 = load i32, i32* %i
+  %__cmptemp = icmp slt i32 %i1, 4
+  br i1 %__cmptemp, label %__while, label %__whilecontr
+
+__while:                                          ; preds = %__whilecond
+  %i2 = load i32, i32* %i
+  %__gep_adr = getelementptr [4 x i32], [4 x i32]* %a, i32 0, i32 %i2
+  %i3 = load i32, i32* %i
+  %__addtmp = sub i32 3, %i3
+  store i32 %__addtmp, i32* %__gep_adr
+  %i4 = load i32, i32* %i
+  %__addtmp5 = add i32 %i4, 1
+  store i32 %__addtmp5, i32* %i
+  br label %__whilecond
+
+__whilecontr:                                     ; preds = %__whilecond
+  store i32 0, i32* %i
+  br label %__whilecond6
+
+__whilecond6:                                     ; preds = %__while9, %__whilecontr
+  %i7 = load i32, i32* %i
+  %__cmptemp8 = icmp slt i32 %i7, 4
+  br i1 %__cmptemp8, label %__while9, label %__whilecontr14
+
+__while9:                                         ; preds = %__whilecond6
+  %i10 = load i32, i32* %i
+  %__gep_adr11 = getelementptr [4 x i32], [4 x i32]* %a, i32 0, i32 %i10
+  %__gep_val = load i32, i32* %__gep_adr11
+  call void @put(i32 %__gep_val)
+  %i12 = load i32, i32* %i
+  %__addtmp13 = add i32 %i12, 1
+  store i32 %__addtmp13, i32* %i
+  br label %__whilecond6
+
+__whilecontr14:                                   ; preds = %__whilecond6
   ret i32 0
 }
 

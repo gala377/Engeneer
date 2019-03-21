@@ -17,7 +17,7 @@
 #include <llvm/Transforms/InstCombine/InstCombine.h>
 
 // todo const and some kind of implicit dereferencing
-Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): _ast(ast), Base() {}
+Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): Base(), _ast(ast) {}
 
 // Base
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
@@ -185,7 +185,10 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
         if(init->getType() != var.llvm_alloca->getType()) {
             init = cast(init, var.llvm_alloca);
         }
-        _builder.CreateStore(init, var.llvm_alloca);
+        auto old_action = _ptr_action;
+        _ptr_action = PtrAction::Store;
+        perform_ptr_action(var.llvm_alloca, init);
+        _ptr_action = old_action;
     }
 }
 
@@ -276,12 +279,13 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     // todo for now only identifier
     // todo support for access and indexing operators
-    _skip_load = true;
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ret_value;
     if (!lhs) {
         throw std::runtime_error("Could not compile lhs of an assignment");
     }
-    _skip_load = false;
+    _ptr_action = PtrAction::Load;
     node.rhs->accept(*this); auto rhs = _ret_value;
     if (!rhs) {
         throw std::runtime_error("Could not compile left side of the assignment");
@@ -289,7 +293,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     if(lhs->getType() != rhs->getType()) {
         rhs = cast(rhs, lhs);
     }
-    _builder.CreateStore(rhs, lhs);
+    _ptr_action = PtrAction::Store;
+    perform_ptr_action(lhs, rhs);
+    _ptr_action = old_action;
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
@@ -396,12 +402,18 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
     std::cout << "Indexing\n";
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ret_value;
+    _ptr_action = PtrAction::Load;
     node.index_expr->accept(*this); auto index = _ret_value;
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         index};
-    _ret_value = _builder.CreateGEP(lhs, gep_indexes, "__gep_tmp");
+    auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
+
+    _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
+    _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
 // Primary
@@ -415,11 +427,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
         return;
     }
     llvm::Value* v = var->second.llvm_alloca;
-    if(_skip_load) {
-        _ret_value = v;
-    } else {
-        _ret_value = _builder.CreateLoad(v, node.symbol);
-    }
+    _ret_value = perform_ptr_action(v, nullptr, node.symbol);
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ParenthesisExpr &node) {
@@ -463,8 +471,9 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
 }
 
 llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
-    auto to_type = strip_allocas_and_stores(to);
-    auto from_type =  strip_allocas_and_stores(from);
+    std::cout << "Cast: " << from->getName().str() << " to: " << to->getName().str() << "\n";
+    auto to_type = strip_ptr_type(to);
+    auto from_type = strip_ptr_type(from);
     if(from_type == to_type) {
         return from;
     }
@@ -482,12 +491,13 @@ llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
     if(!cast) {
         throw std::runtime_error("Could not compile cast");
     }
+    std::cout << "Cast ended!\n";
     return cast;
 }
 
 std::tuple<llvm::Value*, llvm::Value*> Visitor::LLVM::Compiler::promote(llvm::Value *lhs, llvm::Value *rhs) {
-    auto l_type = strip_allocas_and_stores(lhs);
-    auto r_type = strip_allocas_and_stores(rhs);
+    auto l_type = strip_ptr_type(lhs);
+    auto r_type = strip_ptr_type(rhs);
     if (l_type->isIntegerTy() && r_type->isIntegerTy()) {
        if(Type::int_size(l_type) > Type::int_size(r_type)) {
             rhs = cast(rhs, lhs);
@@ -508,11 +518,30 @@ std::tuple<llvm::Value*, llvm::Value*> Visitor::LLVM::Compiler::promote(llvm::Va
     return std::make_tuple(lhs, rhs);
 }
 
-llvm::Type *Visitor::LLVM::Compiler::strip_allocas_and_stores(llvm::Value *v) {
+llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Value *v) {
     auto v_type = v->getType();
-    if(llvm::dyn_cast<llvm::AllocaInst>(v) || llvm::dyn_cast<llvm::StoreInst>(v)) {
-        auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type);
+    if(auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type); type_tmp) {
         v_type = type_tmp->getElementType();
     }
     return v_type;
+}
+
+llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
+    llvm::Value *ptr, llvm::Value *v,
+    const std::string &load_s) {
+
+    switch (_ptr_action) {
+        case PtrAction::None:
+            return nullptr;
+        case PtrAction::Store:
+            if(!v) {
+                throw std::runtime_error("Store of a null value");
+            }
+            return _builder.CreateStore(v, ptr);
+        case PtrAction::Load:
+            std::cout << "ptr action is load as " << load_s << "\n";
+            return _builder.CreateLoad(ptr, load_s);
+        case PtrAction::Address:
+            return ptr;
+    }
 }

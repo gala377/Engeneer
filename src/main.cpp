@@ -21,25 +21,36 @@ int main() {
         putchar(65 + v);
     }
 
-    f32 itof(i i32) {
-        let f f32 = i;
-        return f;
-    }
+    #f32 itof(i i32) {
+    #    let f f32 = i;
+    #    return f;
+    #}
 
-    i32 ftoi(f f32) {
-        let i i32 = f;
-        return i;
-    }
+    #i32 ftoi(f f32) {
+    #    let i i32 = f;
+    #    return i;
+    #}
 
-    i32 factorial(n i32) {
-        if n <= 1 {
-            return 1;
-        }
-        return n * factorial(n-1);
-    }
+    #i32 factorial(n i32) {
+    #    if n <= 1 {
+    #        return 1;
+    #    }
+    #    return n * factorial(n-1);
+    #}
 
     i32 main() {
-        put(factorial(4));
+        let a [4]i32;
+        let i i32 = 0;
+        while i < 4 {
+            a[i] = 3 - i;
+            i = i + 1;
+        }
+
+        i = 0;
+        while i < 4 {
+            put(a[i]);
+            i = i + 1;
+        }
         return 0;
     }
 )");

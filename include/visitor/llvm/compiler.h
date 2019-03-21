@@ -103,7 +103,11 @@ namespace Visitor::LLVM {
 
         llvm::BasicBlock* _curr_loop = nullptr;
         llvm::BasicBlock* _curr_loop_contr = nullptr;
-        bool _skip_load = false;
+
+        enum class PtrAction {
+            Store, Load, Address, None
+        };
+        PtrAction _ptr_action{PtrAction::Load};
 
         // methods
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
@@ -111,7 +115,9 @@ namespace Visitor::LLVM {
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
 
-        llvm::Type* strip_allocas_and_stores(llvm::Value* v);
+        llvm::Type* strip_ptr_type(llvm::Value *v);
+        llvm::Value* perform_ptr_action(llvm::Value *ptr, llvm::Value *v = nullptr, const std::string &load_s = "");
+
     };
 }
 
