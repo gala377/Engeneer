@@ -559,7 +559,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_logical_or_expr
     return logical_or_expr;
 }
 
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_logical_and_expr() {
     auto logical_and_expr = parse_inclusive_or_expr();
     fold(
@@ -576,7 +575,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_logical_and_exp
         });
     return logical_and_expr;
 }
-
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_inclusive_or_expr() {
     auto inclusive_or_expr = parse_exclusive_or_expr();
@@ -595,7 +593,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_inclusive_or_ex
     return inclusive_or_expr;
 }
 
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_exclusive_or_expr() {
     auto exclusive_or_expr = parse_and_expr();
     fold(
@@ -613,7 +610,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_exclusive_or_ex
     return exclusive_or_expr;
 }
 
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_and_expr() {
     auto and_expr = parse_equality_expr();
     fold(
@@ -630,7 +626,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_and_expr() {
         });
     return and_expr;
 }
-
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_equality_expr() {
     auto equality_expr = parse_relational_expr();
@@ -653,7 +648,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_equality_expr()
     return equality_expr;
 }
 
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_relational_expr() {
     auto rel_expr = parse_shift_expr();
     fold(&Parser::parse_relational_op,
@@ -669,7 +663,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_relational_expr
             });
     return rel_expr;
 }
-
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_shift_expr() {
     auto shift_expr = parse_add_expr();
@@ -715,7 +708,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_add_expr() {
     return add_expr;
 }
 
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_mult_expr() {
     auto mult_expr = parse_unary_expr();
     fold(
@@ -743,7 +735,8 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_unary_expr() {
     return one_of<Nodes::Expression>(
         &Parser::parse_negative_expr,
         &Parser::parse_negation_expr,
-        &Parser::parse_postfix_expr);
+        &Parser::parse_postfix_expr,
+        &Parser::parse_address_access_expr);
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negative_expr() {
@@ -776,6 +769,21 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negation_expr()
                 "(use parenthesis for multiple unary operators)");
     }
     return std::make_unique<Nodes::NegationExpr>(tok.value(), std::move(rhs));
+}
+
+std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_address_access_expr() {
+    auto tok = parse_token(Lexer::Token::Id::And);
+    if(!tok) {
+        return nullptr;
+    }
+    auto rhs = parse_postfix_expr();
+    if(!rhs) {
+        abort<Exception::BaseSyntax>(
+            _lexer.curr_token(),
+                "Primary expression expected after unary & operator "
+                "(use parenthesis for multiple unary operators)");
+    }
+    return std::make_unique<Nodes::AddressAccessExpr>(tok.value(), std::move(rhs));
 }
 
 // Postfix

@@ -160,6 +160,10 @@ void Visitor::Base::visit(const Parser::Nodes::NegationExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::AddressAccessExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
 
 // Postfix
 void Visitor::Base::visit(const Parser::Nodes::PostfixExpr &node) {

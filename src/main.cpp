@@ -21,6 +21,10 @@ int main() {
         putchar(65 + v);
     }
 
+    void put_ptr(v &i32) {
+        return;
+    }
+
     #f32 itof(i i32) {
     #    let f f32 = i;
     #    return f;
@@ -39,18 +43,13 @@ int main() {
     #}
 
     i32 main() {
-        let a [4]i32;
-        let i i32 = 0;
-        while i < 4 {
-            a[i] = 3 - i;
-            i = i + 1;
-        }
+        let a i32 = 3;
+        let ptr_a &i32 = &a;
 
-        i = 0;
-        while i < 4 {
-            put(a[i]);
-            i = i + 1;
-        }
+        put_ptr(ptr_a);
+        a = 2;
+        put_ptr(ptr_a);
+
         return 0;
     }
 )");

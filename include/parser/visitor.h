@@ -66,7 +66,7 @@ namespace Parser {
         class UnaryExpr;
         class NegativeExpr;
         class NegationExpr;
-
+        class AddressAccessExpr;
         // Postfix
         class PostfixExpr;
         class IndexExpr;
@@ -141,6 +141,7 @@ namespace Parser {
         virtual void visit(const Nodes::UnaryExpr& node) = 0;
         virtual void visit(const Nodes::NegativeExpr& node) = 0;
         virtual void visit(const Nodes::NegationExpr& node) = 0;
+        virtual void visit(const Nodes::AddressAccessExpr& node) = 0;
 
         // Postfix
         virtual void visit(const Nodes::PostfixExpr& node) = 0;

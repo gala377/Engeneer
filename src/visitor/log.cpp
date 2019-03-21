@@ -346,6 +346,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::NegationExpr &node) {
     node.rhs->accept(*this);
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::AddressAccessExpr &node) {
+    stringify(node, "AdressAccess: &");
+    node.rhs->accept(*this);
+}
+
 // Postfix
 void Visitor::Stringify::visit(const Parser::Nodes::PostfixExpr &node) {
     stringify(node, "PostfixExpr");

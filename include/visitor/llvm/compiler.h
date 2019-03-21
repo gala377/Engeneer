@@ -54,6 +54,8 @@ namespace Visitor::LLVM {
         void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
 
         // Unary
+        void visit(const Parser::Nodes::AddressAccessExpr &node) override;
+
         // Postfix
         void visit(const Parser::Nodes::CallExpr &node) override;
         void visit(const Parser::Nodes::IndexExpr &node) override;

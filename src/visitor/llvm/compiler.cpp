@@ -365,7 +365,12 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
 }
 
 // Unary
-
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AddressAccessExpr &node) {
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Address;
+    node.rhs->accept(*this);
+    _ptr_action = old_action;
+}
 // Postfix
 // Todo for now its just for the identifiers
 // todo chained function calls on function pointers

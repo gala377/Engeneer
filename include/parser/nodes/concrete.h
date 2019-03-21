@@ -316,19 +316,24 @@ namespace Parser::Nodes {
 
     class NegativeExpr: public UnaryExpr {
     public:
-        NegativeExpr(const Lexer::Token& op, std::unique_ptr<Expression>&& rhs);
+        using UnaryExpr::UnaryExpr;
 
         void accept(Parser::Visitor &v) const override;
     };
 
     class NegationExpr: public UnaryExpr {
     public:
-        NegationExpr(const Lexer::Token& op, std::unique_ptr<Expression>&& rhs);
+        using UnaryExpr::UnaryExpr;
 
         void accept(Parser::Visitor& v) const override;
     };
 
+    class AddressAccessExpr: public UnaryExpr {
+    public:
+        using UnaryExpr::UnaryExpr;
 
+        void accept(Parser::Visitor &v) const override;
+    };
     // Postfix
     class PostfixExpr: public Expression {
         // todo finish postfix parsing and refactoring
