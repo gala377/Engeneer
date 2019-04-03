@@ -364,6 +364,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
     }
 }
 
+// Cast
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
+    Base::visit(node);
+}
+
 // Unary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AddressAccessExpr &node) {
     auto old_action = _ptr_action;
@@ -371,6 +376,15 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AddressAccessExpr &node
     node.rhs->accept(*this);
     _ptr_action = old_action;
 }
+
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::DereferenceExpr &node) {
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Load;
+    node.rhs->accept(*this);
+    _ptr_action = old_action;
+    _ret_value = perform_ptr_action(_ret_value, nullptr, "__deref_val");
+}
+
 // Postfix
 // Todo for now its just for the identifiers
 // todo chained function calls on function pointers

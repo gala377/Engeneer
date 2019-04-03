@@ -22,34 +22,22 @@ int main() {
     }
 
     void put_ptr(v &i32) {
-        return;
+        put(val v);
     }
 
-    #f32 itof(i i32) {
-    #    let f f32 = i;
-    #    return f;
-    #}
-
-    #i32 ftoi(f f32) {
-    #    let i i32 = f;
-    #    return i;
-    #}
-
-    #i32 factorial(n i32) {
-    #    if n <= 1 {
-    #        return 1;
-    #    }
-    #    return n * factorial(n-1);
-    #}
+    void test(v []i32) {
+        put(v[2]);
+    }
 
     i32 main() {
-        let a i32 = 3;
-        let ptr_a &i32 = &a;
-
-        put_ptr(ptr_a);
-        a = 2;
-        put_ptr(ptr_a);
-
+        let a [10]i32;
+        let i i32 = 0;
+        while i < 10 {
+            a[i] = i;
+            i = i + 1;
+        }
+        let d &i32 = &a as &i32;
+        test(val b);
         return 0;
     }
 )");

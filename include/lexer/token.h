@@ -39,6 +39,8 @@ namespace Lexer {
             Break,
             Continue,
             Const,
+            Val,
+            As,
 
             // Operators
             Assignment=200,

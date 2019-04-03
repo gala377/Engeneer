@@ -350,6 +350,10 @@ void Visitor::Stringify::visit(const Parser::Nodes::AddressAccessExpr &node) {
     stringify(node, "AdressAccess: &");
     node.rhs->accept(*this);
 }
+void Visitor::Stringify::visit(const Parser::Nodes::DereferenceExpr &node) {
+    stringify(node, "Dereference: val");
+    node.rhs->accept(*this);
+}
 
 // Postfix
 void Visitor::Stringify::visit(const Parser::Nodes::PostfixExpr &node) {
@@ -378,6 +382,11 @@ void Visitor::Stringify::visit(const Parser::Nodes::AccessExpr &node) {
     node.rhs->accept(*this);
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::CastExpr &node) {
+    std::string mess = "CastExpr: " + strf_type(node.type);
+    stringify(node, std::move(mess));
+    node.lhs->accept(*this);
+}
 
 // Primary
 void Visitor::Stringify::visit(const Parser::Nodes::Identifier &node) {

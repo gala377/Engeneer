@@ -334,6 +334,14 @@ namespace Parser::Nodes {
 
         void accept(Parser::Visitor &v) const override;
     };
+
+    class DereferenceExpr: public UnaryExpr {
+    public:
+        using UnaryExpr::UnaryExpr;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
     // Postfix
     class PostfixExpr: public Expression {
         // todo finish postfix parsing and refactoring
@@ -345,6 +353,20 @@ namespace Parser::Nodes {
         void set_depth(std::uint32_t depth) override;
 
         void accept(Parser::Visitor &v) const override;
+    };
+
+    class CastExpr: public Expression {
+    public:
+        CastExpr(
+                std::unique_ptr<Expression>&& lhs,
+                std::unique_ptr<Types::BaseType>&& type);
+
+        std::unique_ptr<Nodes::Expression> lhs;
+        std::unique_ptr<Types::BaseType> type;
+
+        void set_depth(std::uint32_t depth) override;
+
+        void accept(Parser::Visitor& v) const override;
     };
 
     class IndexExpr: public PostfixExpr {

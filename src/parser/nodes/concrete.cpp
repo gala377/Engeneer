@@ -326,6 +326,10 @@ void Parser::Nodes::AddressAccessExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+void Parser::Nodes::DereferenceExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
 // Postfix
 Parser::Nodes::PostfixExpr::PostfixExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs):
     lhs(std::move(lhs)) {}
@@ -337,6 +341,20 @@ void Parser::Nodes::PostfixExpr::set_depth(std::uint32_t depth) {
 
 void Parser::Nodes::PostfixExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
+}
+
+
+Parser::Nodes::CastExpr::CastExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
+                                  std::unique_ptr<Parser::Types::BaseType> &&type):
+                                  lhs(std::move(lhs)), type(std::move(type)) {}
+
+void Parser::Nodes::CastExpr::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
+void Parser::Nodes::CastExpr::set_depth(std::uint32_t depth) {
+    Base::set_depth(depth);
+    lhs->set_depth(_depth+1);
 }
 
 

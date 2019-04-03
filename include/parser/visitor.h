@@ -67,8 +67,11 @@ namespace Parser {
         class NegativeExpr;
         class NegationExpr;
         class AddressAccessExpr;
+        class DereferenceExpr;
+
         // Postfix
         class PostfixExpr;
+        class CastExpr;
         class IndexExpr;
         class CallExpr;
         class AccessExpr;
@@ -137,11 +140,15 @@ namespace Parser {
         // todo modulo expr
         virtual void visit(const Nodes::MultiplicativeExpr& node) = 0;
 
+        // Cast
+        virtual void visit(const Nodes::CastExpr& node) = 0;
+
         // Unary
         virtual void visit(const Nodes::UnaryExpr& node) = 0;
         virtual void visit(const Nodes::NegativeExpr& node) = 0;
         virtual void visit(const Nodes::NegationExpr& node) = 0;
         virtual void visit(const Nodes::AddressAccessExpr& node) = 0;
+        virtual void visit(const Nodes::DereferenceExpr& node) = 0;
 
         // Postfix
         virtual void visit(const Nodes::PostfixExpr& node) = 0;

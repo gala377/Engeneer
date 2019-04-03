@@ -24,6 +24,8 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"break", Token::Id::Break},
         {"continue", Token::Id::Continue},
         {"const", Token::Id::Const},
+        {"val", Token::Id::Val},
+        {"as", Token::Id::As},
 };
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {

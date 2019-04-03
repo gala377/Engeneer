@@ -363,13 +363,13 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_semicolon_termin
     return res;
 }
 
-std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_custom_terminated_stmt() {
-    return one_of<Nodes::Statement>(
-            &Parser::parse_if_stmt,
-            &Parser::parse_while_stmt,
-            &Parser::parse_return_stmt,
-            &Parser::parse_block_stmt);
-}
+    std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_custom_terminated_stmt() {
+        return one_of<Nodes::Statement>(
+                &Parser::parse_if_stmt,
+                &Parser::parse_while_stmt,
+                &Parser::parse_return_stmt,
+                &Parser::parse_block_stmt);
+    }
 
 std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
     if(!parse_token(Lexer::Token::Id::LeftBrace)) {
@@ -525,20 +525,21 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 // Binary
 // todo make assignment stack, for now it does not
-std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_assig_expr() {
-    auto lhs = parse_logical_or_expr();
-    if(!lhs) {
-        return nullptr;
+
+    std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_assig_expr() {
+        auto lhs = parse_logical_or_expr();
+        if(!lhs) {
+            return nullptr;
+        }
+        auto tok = parse_token(Lexer::Token::Id::Assignment);
+        if(!tok) {
+            return lhs;
+        }
+        auto op = tok.value();
+        auto rhs = parse_logical_or_expr();
+        return std::make_unique<Nodes::AssignmentExpr>(
+                std::move(lhs), op, std::move(rhs));
     }
-    auto tok = parse_token(Lexer::Token::Id::Assignment);
-    if(!tok) {
-        return lhs;
-    }
-    auto op = tok.value();
-    auto rhs = parse_logical_or_expr();
-    return std::make_unique<Nodes::AssignmentExpr>(
-            std::move(lhs), op, std::move(rhs));
-}
 
 
 // Logical
@@ -709,7 +710,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_add_expr() {
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_mult_expr() {
-    auto mult_expr = parse_unary_expr();
+    auto mult_expr = parse_cast_expr();
     fold(
         [](Parser* p) {
             return p->one_of_op<Lexer::Token>(
@@ -717,7 +718,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_mult_expr() {
                 p->make_tok_parser(Lexer::Token::Id::Division));
         },
         [this, &mult_expr] (auto&& op) {
-            auto res = parse_unary_expr();
+            auto res = parse_cast_expr();
             if(!res) {
                 abort<Exception::BaseSyntax>(
                     _lexer.curr_token(),
@@ -729,6 +730,20 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_mult_expr() {
     return mult_expr;
 }
 
+// Cast
+std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_cast_expr() {
+    auto lhs = parse_unary_expr();
+    if(!parse_token(Lexer::Token::Id::As)) {
+        return lhs;
+    }
+    auto type = parse_type();
+    if(!type) {
+        abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Type expected after 'as' keyword");
+    }
+    return std::make_unique<Nodes::CastExpr>(std::move(lhs), std::move(type));
+}
 
 // Unary
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_unary_expr() {
@@ -736,7 +751,8 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_unary_expr() {
         &Parser::parse_negative_expr,
         &Parser::parse_negation_expr,
         &Parser::parse_postfix_expr,
-        &Parser::parse_address_access_expr);
+        &Parser::parse_address_access_expr,
+        &Parser::parse_dereference_expr);
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_negative_expr() {
@@ -786,6 +802,21 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_address_access_
     return std::make_unique<Nodes::AddressAccessExpr>(tok.value(), std::move(rhs));
 }
 
+std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_dereference_expr() {
+    auto tok = parse_token(Lexer::Token::Id::Val);
+    if(!tok) {
+        return nullptr;
+    }
+    auto rhs = parse_postfix_expr();
+    if(!rhs) {
+        abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                        "Primary expression expected after unary value operator "
+                        "(use parenthesis for multiple unary operators)");
+    }
+    return std::make_unique<Nodes::DereferenceExpr>(tok.value(), std::move(rhs));
+}
+
 // Postfix
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_postfix_expr() {
     auto lhs = parse_prim_expr();
@@ -795,16 +826,16 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_postfix_expr() 
     fold(
         [&lhs] (Parser* p) -> std::unique_ptr<Nodes::Expression> {
             return p->one_of<Nodes::Expression>(
-                    [&lhs] (Parser* p) {
+                    [&lhs](Parser *p) {
                         return p->parse_call_expr(lhs);
                     },
-                    [&lhs] (Parser* p) {
+                    [&lhs](Parser *p) {
                         return p->parse_index_expr(lhs);
                     },
-                    [&lhs] (Parser* p) {
+                    [&lhs](Parser *p) {
                         return p->parse_access_expr(lhs);
                     });
-        },
+            },
         [&lhs](auto&& res) {
             lhs = std::move(res);
         });
@@ -920,7 +951,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_prim_expr() {
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_ident() {
-
     auto res = parse_token(Lexer::Token::Id::Identifier);
     return res ? std::make_unique<Nodes::Identifier>(res->symbol) : nullptr;
 }
@@ -993,14 +1023,14 @@ std::function<std::optional<Lexer::Token>(Parser::Parser*)> Parser::Parser::make
 
 
 
-// Type parsers
-std::unique_ptr<Parser::Types::BaseType> Parser::Parser::parse_type() {
-    return one_of<Types::BaseType>(
-        &Parser::parse_complex_type,
-        &Parser::parse_array_type,
-        &Parser::parse_simple_type);
+    // Type parsers
+    std::unique_ptr<Parser::Types::BaseType> Parser::Parser::parse_type() {
+        return one_of<Types::BaseType>(
+            &Parser::parse_complex_type,
+            &Parser::parse_array_type,
+            &Parser::parse_simple_type);
 
-}
+    }
 
 std::unique_ptr<Parser::Types::ComplexType> Parser::Parser::parse_complex_type() {
     auto complex = std::make_unique<Types::ComplexType>();
@@ -1029,14 +1059,19 @@ std::unique_ptr<Parser::Types::ArrayType> Parser::Parser::parse_array_type() {
     }
     // todo for now just integers, later maybe expressions which are consts
     // todo that would be nice
-    auto size = parse_cast<Nodes::IntConstant>(&Parser::parse_int);
-    if(!size) {
-        abort<Exception::BaseSyntax>(
-            _lexer.curr_token(),
-            "Array size needs to be a positive integer");
-    }
+    auto size = std::make_unique<Nodes::IntConstant>(0);
     if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
-        return nullptr;
+        size = std::move(parse_cast<Nodes::IntConstant>(&Parser::parse_int));
+        if(!size) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Array size needs to be a positive integer");
+        }
+        if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
+            error<Exception::ExpectedToken>(
+                    _lexer.make_token(Lexer::Token::Id::RightSquareBracket, "]"),
+                    _lexer.curr_token());
+        }
     }
     auto underlying_type = parse_type();
     if(!underlying_type) {

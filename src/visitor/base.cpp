@@ -164,6 +164,9 @@ void Visitor::Base::visit(const Parser::Nodes::AddressAccessExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::DereferenceExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
 
 // Postfix
 void Visitor::Base::visit(const Parser::Nodes::PostfixExpr &node) {
@@ -183,6 +186,9 @@ void Visitor::Base::visit(const Parser::Nodes::AccessExpr &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 
+void Visitor::Base::visit(const Parser::Nodes::CastExpr &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
 
 // Primary
 void Visitor::Base::visit(const Parser::Nodes::PrimaryExpr &node) {
@@ -214,3 +220,7 @@ void Visitor::Base::visit(const Parser::Nodes::StringConstant &node) {
 void Visitor::Base::visit(const Parser::Nodes::FloatConstant &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
+
+
+
+

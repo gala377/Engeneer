@@ -96,6 +96,8 @@ std::string Lexer::str(Lexer::Token::Id id) {
             return "End";
         case Token::Id::Wraps:
             return "Wraps";
+        case Token::Id::Val:
+            return "Val";
         default:
             return "Undefined";
     }

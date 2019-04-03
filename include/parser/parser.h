@@ -24,10 +24,8 @@ namespace Parser {
     public:
         Parser() = delete;
         explicit Parser(Lexer::Source::Base& s);
-        explicit Parser(
-                Lexer::Source::Base& s,
-                Exception::Handler& excp_handler);
-
+        Parser(Lexer::Source::Base& s,
+               Exception::Handler& excp_handler);
         AST parse();
     protected:
         Lexer::Lexer _lexer;
@@ -82,11 +80,15 @@ namespace Parser {
         std::unique_ptr<Nodes::Expression> parse_add_expr();
         std::unique_ptr<Nodes::Expression> parse_mult_expr();
 
+        // Cast
+        std::unique_ptr<Nodes::Expression> parse_cast_expr();
+
         // Unary
         std::unique_ptr<Nodes::Expression> parse_unary_expr();
         std::unique_ptr<Nodes::Expression> parse_negative_expr();
         std::unique_ptr<Nodes::Expression> parse_negation_expr();
         std::unique_ptr<Nodes::Expression> parse_address_access_expr();
+        std::unique_ptr<Nodes::Expression> parse_dereference_expr();
 
         // Postfix
         std::unique_ptr<Nodes::Expression> parse_postfix_expr();

@@ -16,7 +16,7 @@
 
 
 namespace Visitor::LLVM::Type {
-
+    
         const std::string void_id{"void"};
         const std::string bool_id{"bool"};
         const std::string byte_id{"byte"};
