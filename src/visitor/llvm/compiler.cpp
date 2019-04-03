@@ -474,6 +474,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
     Base::visit(node);
+    // todo left has to be a struct and we need to know its name
+    // todo right needs to be an identifier
+    // todo for now we just search members, later we should search methods
 }
 
 // Primary

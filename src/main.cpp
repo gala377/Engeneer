@@ -26,12 +26,19 @@ int main() {
         let a f32 = 1.5 as f32 + 1.5 as f32 + 1 as f32;
         put(a as i32);
         let b Foo = test();
+
+        put(b[0] as i32);
+        put((b[1] + 0.5 as f32) as i32);
+        b[2] = &b;
+        put((val b[2])[0] as i32);
         return 0;
     }
 
     Foo test() {
         let a Foo;
-        return Foo;
+        a[0] = 1 as i64;
+        a[1] = 20.5 as f32;
+        return a;
     }
 
     void put(v i32) {
