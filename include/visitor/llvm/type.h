@@ -35,10 +35,10 @@ namespace Visitor::LLVM::Type {
         using type_handler = std::function<llvm::Type*(const Parser::Types::BaseType&, llvm::LLVMContext&)>;
         using handlers_map = std::map<std::string, type_handler>;
 
-        llvm::Type* to_llvm(const Parser::Types::BaseType& type, llvm::LLVMContext& c);
-        llvm::Type* try_as_simple(const Parser::Types::BaseType& type, llvm::LLVMContext& c);
-        llvm::Type* try_as_array(const Parser::Types::BaseType& type, llvm::LLVMContext& c);
-        llvm::Type* try_as_complex(const Parser::Types::BaseType& type, llvm::LLVMContext& c);
+        llvm::Type* to_llvm(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
+        llvm::Type* try_as_simple(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
+        llvm::Type* try_as_array(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
+        llvm::Type* try_as_complex(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
 
         std::uint32_t float_size(llvm::Type* t);
         std::uint32_t int_size(llvm::Type* t);

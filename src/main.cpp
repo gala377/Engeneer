@@ -15,37 +15,28 @@
 
 int main() {
     Lexer::Source::String s(R"(
+
+    struct Foo {
+        a i64;
+        b f32;
+        c &Foo;
+    }
+
     i32 main() {
-        # get some array
-        let a [128]i32 = get_array();
-
-        # have a ptr to some of its content
-        let d &i32 = &a[1];
-
-        test(d as &[]i32);
+        let a f32 = 1.5 as f32 + 1.5 as f32 + 1 as f32;
+        put(a as i32);
+        let b Foo = test();
         return 0;
     }
 
-    void test(ptr &[]i32) {
-        # value of v is a[3];
-        let v i32 = (val ptr)[1];
-        put(v);
-    }
-
-    [128]i32 get_array() {
-        let a [128]i32;
-        let i i32 = 0;
-        while i < 128 {
-            a[i] = i;
-            i = i + 1;
-        }
-        return a;
+    Foo test() {
+        let a Foo;
+        return Foo;
     }
 
     void put(v i32) {
         putchar(65 + v);
     }
-
 
     i32 putchar(_ i32);
 )");

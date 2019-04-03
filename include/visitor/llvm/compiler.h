@@ -36,6 +36,8 @@ namespace Visitor::LLVM {
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
 
+        void visit(const Parser::Nodes::StructDecl &node) override;
+
         // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
@@ -64,6 +66,8 @@ namespace Visitor::LLVM {
         void visit(const Parser::Nodes::CallExpr &node) override;
         void visit(const Parser::Nodes::IndexExpr &node) override;
 
+        void visit(const Parser::Nodes::AccessExpr &node) override;
+
         // Primary
         void visit(const Parser::Nodes::Identifier &node) override;
         void visit(const Parser::Nodes::ParenthesisExpr &node) override;
@@ -84,8 +88,16 @@ namespace Visitor::LLVM {
             llvm::Function* llvm_func;
         };
 
+        struct StructWrapper {
+            const Parser::Nodes::StructDecl* str;
+            llvm::StructType* llvm_str;
+
+            std::int32_t member_index(const std::string& name) const;
+        };
+
         using func_map_t = std::map<std::string, FuncProtWrapper>;
         using var_map_t = std::map<std::string, VarWrapper>;
+        using str_map_t = std::map<std::string, StructWrapper>;
     private:
         Parser::AST& _ast;
 
@@ -102,6 +114,7 @@ namespace Visitor::LLVM {
         // Context
         var_map_t _local_variables;
         func_map_t _functions;
+        str_map_t _structs;
 
         // Returns
         llvm::Value* _ret_value;
@@ -123,6 +136,8 @@ namespace Visitor::LLVM {
 
         llvm::Type* strip_ptr_type(llvm::Value *v);
         llvm::Value* perform_ptr_action(llvm::Value *ptr, llvm::Value *v = nullptr, const std::string &load_s = "");
+
+
 
     };
 }

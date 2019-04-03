@@ -29,13 +29,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
 
-    // precompile function protos
+    for(const auto& struct_def: _ast.iter_struct_decl()) {
+        struct_def.second->accept(*this);
+    }
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
     }
     for(const auto& func_def: _ast.iter_func_def()) {
         func_def.second->declaration->accept(*this);
     }
+
 
     node.accept_children(*this);
     std::cout << "Printing module\n\n\n";
@@ -49,10 +52,10 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
         return;
     }
 
-    auto ret_type = Type::to_llvm(*node.type, _context);
+    auto ret_type = Type::to_llvm(*node.type, _context, _structs);
     std::vector<llvm::Type*> args_types;
     for(const auto& arg: node.arg_list) {
-        args_types.push_back(Type::to_llvm(*arg->type, _context));
+        args_types.push_back(Type::to_llvm(*arg->type, _context, _structs));
     }
 
     llvm::FunctionType* func_t = llvm::FunctionType::get(
@@ -101,17 +104,21 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     }
 }
 
-void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ReturnStmt &node) {
-    _ret_value = nullptr;
-    if(node.expr) {
-        node.expr->accept(*this);
-        if(_ret_value) {
-            _builder.CreateRet(_ret_value);
-        }
-    } else {
-        _builder.CreateRetVoid();
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
+    if(_structs.count(node.identifier->symbol) > 0) {
+        return;
     }
+
+    auto struct_type = llvm::StructType::create(_context, node.identifier->symbol);
+    _structs[node.identifier->symbol] = StructWrapper{ &node, struct_type };
+    std::cout << "Creating a struct!\n";
+    std::vector<llvm::Type*> fields;
+    for(auto& field: node.members) {
+        fields.emplace_back(Type::to_llvm(*(field->type), _context, _structs));
+    }
+    _structs[node.identifier->symbol].llvm_str->setBody(fields, false);
 }
+
 
 // Statement
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CodeBlock &node) {
@@ -227,6 +234,17 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IfStmt &node) {
     _builder.SetInsertPoint(merge);
 }
 
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ReturnStmt &node) {
+    _ret_value = nullptr;
+    if(node.expr) {
+        node.expr->accept(*this);
+        if(_ret_value) {
+            _builder.CreateRet(_ret_value);
+        }
+    } else {
+        _builder.CreateRetVoid();
+    }
+}
 // Expression
 // Binary
 // todo for now only signed cmp
@@ -369,7 +387,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
     node.lhs->accept(*this); auto lhs = _ret_value;
 
     auto from_type = lhs->getType();
-    auto to_type = Type::to_llvm(*node.type, _context);
+    auto to_type = Type::to_llvm(*node.type, _context, _structs);
 
     if(!llvm::CastInst::isCastable(from_type, to_type)) {
         throw std::runtime_error("Cannot cast types");
@@ -454,6 +472,10 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
     _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
+    Base::visit(node);
+}
+
 // Primary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     auto var = _local_variables.find(node.symbol);
@@ -500,7 +522,7 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
     }
     llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
     auto alloca = tmp_b.CreateAlloca(
-        Type::to_llvm(*node.type, _context),
+        Type::to_llvm(*node.type, _context, _structs),
         nullptr,
         node.identifier->symbol);
     _local_variables[node.identifier->symbol] = VarWrapper{&node, alloca};
@@ -582,4 +604,14 @@ llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
         case PtrAction::Address:
             return ptr;
     }
+}
+
+
+std::int32_t Visitor::LLVM::Compiler::StructWrapper::member_index(const std::string &name) const {
+    for(std::uint32_t i = 0; i < str->members.size(); ++i) {
+        if(name == str->members[i]->identifier->symbol) {
+            return i;
+        }
+    }
+    throw std::runtime_error("Unknown struct member " + name);
 }
