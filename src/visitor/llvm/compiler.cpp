@@ -182,9 +182,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
         if(!init) {
             throw std::runtime_error("Could not compile variable init expr");
         }
-        if(init->getType() != var.llvm_alloca->getType()) {
-            init = cast(init, var.llvm_alloca);
-        }
+//        if(init->getType() != var.llvm_alloca->getType()) {
+//            init = cast(init, var.llvm_alloca);
+//        }
         auto old_action = _ptr_action;
         _ptr_action = PtrAction::Store;
         perform_ptr_action(var.llvm_alloca, init);
@@ -234,9 +234,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IfStmt &node) {
 // todo in future versions we need to know the type of the lhs
 // todo and the rhs to make appropriate cmp
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
-    node.lhs->accept(*this); auto t_lhs = _ret_value;
-    node.rhs->accept(*this); auto t_rhs = _ret_value;
-    auto [lhs, rhs] = promote(t_lhs, t_rhs);
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    node.rhs->accept(*this); auto rhs = _ret_value;
+    //auto [lhs, rhs] = promote(t_lhs, t_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
             switch(node.op.id) {
@@ -290,18 +290,18 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     if (!rhs) {
         throw std::runtime_error("Could not compile left side of the assignment");
     }
-    if(lhs->getType() != rhs->getType()) {
-        rhs = cast(rhs, lhs);
-    }
+//    if(lhs->getType() != rhs->getType()) {
+//        rhs = cast(rhs, lhs);
+//    }
     _ptr_action = PtrAction::Store;
     perform_ptr_action(lhs, rhs);
     _ptr_action = old_action;
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
-    node.lhs->accept(*this); auto t_lhs = _ret_value;
-    node.rhs->accept(*this); auto t_rhs = _ret_value;
-    auto [lhs, rhs] = promote(t_lhs, t_rhs);
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    node.rhs->accept(*this); auto rhs = _ret_value;
+//    auto [lhs, rhs] = promote(t_lhs, t_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
         switch (node.op.id) {
@@ -330,9 +330,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &node) {
-    node.lhs->accept(*this); auto tmp_lhs = _ret_value;
-    node.rhs->accept(*this); auto tmp_rhs = _ret_value;
-    auto [lhs, rhs] = promote(tmp_lhs, tmp_rhs);
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    node.rhs->accept(*this); auto rhs = _ret_value;
+//    auto [lhs, rhs] = promote(tmp_lhs, tmp_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
         // both integers
@@ -366,7 +366,28 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
 
 // Cast
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
-    Base::visit(node);
+    node.lhs->accept(*this); auto lhs = _ret_value;
+
+    auto to_type = strip_ptr_type(lhs);
+    auto from_type = Type::to_llvm(*node.type, _context);
+    if(from_type == to_type) {
+        _ret_value = lhs;
+    }
+    if(!llvm::CastInst::isCastable(from_type, to_type)) {
+        throw std::runtime_error("Cannot cast types");
+    }
+    // true means they are signed
+    auto cast = _builder.CreateCast(
+            llvm::CastInst::getCastOpcode(
+                    lhs, true,
+                    to_type, true),
+            lhs,
+            to_type,
+            "__cast_tmp");
+    if(!cast) {
+        throw std::runtime_error("Could not compile cast");
+    }
+    _ret_value = cast;
 }
 
 // Unary
