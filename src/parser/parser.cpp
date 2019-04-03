@@ -982,7 +982,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_const() {
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_int() {
     auto res = parse_token(Lexer::Token::Id::Integer);
-
     return res ? std::make_unique<Nodes::IntConstant>(std::stoi(res->symbol)) : nullptr;
 }
 

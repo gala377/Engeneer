@@ -1,19 +1,18 @@
-define i32 @main() {
+define [128 x i32] @get_array() {
 entry:
-  %b = alloca i32*
   %i = alloca i32
-  %a = alloca [10 x i32]
+  %a = alloca [128 x i32]
   store i32 0, i32* %i
   br label %__whilecond
 
 __whilecond:                                      ; preds = %__while, %entry
   %i1 = load i32, i32* %i
-  %__cmptemp = icmp slt i32 %i1, 10
+  %__cmptemp = icmp slt i32 %i1, 128
   br i1 %__cmptemp, label %__while, label %__whilecontr
 
 __while:                                          ; preds = %__whilecond
   %i2 = load i32, i32* %i
-  %__gep_adr = getelementptr [10 x i32], [10 x i32]* %a, i32 0, i32 %i2
+  %__gep_adr = getelementptr [128 x i32], [128 x i32]* %a, i32 0, i32 %i2
   %i3 = load i32, i32* %i
   store i32 %i3, i32* %__gep_adr
   %i4 = load i32, i32* %i
@@ -22,11 +21,21 @@ __while:                                          ; preds = %__whilecond
   br label %__whilecond
 
 __whilecontr:                                     ; preds = %__whilecond
-  %__gep_adr5 = getelementptr [10 x i32], [10 x i32]* %a, i32 0, i32 0
-  store i32* %__gep_adr5, i32** %b
-  %b6 = load i32*, i32** %b
-  %__deref_val = load i32, i32* %b6
-  call void @test(i32 %__deref_val)
+  %a5 = load [128 x i32], [128 x i32]* %a
+  ret [128 x i32] %a5
+}
+
+define i32 @main() {
+entry:
+  %d = alloca i32*
+  %a = alloca [128 x i32]
+  %__calltmp = call [128 x i32] @get_array()
+  store [128 x i32] %__calltmp, [128 x i32]* %a
+  %__gep_adr = getelementptr [128 x i32], [128 x i32]* %a, i32 0, i32 1
+  store i32* %__gep_adr, i32** %d
+  %d1 = load i32*, i32** %d
+  %__cast_tmp = bitcast i32* %d1 to [0 x i32]*
+  call void @test([0 x i32]* %__cast_tmp)
   ret i32 0
 }
 
@@ -52,12 +61,16 @@ entry:
 
 declare i32 @putchar(i32)
 
-define void @test([0 x i32] %v) {
+define void @test([0 x i32]* %ptr) {
 entry:
-  %v1 = alloca [0 x i32]
-  store [0 x i32] %v, [0 x i32]* %v1
-  %__gep_adr = getelementptr [0 x i32], [0 x i32]* %v1, i32 0, i32 2
+  %v = alloca i32
+  %ptr1 = alloca [0 x i32]*
+  store [0 x i32]* %ptr, [0 x i32]** %ptr1
+  %ptr2 = load [0 x i32]*, [0 x i32]** %ptr1
+  %__gep_adr = getelementptr [0 x i32], [0 x i32]* %ptr2, i32 0, i32 1
   %__gep_val = load i32, i32* %__gep_adr
-  call void @put(i32 %__gep_val)
+  store i32 %__gep_val, i32* %v
+  %v3 = load i32, i32* %v
+  call void @put(i32 %v3)
   ret void
 }

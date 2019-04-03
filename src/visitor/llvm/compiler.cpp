@@ -368,11 +368,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
     node.lhs->accept(*this); auto lhs = _ret_value;
 
-    auto to_type = strip_ptr_type(lhs);
-    auto from_type = Type::to_llvm(*node.type, _context);
-    if(from_type == to_type) {
-        _ret_value = lhs;
-    }
+    auto from_type = lhs->getType();
+    auto to_type = Type::to_llvm(*node.type, _context);
+
     if(!llvm::CastInst::isCastable(from_type, to_type)) {
         throw std::runtime_error("Cannot cast types");
     }

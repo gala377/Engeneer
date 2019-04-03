@@ -15,31 +15,39 @@
 
 int main() {
     Lexer::Source::String s(R"(
-    i32 putchar(_ i32);
+    i32 main() {
+        # get some array
+        let a [128]i32 = get_array();
+
+        # have a ptr to some of its content
+        let d &i32 = &a[1];
+
+        test(d as &[]i32);
+        return 0;
+    }
+
+    void test(ptr &[]i32) {
+        # value of v is a[3];
+        let v i32 = (val ptr)[1];
+        put(v);
+    }
+
+    [128]i32 get_array() {
+        let a [128]i32;
+        let i i32 = 0;
+        while i < 128 {
+            a[i] = i;
+            i = i + 1;
+        }
+        return a;
+    }
 
     void put(v i32) {
         putchar(65 + v);
     }
 
-    void put_ptr(v &i32) {
-        put(val v);
-    }
 
-    void test(v []i32) {
-        put(v[2]);
-    }
-
-    i32 main() {
-        let a [10]i32;
-        let i i32 = 0;
-        while i < 10 {
-            a[i] = i;
-            i = i + 1;
-        }
-        let d &i32 = &a as &i32;
-        test(val b);
-        return 0;
-    }
+    i32 putchar(_ i32);
 )");
     // todo cast makes to so int32 is casted to int32*
     // todo I need to think about and implement some kind of
