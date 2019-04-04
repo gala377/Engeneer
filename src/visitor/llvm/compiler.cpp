@@ -30,7 +30,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
 
     for(const auto& struct_def: _ast.iter_struct_decl()) {
-        struct_def.second->accept(*this);
+        declare_opaque(*struct_def.second);
     }
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
@@ -104,21 +104,23 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     }
 }
 
-void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
-    if(_structs.count(node.identifier->symbol) > 0) {
-        return;
+Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_opaque(const Parser::Nodes::StructDecl &node) {
+    if(auto it = _structs.find(node.identifier->symbol); it != _structs.end()) {
+        return it->second;
     }
-
     auto struct_type = llvm::StructType::create(_context, node.identifier->symbol);
     _structs[node.identifier->symbol] = StructWrapper{ &node, struct_type };
-    std::cout << "Creating a struct!\n";
+    return _structs[node.identifier->symbol];
+}
+
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
+    auto& s = declare_opaque(node);
     std::vector<llvm::Type*> fields;
     for(auto& field: node.members) {
         fields.emplace_back(Type::to_llvm(*(field->type), _context, _structs));
     }
-    _structs[node.identifier->symbol].llvm_str->setBody(fields, false);
+    s.llvm_str->setBody(fields, false);
 }
-
 
 // Statement
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CodeBlock &node) {
@@ -295,8 +297,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
-    // todo for now only identifier
-    // todo support for access and indexing operators
     auto old_action = _ptr_action;
     _ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ret_value;
@@ -308,9 +308,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     if (!rhs) {
         throw std::runtime_error("Could not compile left side of the assignment");
     }
-//    if(lhs->getType() != rhs->getType()) {
-//        rhs = cast(rhs, lhs);
-//    }
+
     _ptr_action = PtrAction::Store;
     perform_ptr_action(lhs, rhs);
     _ptr_action = old_action;
@@ -428,6 +426,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::DereferenceExpr &node) 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
     //std::cout << "call expr";
     // todo for now we assume lhs can only be an identifier
+    // todo make it so if its a function we return function ptr to it
     node.lhs->accept(*this); auto symbol = _ret_symbol;
 
     auto callee = _module->getFunction(symbol);
@@ -473,10 +472,38 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
-    Base::visit(node);
-    // todo left has to be a struct and we need to know its name
-    // todo right needs to be an identifier
-    // todo for now we just search members, later we should search methods
+    // get address of lhs for gep
+    std::cout << "Watch1\n";
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Address;
+    std::cout << "Watch2\n";
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    // todo for now we assume only members
+    // todo for methods me need to translate
+    // todo its identifier to func ptr to call later
+    Parser::Nodes::Identifier* ident = nullptr;
+    std::cout << "Watch3\n";
+    if(ident = dynamic_cast<Parser::Nodes::Identifier*>(node.rhs.get()); ident == nullptr) {
+        throw std::runtime_error("Expected identifier for the access operator");
+    }
+    std::cout << "Watch4\n";
+    auto expr_type = strip_ptr_type(lhs);
+    if(!(expr_type->isStructTy())) {
+        throw std::runtime_error("Access can only be done on structs");
+    }
+    std::cout << "Watch5\n";
+    auto& s_wrapper = _structs[llvm::dyn_cast<llvm::StructType>(expr_type)->getName()];
+    std::cout << "Watch6\n";
+    std::int32_t gep_index = s_wrapper.member_index(ident->symbol);
+    std::cout << "Watch7\n";
+    std::vector<llvm::Value*> gep_indexes{
+        llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
+        llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
+    std::cout << "Watch8\n";
+    auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
+    _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
+    std::cout << "Watch9\n";
+    _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
 // Primary

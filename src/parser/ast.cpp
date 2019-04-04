@@ -80,8 +80,6 @@ Parser::Nodes::StructDecl *Parser::AST::get_struct_decl(const Parser::AST::symbo
 }
 
 
-
-
 Parser::AST::const_iterator<Parser::Nodes::FunctionProt*> Parser::AST::iter_func_prot() const {
     return glib::collections::CollectionConstIter(function_protos);
 }

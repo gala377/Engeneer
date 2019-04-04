@@ -10,7 +10,7 @@ namespace glib::collections {
     template <typename T>
     class CollectionConstIter {
     public:
-        CollectionConstIter(const T& collection): collection(collection) {};
+        explicit CollectionConstIter(const T& collection): collection(collection) {};
 
         typedef typename T::const_iterator const_iterator;
 

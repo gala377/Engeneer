@@ -21,7 +21,7 @@ namespace Visitor::LLVM {
 
     class Compiler: public Visitor::Base {
     public:
-        Compiler(Parser::AST& ast);
+        explicit Compiler(Parser::AST& ast);
 
         // Visitor
         // Base
@@ -65,7 +65,6 @@ namespace Visitor::LLVM {
         // Postfix
         void visit(const Parser::Nodes::CallExpr &node) override;
         void visit(const Parser::Nodes::IndexExpr &node) override;
-
         void visit(const Parser::Nodes::AccessExpr &node) override;
 
         // Primary
@@ -129,16 +128,15 @@ namespace Visitor::LLVM {
         PtrAction _ptr_action{PtrAction::Load};
 
         // methods
+        StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
+
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
-
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
+
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
-
         llvm::Type* strip_ptr_type(llvm::Value *v);
+
         llvm::Value* perform_ptr_action(llvm::Value *ptr, llvm::Value *v = nullptr, const std::string &load_s = "");
-
-
-
     };
 }
 

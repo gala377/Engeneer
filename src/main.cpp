@@ -17,35 +17,28 @@ int main() {
     Lexer::Source::String s(R"(
 
     struct Foo {
-        a i64;
-        b f32;
-        c &Foo;
-    }
-
-    i32 main() {
-        let a f32 = 1.5 as f32 + 1.5 as f32 + 1 as f32;
-        put(a as i32);
-        let b Foo = test();
-
-        put(b[0] as i32);
-        put((b[1] + 0.5 as f32) as i32);
-        b[2] = &b;
-        put((val b[2])[0] as i32);
-        return 0;
-    }
-
-    Foo test() {
-        let a Foo;
-        a[0] = 1 as i64;
-        a[1] = 20.5 as f32;
-        return a;
-    }
-
-    void put(v i32) {
-        putchar(65 + v);
+        bar f64;
+        bar2 [3]i32;
     }
 
     i32 putchar(_ i32);
+    i32 put(v i32) {
+        return putchar(v+65);
+    }
+
+    i32 main() {
+        let f Foo;
+        f.bar = 1.5;
+        let i i32 = 0;
+        while i < 3 {
+            f.bar2[i] = i;
+            put(f.bar2[i]);
+            #put(i);
+            i = i+1;
+        }
+        return 0;
+    }
+
 )");
     // todo cast makes to so int32 is casted to int32*
     // todo I need to think about and implement some kind of

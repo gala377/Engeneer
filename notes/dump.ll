@@ -1,54 +1,47 @@
-%Foo = type { i64, float, %Foo* }
+%Foo = type { double, [3 x i32] }
 
 define i32 @main() {
 entry:
-  %b = alloca %Foo
-  %a = alloca float
-  store float 4.000000e+00, float* %a
-  %a1 = load float, float* %a
-  %__cast_tmp = fptosi float %a1 to i32
-  call void @put(i32 %__cast_tmp)
-  %__calltmp = call %Foo @test()
-  store %Foo %__calltmp, %Foo* %b
-  %__gep_adr = getelementptr %Foo, %Foo* %b, i32 0, i32 0
-  %__gep_val = load i64, i64* %__gep_adr
-  %__cast_tmp2 = trunc i64 %__gep_val to i32
-  call void @put(i32 %__cast_tmp2)
-  %__gep_adr3 = getelementptr %Foo, %Foo* %b, i32 0, i32 1
-  %__gep_val4 = load float, float* %__gep_adr3
-  %__addtmp = fadd float %__gep_val4, 5.000000e-01
-  %__cast_tmp5 = fptosi float %__addtmp to i32
-  call void @put(i32 %__cast_tmp5)
-  %__gep_adr6 = getelementptr %Foo, %Foo* %b, i32 0, i32 2
-  store %Foo* %b, %Foo** %__gep_adr6
-  %__gep_adr7 = getelementptr %Foo, %Foo* %b, i32 0, i32 2
-  %__gep_val8 = load %Foo*, %Foo** %__gep_adr7
-  %__gep_adr9 = getelementptr %Foo, %Foo* %__gep_val8, i32 0, i32 0
-  %__gep_val10 = load i64, i64* %__gep_adr9
-  %__cast_tmp11 = trunc i64 %__gep_val10 to i32
-  call void @put(i32 %__cast_tmp11)
+  %i = alloca i32
+  %f = alloca %Foo
+  %__gep_adr = getelementptr %Foo, %Foo* %f, i32 0, i32 0
+  store double 1.500000e+00, double* %__gep_adr
+  store i32 0, i32* %i
+  br label %__whilecond
+
+__whilecond:                                      ; preds = %__while, %entry
+  %i1 = load i32, i32* %i
+  %__cmptemp = icmp slt i32 %i1, 3
+  br i1 %__cmptemp, label %__while, label %__whilecontr
+
+__while:                                          ; preds = %__whilecond
+  %__gep_adr2 = getelementptr %Foo, %Foo* %f, i32 0, i32 1
+  %i3 = load i32, i32* %i
+  %__gep_adr4 = getelementptr [3 x i32], [3 x i32]* %__gep_adr2, i32 0, i32 %i3
+  %i5 = load i32, i32* %i
+  store i32 %i5, i32* %__gep_adr4
+  %__gep_adr6 = getelementptr %Foo, %Foo* %f, i32 0, i32 1
+  %i7 = load i32, i32* %i
+  %__gep_adr8 = getelementptr [3 x i32], [3 x i32]* %__gep_adr6, i32 0, i32 %i7
+  %__gep_val = load i32, i32* %__gep_adr8
+  %__calltmp = call i32 @put(i32 %__gep_val)
+  %i9 = load i32, i32* %i
+  %__addtmp = add i32 %i9, 1
+  store i32 %__addtmp, i32* %i
+  br label %__whilecond
+
+__whilecontr:                                     ; preds = %__whilecond
   ret i32 0
 }
 
-define void @put(i32 %v) {
+define i32 @put(i32 %v) {
 entry:
   %v1 = alloca i32
   store i32 %v, i32* %v1
   %v2 = load i32, i32* %v1
-  %__addtmp = add i32 65, %v2
+  %__addtmp = add i32 %v2, 65
   %__calltmp = call i32 @putchar(i32 %__addtmp)
-  ret void
+  ret i32 %__calltmp
 }
 
 declare i32 @putchar(i32)
-
-define %Foo @test() {
-entry:
-  %a = alloca %Foo
-  %__gep_adr = getelementptr %Foo, %Foo* %a, i32 0, i32 0
-  store i64 1, i64* %__gep_adr
-  %__gep_adr1 = getelementptr %Foo, %Foo* %a, i32 0, i32 1
-  store float 2.050000e+01, float* %__gep_adr1
-  %a2 = load %Foo, %Foo* %a
-  ret %Foo %a2
-}
