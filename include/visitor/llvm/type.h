@@ -39,6 +39,7 @@ namespace Visitor::LLVM::Type {
         llvm::Type* try_as_simple(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
         llvm::Type* try_as_array(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
         llvm::Type* try_as_complex(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
+        llvm::Type* try_as_function(const Parser::Types::BaseType& type, llvm::LLVMContext& c, Compiler::str_map_t& structs);
 
         std::uint32_t float_size(llvm::Type* t);
         std::uint32_t int_size(llvm::Type* t);

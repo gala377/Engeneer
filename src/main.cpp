@@ -16,35 +16,20 @@
 int main() {
     Lexer::Source::String s(R"(
 
-    struct Foo {
-        bar f64;
-        bar2 [3]i32;
-    }
-
     i32 putchar(_ i32);
     i32 put(v i32) {
         return putchar(v+65);
     }
 
     i32 main() {
-        let f Foo;
-        f.bar = 1.5;
-        let i i32 = 0;
-        while i < 3 {
-            f.bar2[i] = i;
-            put(f.bar2[i]);
-            #put(i);
-            i = i+1;
-        }
+        let func fn(i32) -> i32 = put;
+        func(0);
         return 0;
     }
 
-)");
-    // todo cast makes to so int32 is casted to int32*
-    // todo I need to think about and implement some kind of
-    // todo an implicit pointer dereferencing and shit
-    // todo and control casting and promotion more
 
+
+)");
     Parser::Parser p(s);
     Parser::AST ast;
     try {

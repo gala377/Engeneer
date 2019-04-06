@@ -13,6 +13,7 @@ const Parser::Nodes::Identifier &Parser::Types::SimpleType::identifier() const {
 }
 
 const Parser::Nodes::Identifier &Parser::Types::ComplexType::identifier() const {
+    // todo really doesn't make any sense
     return underlying_type->identifier();
 }
 
@@ -20,6 +21,7 @@ Parser::Types::SimpleType::SimpleType(std::unique_ptr<Parser::Nodes::Identifier>
     ident(std::move(ident)) {}
 
 const Parser::Nodes::Identifier &Parser::Types::ArrayType::identifier() const {
+    // todo really doesn't make any sense
     return underlying_type->identifier();
 }
 
@@ -28,3 +30,13 @@ Parser::Types::ArrayType::ArrayType(
     std::unique_ptr<Parser::Types::BaseType> &&underlying_type):
     size(size),
     underlying_type(std::move(underlying_type)) {}
+
+const Parser::Nodes::Identifier &Parser::Types::FunctionType::identifier() const {
+    // todo really doesn't make any sense
+    return return_type->identifier();
+}
+
+Parser::Types::FunctionType::FunctionType(
+        std::unique_ptr<Parser::Types::BaseType> return_t,
+        std::vector<std::unique_ptr<Parser::Types::BaseType>> arg_t):
+        return_type(std::move(return_t)), argument_types(std::move(arg_t)) {}

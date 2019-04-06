@@ -444,7 +444,15 @@ std::string Visitor::Stringify::strf_type(const std::unique_ptr<Parser::Types::B
         std::string mess = "[" + std::to_string(array->size) + "]";
         return mess + strf_type(array->underlying_type);
     }
-    throw std::runtime_error("StringifyVisitor: Passed type is neither complex nor simple");
+    if(auto func = dynamic_cast<Parser::Types::FunctionType*>(type.get()); func) {
+        std::string mess = "fn(";
+        for(auto& arg: func->argument_types) {
+            mess += strf_type(arg) + ",";
+        }
+        mess += ")->" + strf_type(func->return_type);
+        return mess;
+    }
+    throw std::runtime_error("StringifyVisitor: Cannot stringify type!");
 }
 
 

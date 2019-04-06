@@ -344,7 +344,6 @@ namespace Parser::Nodes {
 
     // Postfix
     class PostfixExpr: public Expression {
-        // todo finish postfix parsing and refactoring
     public:
         PostfixExpr(std::unique_ptr<Expression>&& lhs);
 

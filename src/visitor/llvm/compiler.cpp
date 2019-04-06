@@ -421,23 +421,29 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::DereferenceExpr &node) 
 }
 
 // Postfix
-// Todo for now its just for the identifiers
-// todo chained function calls on function pointers
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
-    //std::cout << "call expr";
-    // todo for now we assume lhs can only be an identifier
-    // todo make it so if its a function we return function ptr to it
-    node.lhs->accept(*this); auto symbol = _ret_symbol;
+    // todo does it work for function ptrs and functions?
+    auto old_action = _ptr_action;
+    _ptr_action = PtrAction::Load;
+    node.lhs->accept(*this); auto lhs = _ret_value;
+    _ptr_action = old_action;
 
-    auto callee = _module->getFunction(symbol);
-    if(!callee) {
-        throw std::runtime_error("Use of undeclared function");
+    auto func_ptr_t = llvm::dyn_cast<llvm::PointerType>(lhs->getType());
+    if(!func_ptr_t) {
+        std::cout << lhs->getName().str() << " is not a Func ptr type\n Type is ";
+        lhs->getType()->print(llvm::outs(), true, false);
     }
-
-    if(callee->arg_size() != node.args.size()) {
-        throw std::runtime_error("Incorrect # arguments passed");
+    auto func_t = llvm::dyn_cast<llvm::FunctionType>(func_ptr_t->getElementType());
+    if(!func_t->isFunctionTy()) {
+        std::cout << lhs->getName().str() << "is not a Func type\n Type is ";
+        func_ptr_t->getElementType()->print(llvm::outs(), true, false);
     }
-
+    if(!func_t) {
+        throw std::runtime_error("LHS of call expression is expected to be a function ptr");
+    }
+    if(func_t->params().size()!= node.args.size()) {
+        throw std::runtime_error("Incorrect number of arguments passed");
+    }
     std::vector<llvm::Value*> args_v;
     for(uint32_t i = 0; i != node.args.size(); ++i) {
         node.args[i]->accept(*this); auto arg = _ret_value;
@@ -446,12 +452,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
             throw std::runtime_error("Could not emit function call argument");
         }
     }
-
-    if(callee->getReturnType() == llvm::Type::getVoidTy(_context)) {
-        _builder.CreateCall(callee, args_v);
+    if(func_t->getReturnType() == llvm::Type::getVoidTy(_context)) {
+        _builder.CreateCall(lhs, args_v);
         _ret_value = nullptr;
     } else {
-        _ret_value = _builder.CreateCall(callee, args_v, "__calltmp");
+        _ret_value = _builder.CreateCall(lhs, args_v, "__calltmp");
     }
 }
 
@@ -510,10 +515,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     auto var = _local_variables.find(node.symbol);
     if(var == _local_variables.end()) {
-        // possible function call, we pass the identifier
-        // todo make it work somehow later
-        _ret_symbol = node.symbol;
-        _ret_value = nullptr;
+        _ret_value = _module->getFunction(node.symbol);
         return;
     }
     llvm::Value* v = var->second.llvm_alloca;
@@ -622,16 +624,19 @@ llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
 
     switch (_ptr_action) {
         case PtrAction::None:
+            std::cout << "Ptr action is None\n";
             return nullptr;
         case PtrAction::Store:
+            std::cout << "Ptr action is store to " << ptr->getName().str() << "\n";
             if(!v) {
                 throw std::runtime_error("Store of a null value");
             }
             return _builder.CreateStore(v, ptr);
         case PtrAction::Load:
-            std::cout << "ptr action is load as " << load_s << "\n";
+            std::cout << "ptr action is load as " << load_s << " from: " << ptr->getName().str() <<"\n";
             return _builder.CreateLoad(ptr, load_s);
         case PtrAction::Address:
+            std::cout << "ptr actions is address of " << ptr->getName().str() << "\n";
             return ptr;
     }
 }

@@ -43,6 +43,16 @@ namespace Parser::Types {
 
         const Nodes::Identifier &identifier() const override;
     };
+
+    class FunctionType: public BaseType {
+    public:
+        FunctionType(std::unique_ptr<BaseType> return_t, std::vector<std::unique_ptr<BaseType>> arg_t);
+
+        std::unique_ptr<BaseType> return_type{nullptr};
+        std::vector<std::unique_ptr<BaseType>> argument_types;
+
+        const Nodes::Identifier &identifier() const override;
+    };
 }
 
 #endif //TKOM2_TYPE_H

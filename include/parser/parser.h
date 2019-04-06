@@ -127,6 +127,9 @@ namespace Parser {
         std::unique_ptr<Types::ComplexType> parse_complex_type();
         std::unique_ptr<Types::ArrayType> parse_array_type();
         std::unique_ptr<Types::SimpleType> parse_simple_type();
+        std::unique_ptr<Types::FunctionType> parse_func_type();
+        unique_vec<Types::BaseType> parse_func_type_args();
+
 
         // postfix helpers
         using call_args_t = unique_vec<Nodes::Expression>;

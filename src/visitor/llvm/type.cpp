@@ -15,6 +15,9 @@ llvm::Type* Visitor::LLVM::Type::to_llvm(const Parser::Types::BaseType &type, ll
     if(auto t = try_as_array(type, c, structs); t) {
         return t;
     }
+    if(auto t = try_as_function(type, c, structs); t) {
+        return t;
+    }
     return nullptr;
 }
 
@@ -31,7 +34,6 @@ llvm::Type *Visitor::LLVM::Type::try_as_simple(const Parser::Types::BaseType &ty
     } catch (std::bad_cast&) {
         return nullptr;
     }
-    return nullptr;
 }
 
 llvm::Type *Visitor::LLVM::Type::try_as_array(const Parser::Types::BaseType &type, llvm::LLVMContext& c, Compiler::str_map_t& structs) {
@@ -49,6 +51,21 @@ llvm::Type *Visitor::LLVM::Type::try_as_complex(const Parser::Types::BaseType &t
         if(complex.is_ptr) {
             return llvm::PointerType::get(to_llvm(*complex.underlying_type, c, structs), 0);
         }
+    } catch (std::bad_cast&) {
+        return nullptr;
+    }
+}
+
+llvm::Type *Visitor::LLVM::Type::try_as_function(const Parser::Types::BaseType &type, llvm::LLVMContext &c, Compiler::str_map_t &structs) {
+    try {
+        const auto &func = dynamic_cast<const Parser::Types::FunctionType&>(type);
+        std::vector<llvm::Type*> args;
+        for(auto& arg: func.argument_types) {
+            args.emplace_back(to_llvm(*arg, c, structs));
+        }
+        return llvm::PointerType::get(
+            llvm::FunctionType::get(to_llvm(*func.return_type, c, structs), args, false),
+            0);
     } catch (std::bad_cast&) {
         return nullptr;
     }

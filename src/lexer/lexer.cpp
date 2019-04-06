@@ -26,6 +26,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"const", Token::Id::Const},
         {"val", Token::Id::Val},
         {"as", Token::Id::As},
+        {"fn", Token::Id::Fn},
 };
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
@@ -64,6 +65,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
         {"-", Token::Id::Minus},
         {"!", Token::Id::Negation},
         {".", Token::Id::Dot},
+        {"->", Token::Id::Arrow},
 };
 
 Lexer::Lexer::Lexer(Source::Base &source):

@@ -41,6 +41,7 @@ namespace Lexer {
             Const,
             Val,
             As,
+            Fn,
 
             // Operators
             Assignment=200,
@@ -77,6 +78,7 @@ namespace Lexer {
             Semicolon,
             Colon,
             Dot,
+            Arrow,
 
             DoubleMinus,
             DoublePlus,
