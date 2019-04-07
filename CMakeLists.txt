@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.10)
 project(TKOM2)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY build)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -Wall -std=c++17 -lstdc++fs")
@@ -12,7 +14,9 @@ set(CMAKE_CXX_COMPILER g++)
 
 include_directories(include)
 add_subdirectory(src)
-add_subdirectory(tests)
+# for now because as of now
+# or tests really dont do anything
+#add_subdirectory(tests)
 
-enable_testing()
-add_test(NAME All COMMAND Test)
+#enable_testing()
+#add_test(NAME All COMMAND Test)

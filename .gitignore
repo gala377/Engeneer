@@ -6,4 +6,5 @@ build
 
 notes/hello_world
 notes/example
+custom
 *.o
