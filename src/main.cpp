@@ -39,11 +39,17 @@ int main() {
 
     i32 main() {
         #struct_example();
-        # todo this one doesnt work actually
-        put(array_example()[0]);
+        #put(array_example()[0]);
         #put(struct_example().i);
-        #let i i32 = 0;
-        #put(val i);
+        #put_chars(&(new_B().array));
+        let a A = struct_example();
+        put(a.i);
+
+        let b B = new_B();
+        # i have no idea why this doesnt work? 
+        let i i32 = 0;
+        b.array[i] = 20;
+        put(b.array[i]);
         return 0;
     }
 
@@ -68,10 +74,20 @@ int main() {
         return a;        
     }
 
-    A struct_example_2() {
-        let a A;
-        a.i = 7;
-        return a;
+    struct B {
+        array [3]i32;
+    }
+
+    B new_B() {
+        let b B;
+        let i i32 = 0;
+        while i < 2 {
+            b.array[i] = i;
+            i = i +1;
+        }
+        b.array[2] = 999;
+        put_chars(&b.array as &[]i32);
+        return b;
     }
 )");
     Parser::Parser p(s);

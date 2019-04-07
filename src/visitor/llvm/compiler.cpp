@@ -137,7 +137,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
         _builder.CreateStore(&arg, var.llvm_alloca);
         ++i;
     }
-
+    std::cerr << "In function " << func_name << "\n";
     node.body->accept(*this);
     if(func_w->second.func->type->identifier().symbol == Type::void_id) {
         _builder.CreateRetVoid();
