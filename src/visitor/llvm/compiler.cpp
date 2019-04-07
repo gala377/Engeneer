@@ -50,6 +50,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
     }
+
     for(const auto& func_def: _ast.iter_func_def()) {
         func_def.second->declaration->accept(*this);
     }

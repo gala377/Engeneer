@@ -29,6 +29,22 @@ int main() {
         }
     }
 
+    struct B {
+        array [3]i32;
+    }
+
+    B new_B() {
+        let b B;
+        let i i32 = 0;
+        while i < 2 {
+            b.array[i] = i;
+            i = i +1;
+        }
+        b.array[2] = 999;
+        put_chars(&b.array as &[]i32);
+        return b;
+    }
+
     void put_chars(a &[]i32) {
         let i i32 = 0;
         while a[i] < 999 {
@@ -72,22 +88,6 @@ int main() {
         __A__meth__add(&a);
         put(a.i);
         return a;        
-    }
-
-    struct B {
-        array [3]i32;
-    }
-
-    B new_B() {
-        let b B;
-        let i i32 = 0;
-        while i < 2 {
-            b.array[i] = i;
-            i = i +1;
-        }
-        b.array[2] = 999;
-        put_chars(&b.array as &[]i32);
-        return b;
     }
 )");
     Parser::Parser p(s);

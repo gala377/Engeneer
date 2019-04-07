@@ -41,7 +41,16 @@ namespace Visitor::LLVM {
         // Function
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
-
+        
+        // todo We need 2 different functions to compile structs
+        // todo one which would compile the type
+        // todo and the second one which will compile its methods
+        // todo it should go like this
+        // compile every function prototype (so if anything calls anything it exists)
+        // compile every method prototype (so if anything calls anything it exists)
+        // compile every struct as opaque (so fields which are structs always exist)
+        // compile every struct with types (so gep will work)
+        // now compile methods and functions 
         void visit(const Parser::Nodes::StructDecl &node) override;
 
         // Statement
@@ -70,12 +79,7 @@ namespace Visitor::LLVM {
 
         // Postfix
         void visit(const Parser::Nodes::CallExpr &node) override;
-        // todo Index zakłada że po leweje stronie zawsze ma wskaźnik
-        // todo (bo zakłada allocainst), kiedy tak naprawdę
-        // todo może mieć wartość (np zwróconą z funckji)
         void visit(const Parser::Nodes::IndexExpr &node) override;
-
-        // todo ten sam problem instieje dla Access
         void visit(const Parser::Nodes::AccessExpr &node) override;
 
         // Primary
@@ -162,7 +166,7 @@ namespace Visitor::LLVM {
             llvm::Function &func,
             const std::string& identifier,
             llvm::Type* type);
-            
+
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
 
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
