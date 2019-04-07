@@ -532,6 +532,17 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         index};
+    if(!lhs->getType()->isPointerTy()) {
+        auto anon = create_anon_var(
+            *_builder.GetInsertBlock()->getParent(),
+            "__anonym_value",
+            lhs->getType());
+        auto old_action = _ptr_action;
+        _ptr_action = PtrAction::Store;
+        perform_ptr_action(anon, lhs, "__anonym_store");
+        lhs = anon;
+        _ptr_action = old_action;
+    }
     auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
     _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
     _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
@@ -577,7 +588,6 @@ llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, cons
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
     if(str->getType()->isStructTy()) {
-        std::cerr << "Is a literal struct type, making alloca inst\n";
         auto anon = create_anon_var(
             *_builder.GetInsertBlock()->getParent(),
             "__anonym_value",
@@ -587,12 +597,6 @@ llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, cons
         perform_ptr_action(anon, str, "__anonym_store");
         str = anon;
         _ptr_action = old_action;
-    }
-    std::cerr << "Creating gep\n";
-    if(str->getType()->isPointerTy()) {
-        auto type = llvm::dyn_cast<llvm::PointerType>(str->getType());
-        auto s_type = llvm::dyn_cast<llvm::StructType>(type->getElementType());
-        std::cerr << "str is a pointer type to " << s_type->getName().str() << "\n";
     }
     auto gep = _builder.CreateGEP(str, gep_indexes, "__gep_adr");
     std::cerr << "Gep done, we are happu :)\n";

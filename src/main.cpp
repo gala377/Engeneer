@@ -40,12 +40,8 @@ int main() {
     i32 main() {
         #struct_example();
         # todo this one doesnt work actually
-        #put(array_example()[0]);
-        put(struct_example().i);
-        put(struct_example_2().i);
-        put(struct_example().i);
-        put(struct_example().i);
-        put(struct_example_2().i);
+        put(array_example()[0]);
+        #put(struct_example().i);
         #let i i32 = 0;
         #put(val i);
         return 0;
