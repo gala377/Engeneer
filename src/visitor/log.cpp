@@ -9,7 +9,7 @@
 
 
 Visitor::Stringify::Stringify(Parser::AST &ast) {
-    _ast = std::move(std::make_optional(std::ref(ast)));
+    _ast = std::make_optional(std::ref(ast));
     add_header();
 }
 

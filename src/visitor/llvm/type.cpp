@@ -54,6 +54,7 @@ llvm::Type *Visitor::LLVM::Type::try_as_complex(const Parser::Types::BaseType &t
     } catch (std::bad_cast&) {
         return nullptr;
     }
+    return nullptr;
 }
 
 llvm::Type *Visitor::LLVM::Type::try_as_function(const Parser::Types::BaseType &type, llvm::LLVMContext &c, Compiler::str_map_t &structs) {
@@ -95,7 +96,7 @@ std::uint32_t Visitor::LLVM::Type::int_size(llvm::Type *t) {
 Visitor::LLVM::Type::TypeDeduction::TypeDeduction(
         const Compiler::func_map_t& functions,
         const Compiler::var_map_t& variables):
-        _functions(functions), _variables(variables), Base() {}
+         Base(), _functions(functions), _variables(variables) {}
 
 void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::LogicalOrExpr &node) {
     Base::visit(node);
@@ -167,6 +168,7 @@ void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::Identifier &
     }
     auto t_copy = it->second.var->type.get();
     // todo what todo what todo
+    (void*)t_copy;
 }
 
 void Visitor::LLVM::Type::TypeDeduction::visit(const Parser::Nodes::ParenthesisExpr &node) {

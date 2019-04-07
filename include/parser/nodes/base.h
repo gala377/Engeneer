@@ -19,6 +19,8 @@ namespace Parser::Nodes {
     class Base {
     public:
         Base() = default;
+        virtual ~Base() = default;
+        
         explicit Base(std::uint32_t depth);
 
         virtual const std::uint32_t& depth() const;

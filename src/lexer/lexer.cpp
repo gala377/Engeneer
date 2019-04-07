@@ -134,16 +134,16 @@ const Lexer::Token Lexer::Lexer::next_token() {
     }
 
     auto saved_pos = _source.curr_source_position();
-    _curr_token = std::move(std::exchange(_next_token, _token_assemblers[asm_id](ch)));
+    _curr_token = std::exchange(_next_token, _token_assemblers[asm_id](ch));
     auto curr_pos = _source.curr_source_position();
 
-    _next_token.span = std::move(Token::Span {
+    _next_token.span = Token::Span {
         _source.name(),
         std::get<0>(saved_pos),
         std::get<1>(saved_pos),
         std::get<1>(curr_pos),
         _source.current_pointer(),
-     });
+     };
     return _curr_token;
 }
 

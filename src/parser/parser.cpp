@@ -32,7 +32,7 @@ Parser::AST Parser::Parser::parse() {
                 "End of source expected");
     }
     initialize_ast(ast);
-    return std::move(ast);
+    return ast;
 }
 
 void Parser::Parser::initialize_ast(AST &ast) const {
@@ -111,7 +111,7 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
         std::move(type),
         std::move(init_expr));
     _glob_var_decls.push_back(res.get());
-    return std::move(res);
+    return res;
 }
 
 std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
@@ -138,13 +138,13 @@ std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
         std::move(methods),
         std::move(wrapped_structs));
     _structs_decls.push_back(res.get());
-    return std::move(res);
+    return res;
 }
 
 Parser::Parser::unique_vec<Parser::Nodes::Identifier> Parser::Parser::parse_wraps_decl() {
     unique_vec<Nodes::Identifier> wrapped_structs;
     if(!parse_token(Lexer::Token::Id::Wraps)) {
-        return std::move(wrapped_structs);
+        return wrapped_structs;
     }
     auto ident = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
     if(!ident) {
@@ -164,7 +164,7 @@ Parser::Parser::unique_vec<Parser::Nodes::Identifier> Parser::Parser::parse_wrap
             }
             wrapped_structs.emplace_back(std::move(id));
         });
-    return std::move(wrapped_structs);
+    return wrapped_structs;
 }
 
 // todo refactor
@@ -387,7 +387,7 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::parse_code_block() {
             _lexer.curr_token(),
             "Code block left open");
     }
-    return std::move(code_block);
+    return code_block;
 }
 
 std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
@@ -840,7 +840,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_postfix_expr() 
         [&lhs](auto&& res) {
             lhs = std::move(res);
         });
-    return std::move(lhs);
+    return lhs;
 }
 
 
@@ -926,7 +926,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_index_parameter
             _lexer.curr_token(),
             "Indexing not closed");
     }
-    return std::move(lhs);
+    return lhs;
 }
 
 std::unique_ptr<Parser::Nodes::Identifier> Parser::Parser::parse_access_parameters() {
@@ -941,7 +941,7 @@ std::unique_ptr<Parser::Nodes::Identifier> Parser::Parser::parse_access_paramete
     }
     auto casted = std::unique_ptr<Nodes::Identifier>(
         dynamic_cast<Nodes::Identifier*>(ident.release()));
-    return std::move(casted);
+    return casted;
 }
 
 // Primary
@@ -1062,7 +1062,7 @@ std::unique_ptr<Parser::Types::ArrayType> Parser::Parser::parse_array_type() {
     // todo that would be nice
     auto size = std::make_unique<Nodes::IntConstant>(0);
     if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
-        size = std::move(parse_cast<Nodes::IntConstant>(&Parser::parse_int));
+        size = parse_cast<Nodes::IntConstant>(&Parser::parse_int);
         if(!size) {
             abort<Exception::BaseSyntax>(
                 _lexer.curr_token(),
@@ -1142,5 +1142,5 @@ Parser::Parser::unique_vec<Parser::Types::BaseType> Parser::Parser::parse_func_t
             _lexer.curr_token(),
             "Expected the function ptr arguments list to be inside parenthesis");
     }
-    return std::move(args);
+    return args;
 }
