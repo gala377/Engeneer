@@ -69,7 +69,12 @@ namespace Visitor::LLVM {
 
         // Postfix
         void visit(const Parser::Nodes::CallExpr &node) override;
+        // todo Index zakłada że po leweje stronie zawsze ma wskaźnik
+        // todo (bo zakłada allocainst), kiedy tak naprawdę
+        // todo może mieć wartość (np zwróconą z funckji)
         void visit(const Parser::Nodes::IndexExpr &node) override;
+
+        // todo ten sam problem instieje dla Access
         void visit(const Parser::Nodes::AccessExpr &node) override;
 
         // Primary

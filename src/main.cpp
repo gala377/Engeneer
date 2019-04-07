@@ -24,19 +24,46 @@ int main() {
     struct A {
         i i32;
 
-        void print_A() {
-            let i i32 = 2;
-            put(i);
+        void add() {
+            i = i+1;
         }
+    }
 
-        j f32;
+    void put_chars(a &[]i32) {
+        let i i32 = 0;
+        while a[i] < 999 {
+            put(a[i]);
+            i = i + 1; 
+        }
     }
 
     i32 main() {
+        #struct_example();
+        # todo this one doesnt work actually
+        put(array_example()[0]);
+        put(struct_example().i);
+        return 0;
+    }
+
+    [22]i32 array_example() {
+        let i i32 = 0;
+        let a [22]i32;
+        while i < 21 { 
+            a[i] = i;
+            i = i+1;
+        }
+        a[21] = 999;
+        put_chars(&a as &[]i32);
+        return a;
+    }
+
+    A struct_example() {
         let a A;
         a.i = 1;
-        __A__meth__print_A(&a);
-        return 0;
+        __A__meth__add(&a);
+        __A__meth__add(&a);
+        put(a.i);
+        return A;        
     }
 )");
     Parser::Parser p(s);

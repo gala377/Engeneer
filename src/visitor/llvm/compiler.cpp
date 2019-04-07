@@ -372,7 +372,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
     node.lhs->accept(*this); auto lhs = _ret_value;
     node.rhs->accept(*this); auto rhs = _ret_value;
-//    auto [lhs, rhs] = promote(t_lhs, t_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
         switch (node.op.id) {
@@ -403,7 +402,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &node) {
     node.lhs->accept(*this); auto lhs = _ret_value;
     node.rhs->accept(*this); auto rhs = _ret_value;
-//    auto [lhs, rhs] = promote(tmp_lhs, tmp_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
         // both integers
@@ -521,6 +519,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
     _ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ret_value;
     _ptr_action = PtrAction::Load;
+    if(strip_ptr_type(lhs)->isPointerTy()) {
+        // pointer to index type
+        // we can implicit deref it
+        lhs = perform_ptr_action(lhs, nullptr, "__impl_deref_index");
+    }
     node.index_expr->accept(*this); auto index = _ret_value;
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
@@ -545,6 +548,8 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
     }
     auto gep = access_struct_field(lhs, ident->symbol);
     _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
+    // todo but here is a problem, we really dont want to load function
+    // pointers if we return a method  
     _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
