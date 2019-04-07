@@ -66,6 +66,9 @@ void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+const Parser::Nodes::Identifier& Parser::Nodes::FunctionProt::ident() const {
+    return *identifier;
+}
 
 Parser::Nodes::FunctionDef::FunctionDef(
         std::unique_ptr<Parser::Nodes::FunctionProt> &&decl,
@@ -85,6 +88,9 @@ void Parser::Nodes::FunctionDef::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
+const Parser::Nodes::Identifier& Parser::Nodes::FunctionDef::ident() const {
+    return declaration->ident();
+}
 
 // Struct
 Parser::Nodes::StructDecl::StructDecl(std::unique_ptr<Identifier>&& identifier,

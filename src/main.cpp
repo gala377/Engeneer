@@ -21,14 +21,22 @@ int main() {
         return putchar(v+65);
     }
 
-    i32 main() {
-        let func fn(i32) -> i32 = put;
-        func(0);
-        return 0;
+    struct A {
+        i i32;
+
+        void print_A() {
+            put((val self).i);
+        }
+
+        j f32;
     }
 
-
-
+    i32 main() {
+        let a A;
+        a.i = 1;
+        __A__meth__print_A(&a);
+        return 0;
+    }
 )");
     Parser::Parser p(s);
     Parser::AST ast;

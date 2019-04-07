@@ -5,10 +5,14 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <parser/nodes/concrete.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
 #include <set>
 
 #include <parser/visitor.h>
 #include <parser/ast.h>
+#include <string>
 #include <visitor/base.h>
 
 #include <llvm/Pass.h>
@@ -91,6 +95,8 @@ namespace Visitor::LLVM {
             const Parser::Nodes::StructDecl* str;
             llvm::StructType* llvm_str;
 
+            std::map<std::string, llvm::Function*> methods{};
+
             std::int32_t member_index(const std::string& name) const;
         };
 
@@ -110,33 +116,49 @@ namespace Visitor::LLVM {
         // todo remember about mem2reg for alloca optimalizations
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
+        const std::string _this_identifier{"self"};
+
         // Context
         var_map_t _local_variables;
         func_map_t _functions;
         str_map_t _structs;
 
-        // Returns
-        llvm::Value* _ret_value;
-        std::string _ret_symbol;
-
         llvm::BasicBlock* _curr_loop = nullptr;
         llvm::BasicBlock* _curr_loop_contr = nullptr;
 
+        StructWrapper* _curr_struct = nullptr;
+
+        // what shall we do with pointers in llvm-ir?
         enum class PtrAction {
             Store, Load, Address, None
         };
         PtrAction _ptr_action{PtrAction::Load};
+        // to pass values through calls
+        llvm::Value* _ret_value;
 
-        // methods
+        // helper functions
         StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
+        llvm::Function* compile_method(
+            const Parser::Nodes::StructDecl* str,
+            const Parser::Nodes::FunctionDecl* meth); 
+        std::string meth_identifier(const std::string& m_name);
+        std::string meth_identifier(const std::string& s_name, const std::string& m_name);
+
 
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
+        VarWrapper& create_local_var(
+            llvm::Function &func,
+            const std::string& identifier,
+            llvm::Type* type);
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
 
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
         llvm::Type* strip_ptr_type(llvm::Value *v);
 
-        llvm::Value* perform_ptr_action(llvm::Value *ptr, llvm::Value *v = nullptr, const std::string &load_s = "");
+        llvm::Value* perform_ptr_action(
+            llvm::Value *ptr,
+            llvm::Value *v = nullptr,
+            const std::string &load_s = "");
     };
 }
 

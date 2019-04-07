@@ -63,6 +63,8 @@ namespace Parser::Nodes {
     class FunctionDecl: public TopLevelDecl {
     public:
         void accept(Parser::Visitor &v) const override;
+
+        virtual const Identifier& ident() const = 0; 
     };
 
     class FunctionProt: public FunctionDecl {
@@ -72,11 +74,13 @@ namespace Parser::Nodes {
                 std::unique_ptr<Types::BaseType>&& type,
                 std::vector<std::unique_ptr<VariableDecl>> &&arg_list);
 
-        std::unique_ptr<Identifier> identifier;;
+        std::unique_ptr<Identifier> identifier;
         std::unique_ptr<Types::BaseType> type;
         std::vector<std::unique_ptr<VariableDecl>> arg_list;
 
         void accept(Parser::Visitor &v) const override;
+        
+        const Identifier& ident() const override;
     };
 
     class FunctionDef: public FunctionDecl {
@@ -88,6 +92,8 @@ namespace Parser::Nodes {
 
         void set_depth(std::uint32_t depth) override;
         void accept(Parser::Visitor &v) const override;
+
+        const Identifier& ident() const override; 
     };
 
     // struct

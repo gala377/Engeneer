@@ -2,6 +2,8 @@
 // Created by igor on 17.02.19.
 //
 
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/Function.h>
 #include <visitor/llvm/compiler.h>
 #include <visitor/llvm/type.h>
 #include <parser/nodes/concrete.h>
@@ -30,7 +32,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
 
     for(const auto& struct_def: _ast.iter_struct_decl()) {
-        declare_opaque(*struct_def.second);
+        auto& s = declare_opaque(*struct_def.second);
+        _curr_struct = &s;
+        for(const auto& method: s.str->methods) {
+            if(auto func = dynamic_cast<Parser::Nodes::FunctionDef*>(method.get()); func) {
+                func->declaration->accept(*this);
+                continue;
+            }
+            method->accept(*this);
+        }
+        _curr_struct = nullptr;
     }
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
@@ -51,13 +62,20 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
     if(_functions.count(node.identifier->symbol) > 0) {
         return;
     }
-
     auto ret_type = Type::to_llvm(*node.type, _context, _structs);
     std::vector<llvm::Type*> args_types;
+    if(_curr_struct) {
+        // its a method, we add this ptr
+        args_types.push_back(llvm::PointerType::get(_curr_struct->llvm_str, 0));
+    }
     for(const auto& arg: node.arg_list) {
         args_types.push_back(Type::to_llvm(*arg->type, _context, _structs));
     }
-
+    
+    auto identifier = node.identifier->symbol;
+    if(_curr_struct) {
+        identifier = meth_identifier(identifier);
+    }
     llvm::FunctionType* func_t = llvm::FunctionType::get(
             ret_type,
             args_types,
@@ -65,26 +83,34 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
     llvm::Function* func = llvm::Function::Create(
             func_t,
             llvm::Function::ExternalLinkage,
-            node.identifier->symbol,
+            identifier,
             _module.get());
     if(!func) {
         throw std::runtime_error("Could not compile function!");
     }
     unsigned int i = 0;
+    bool this_id_set = false;
     for(auto& arg: func->args()) {
+        if(_curr_struct && !this_id_set) {
+            arg.setName(_this_identifier);
+            this_id_set = true;
+            continue;
+        }
         arg.setName(node.arg_list[i++]->identifier->symbol);
     }
-
-    _functions[node.identifier->symbol] = FuncProtWrapper{&node, func};
+    _functions[identifier] = FuncProtWrapper{&node, func};
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     auto func_name = node.declaration->identifier->symbol;
+    if(_curr_struct) {
+        func_name = meth_identifier(func_name);
+    }
     auto func_w = _functions.find(func_name);
 
     auto llvm_func = func_w->second.llvm_func;
     if(!llvm_func->empty()) {
-        throw std::runtime_error("Redefinition of func " + node.declaration->identifier->symbol);
+        throw std::runtime_error("Redefinition of func " + func_name);
     }
 
     auto basic_block = llvm::BasicBlock::Create(_context, "entry", llvm_func);
@@ -92,7 +118,17 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     _local_variables.clear();
 
     unsigned i = 0;
+    bool this_arg_set = false;
     for(auto& arg: llvm_func->args()) {
+        if(_curr_struct && !this_arg_set) {
+            this_arg_set = true;
+            auto var = create_local_var(
+                *llvm_func,
+                _this_identifier,
+                llvm::PointerType::get(_curr_struct->llvm_str, 0));
+            _builder.CreateStore(&arg, var.llvm_alloca);
+            continue;
+        }
         auto var = create_local_var(*llvm_func, *func_w->second.func->arg_list[i]);
         _builder.CreateStore(&arg, var.llvm_alloca);
         ++i;
@@ -120,6 +156,28 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
         fields.emplace_back(Type::to_llvm(*(field->type), _context, _structs));
     }
     s.llvm_str->setBody(fields, false);
+    
+    // set compiling struct body context;
+    _curr_struct = &s;
+    for(auto& method: node.methods) {
+        s.methods[method->ident().symbol] = compile_method(s.str, method.get());
+    }
+    _curr_struct = nullptr;
+}
+
+llvm::Function* Visitor::LLVM::Compiler::compile_method(
+        const Parser::Nodes::StructDecl* str,
+        const Parser::Nodes::FunctionDecl* meth) {
+    meth->accept(*this);
+    return _module->getFunction(meth_identifier(meth->ident().symbol));
+}
+
+std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& m_name) {
+    return "__" + _curr_struct->str->identifier->symbol + "__meth__" + m_name;
+}
+
+std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& s_name, const std::string& m_name) {
+    return "__" + s_name + "__meth__" + m_name;
 }
 
 // Statement
@@ -191,9 +249,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
         if(!init) {
             throw std::runtime_error("Could not compile variable init expr");
         }
-//        if(init->getType() != var.llvm_alloca->getType()) {
-//            init = cast(init, var.llvm_alloca);
-//        }
         auto old_action = _ptr_action;
         _ptr_action = PtrAction::Store;
         perform_ptr_action(var.llvm_alloca, init);
@@ -543,8 +598,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FloatConstant &node) {
 }
 
 
-
-
 Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
         llvm::Function &func,
         const Parser::Nodes::VariableDecl &node) {
@@ -561,6 +614,24 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
     return _local_variables[node.identifier->symbol];
 
 }
+
+Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
+            llvm::Function &func,
+            const std::string& identifier,
+            llvm::Type* type) {
+
+    if(_local_variables.count(identifier) > 0) {
+        throw std::runtime_error("Variable redeclaration " + identifier);
+    }
+    llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
+    auto alloca = tmp_b.CreateAlloca(
+        type,
+        nullptr,
+        identifier);
+    _local_variables[identifier] = VarWrapper{nullptr, alloca};
+    return _local_variables[identifier];
+}
+
 
 llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
     std::cerr << "Cast: " << from->getName().str() << " to: " << to->getName().str() << "\n";
@@ -618,6 +689,7 @@ llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Value *v) {
     return v_type;
 }
 
+
 llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
     llvm::Value *ptr, llvm::Value *v,
     const std::string &load_s) {
@@ -650,3 +722,5 @@ std::int32_t Visitor::LLVM::Compiler::StructWrapper::member_index(const std::str
     }
     throw std::runtime_error("Unknown struct member " + name);
 }
+
+
