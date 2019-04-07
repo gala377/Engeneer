@@ -36,18 +36,18 @@ int main() {
         ast = p.parse();
         p.excp_handler().throw_if_able();
     } catch(Exception::Handler::Abort& e) {
-        std::cout << "Parsing error\n";
-        std::cout << e.what();
+        std::cerr << "Parsing error\n";
+        std::cerr << e.what();
     }
     Visitor::LLVM::Compiler comp(ast);
     Visitor::Stringify v(ast);
     ast.accept(v);
-    std::cout << "Code parsed!\n\n""";
-    std::cout << v.repr();
+    std::cerr << "Code parsed!\n\n""";
+    std::cerr << v.repr();
 
-    std::cout << "\nCompiling\n";
+    std::cerr << "\nCompiling\n";
     ast.accept(comp);
-    std::cout << "Compiled\n";
+    std::cerr << "Compiled\n";
 
     return 0;
 }

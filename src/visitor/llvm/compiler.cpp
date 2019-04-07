@@ -41,7 +41,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
 
 
     node.accept_children(*this);
-    std::cout << "Printing module\n\n\n";
+    std::cerr << "Printing module\n\n\n";
     _module->print(llvm::outs(), nullptr);
 }
 
@@ -430,12 +430,12 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
 
     auto func_ptr_t = llvm::dyn_cast<llvm::PointerType>(lhs->getType());
     if(!func_ptr_t) {
-        std::cout << lhs->getName().str() << " is not a Func ptr type\n Type is ";
+        std::cerr << lhs->getName().str() << " is not a Func ptr type\n Type is ";
         lhs->getType()->print(llvm::outs(), true, false);
     }
     auto func_t = llvm::dyn_cast<llvm::FunctionType>(func_ptr_t->getElementType());
     if(!func_t->isFunctionTy()) {
-        std::cout << lhs->getName().str() << "is not a Func type\n Type is ";
+        std::cerr << lhs->getName().str() << "is not a Func type\n Type is ";
         func_ptr_t->getElementType()->print(llvm::outs(), true, false);
     }
     if(!func_t) {
@@ -461,7 +461,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
-    std::cout << "Indexing\n";
+    std::cerr << "Indexing\n";
     auto old_action = _ptr_action;
     _ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ret_value;
@@ -478,36 +478,36 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
     // get address of lhs for gep
-    std::cout << "Watch1\n";
+    std::cerr << "Watch1\n";
     auto old_action = _ptr_action;
     _ptr_action = PtrAction::Address;
-    std::cout << "Watch2\n";
+    std::cerr << "Watch2\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     // todo for now we assume only members
     // todo for methods me need to translate
     // todo its identifier to func ptr to call later
     Parser::Nodes::Identifier* ident = nullptr;
-    std::cout << "Watch3\n";
+    std::cerr << "Watch3\n";
     if(ident = dynamic_cast<Parser::Nodes::Identifier*>(node.rhs.get()); ident == nullptr) {
         throw std::runtime_error("Expected identifier for the access operator");
     }
-    std::cout << "Watch4\n";
+    std::cerr << "Watch4\n";
     auto expr_type = strip_ptr_type(lhs);
     if(!(expr_type->isStructTy())) {
         throw std::runtime_error("Access can only be done on structs");
     }
-    std::cout << "Watch5\n";
+    std::cerr << "Watch5\n";
     auto& s_wrapper = _structs[llvm::dyn_cast<llvm::StructType>(expr_type)->getName()];
-    std::cout << "Watch6\n";
+    std::cerr << "Watch6\n";
     std::int32_t gep_index = s_wrapper.member_index(ident->symbol);
-    std::cout << "Watch7\n";
+    std::cerr << "Watch7\n";
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
-    std::cout << "Watch8\n";
+    std::cerr << "Watch8\n";
     auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
     _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
-    std::cout << "Watch9\n";
+    std::cerr << "Watch9\n";
     _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
@@ -563,7 +563,7 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
 }
 
 llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
-    std::cout << "Cast: " << from->getName().str() << " to: " << to->getName().str() << "\n";
+    std::cerr << "Cast: " << from->getName().str() << " to: " << to->getName().str() << "\n";
     auto to_type = strip_ptr_type(to);
     auto from_type = strip_ptr_type(from);
     if(from_type == to_type) {
@@ -583,7 +583,7 @@ llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
     if(!cast) {
         throw std::runtime_error("Could not compile cast");
     }
-    std::cout << "Cast ended!\n";
+    std::cerr << "Cast ended!\n";
     return cast;
 }
 
@@ -624,19 +624,19 @@ llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
 
     switch (_ptr_action) {
         case PtrAction::None:
-            std::cout << "Ptr action is None\n";
+            std::cerr << "Ptr action is None\n";
             return nullptr;
         case PtrAction::Store:
-            std::cout << "Ptr action is store to " << ptr->getName().str() << "\n";
+            std::cerr << "Ptr action is store to " << ptr->getName().str() << "\n";
             if(!v) {
                 throw std::runtime_error("Store of a null value");
             }
             return _builder.CreateStore(v, ptr);
         case PtrAction::Load:
-            std::cout << "ptr action is load as " << load_s << " from: " << ptr->getName().str() <<"\n";
+            std::cerr << "ptr action is load as " << load_s << " from: " << ptr->getName().str() <<"\n";
             return _builder.CreateLoad(ptr, load_s);
         case PtrAction::Address:
-            std::cout << "ptr actions is address of " << ptr->getName().str() << "\n";
+            std::cerr << "ptr actions is address of " << ptr->getName().str() << "\n";
             return ptr;
     }
 }
