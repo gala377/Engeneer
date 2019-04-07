@@ -5,6 +5,7 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
 #include <parser/nodes/concrete.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -157,6 +158,11 @@ namespace Visitor::LLVM {
             llvm::Function &func,
             const std::string& identifier,
             llvm::Type* type);
+        llvm::AllocaInst* create_anon_var(
+            llvm::Function &func,
+            const std::string& identifier,
+            llvm::Type* type);
+            
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
 
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);

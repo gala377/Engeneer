@@ -40,8 +40,14 @@ int main() {
     i32 main() {
         #struct_example();
         # todo this one doesnt work actually
-        put(array_example()[0]);
+        #put(array_example()[0]);
         put(struct_example().i);
+        put(struct_example_2().i);
+        put(struct_example().i);
+        put(struct_example().i);
+        put(struct_example_2().i);
+        #let i i32 = 0;
+        #put(val i);
         return 0;
     }
 
@@ -63,7 +69,13 @@ int main() {
         __A__meth__add(&a);
         __A__meth__add(&a);
         put(a.i);
-        return A;        
+        return a;        
+    }
+
+    A struct_example_2() {
+        let a A;
+        a.i = 7;
+        return a;
     }
 )");
     Parser::Parser p(s);

@@ -2,8 +2,12 @@
 // Created by igor on 17.02.19.
 //
 
+#include <bits/stdint-uintn.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
+#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
+#include <llvm/Support/Casting.h>
 #include <visitor/llvm/compiler.h>
 #include <visitor/llvm/type.h>
 #include <parser/nodes/concrete.h>
@@ -529,7 +533,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         index};
     auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
-
     _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
     _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
@@ -573,7 +576,26 @@ llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, cons
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
+    if(str->getType()->isStructTy()) {
+        std::cerr << "Is a literal struct type, making alloca inst\n";
+        auto anon = create_anon_var(
+            *_builder.GetInsertBlock()->getParent(),
+            "__anonym_value",
+            str->getType());
+        auto old_action = _ptr_action;
+        _ptr_action = PtrAction::Store;
+        perform_ptr_action(anon, str, "__anonym_store");
+        str = anon;
+        _ptr_action = old_action;
+    }
+    std::cerr << "Creating gep\n";
+    if(str->getType()->isPointerTy()) {
+        auto type = llvm::dyn_cast<llvm::PointerType>(str->getType());
+        auto s_type = llvm::dyn_cast<llvm::StructType>(type->getElementType());
+        std::cerr << "str is a pointer type to " << s_type->getName().str() << "\n";
+    }
     auto gep = _builder.CreateGEP(str, gep_indexes, "__gep_adr");
+    std::cerr << "Gep done, we are happu :)\n";
     return gep;
 }
 
@@ -649,6 +671,17 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
         identifier);
     _local_variables[identifier] = VarWrapper{nullptr, alloca};
     return _local_variables[identifier];
+}
+
+llvm::AllocaInst* Visitor::LLVM::Compiler::create_anon_var(
+            llvm::Function &func,
+            const std::string& identifier,
+            llvm::Type* type) {
+    llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
+    return tmp_b.CreateAlloca(
+        type,
+        nullptr,
+        identifier);
 }
 
 
