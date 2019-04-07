@@ -533,44 +533,58 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
     // get address of lhs for gep
-    std::cerr << "Watch1\n";
     auto old_action = _ptr_action;
     _ptr_action = PtrAction::Address;
-    std::cerr << "Watch2\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
     // todo for now we assume only members
     // todo for methods me need to translate
     // todo its identifier to func ptr to call later
     Parser::Nodes::Identifier* ident = nullptr;
-    std::cerr << "Watch3\n";
     if(ident = dynamic_cast<Parser::Nodes::Identifier*>(node.rhs.get()); ident == nullptr) {
         throw std::runtime_error("Expected identifier for the access operator");
     }
-    std::cerr << "Watch4\n";
-    auto expr_type = strip_ptr_type(lhs);
+    auto gep = access_struct_field(lhs, ident->symbol);
+    _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
+    _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
+}
+
+llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, const std::string& field_name) {
+    // alloca ptr strip
+    auto expr_type = strip_ptr_type(str);
     if(!(expr_type->isStructTy())) {
-        throw std::runtime_error("Access can only be done on structs");
+        // could be pointer to struct
+        expr_type = strip_ptr_type(expr_type);
+        if(!(expr_type->isStructTy())) {
+            throw std::runtime_error("Access can only be done on structs");            
+        }
+        // implicit pointer dereference
+        auto old_action = _ptr_action;
+        _ptr_action = PtrAction::Load;
+        str = perform_ptr_action(str, nullptr, "__impl_deref_struct_load");
+        _ptr_action = old_action;
     }
-    std::cerr << "Watch5\n";
     auto& s_wrapper = _structs[llvm::dyn_cast<llvm::StructType>(expr_type)->getName()];
-    std::cerr << "Watch6\n";
-    std::int32_t gep_index = s_wrapper.member_index(ident->symbol);
-    std::cerr << "Watch7\n";
+    std::int32_t gep_index = s_wrapper.member_index(field_name);
     std::vector<llvm::Value*> gep_indexes{
         llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
         llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
-    std::cerr << "Watch8\n";
-    auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
-    _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
-    std::cerr << "Watch9\n";
-    _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
+    auto gep = _builder.CreateGEP(str, gep_indexes, "__gep_adr");
+    return gep;
 }
+
 
 // Primary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     auto var = _local_variables.find(node.symbol);
     if(var == _local_variables.end()) {
-        _ret_value = _module->getFunction(node.symbol);
+        auto func = _module->getFunction(node.symbol);
+        if(func == nullptr && _curr_struct) {
+            auto str_this = _local_variables[_this_identifier];
+            auto v = access_struct_field(str_this.llvm_alloca, node.symbol);
+            _ret_value = perform_ptr_action(v, nullptr, node.symbol);
+            return;
+        }
+        _ret_value = func;
         return;
     }
     llvm::Value* v = var->second.llvm_alloca;
@@ -681,14 +695,17 @@ std::tuple<llvm::Value*, llvm::Value*> Visitor::LLVM::Compiler::promote(llvm::Va
     return std::make_tuple(lhs, rhs);
 }
 
-llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Value *v) {
-    auto v_type = v->getType();
+llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Type *v) {
+    auto v_type = v;
     if(auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type); type_tmp) {
         v_type = type_tmp->getElementType();
     }
     return v_type;
 }
 
+llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Value *v) {
+    return strip_ptr_type(v->getType());
+}
 
 llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
     llvm::Value *ptr, llvm::Value *v,

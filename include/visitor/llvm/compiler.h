@@ -5,6 +5,7 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <llvm/IR/Value.h>
 #include <parser/nodes/concrete.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -144,6 +145,7 @@ namespace Visitor::LLVM {
         std::string meth_identifier(const std::string& m_name);
         std::string meth_identifier(const std::string& s_name, const std::string& m_name);
 
+        llvm::Value* access_struct_field(llvm::Value* str, const std::string& field_name); 
 
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
         VarWrapper& create_local_var(
@@ -153,7 +155,8 @@ namespace Visitor::LLVM {
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
 
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
-        llvm::Type* strip_ptr_type(llvm::Value *v);
+        llvm::Type* strip_ptr_type(llvm::Type *v);
+        llvm::Type* strip_ptr_type(llvm::Value* v);
 
         llvm::Value* perform_ptr_action(
             llvm::Value *ptr,

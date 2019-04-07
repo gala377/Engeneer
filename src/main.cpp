@@ -25,7 +25,8 @@ int main() {
         i i32;
 
         void print_A() {
-            put((val self).i);
+            let i i32 = 2;
+            put(i);
         }
 
         j f32;
