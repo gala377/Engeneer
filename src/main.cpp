@@ -61,11 +61,11 @@ int main() {
         let a A = struct_example();
         put(a.i);
 
-        let b B = new_B();
+        #let b B = new_B();
         # i have no idea why this doesnt work? 
-        let i i32 = 0;
-        b.array[i] = 20;
-        put(b.array[i]);
+        #let i i32 = 0;
+        #b.array[i] = 20;
+        #put(b.array[i]);
         return 0;
     }
 
@@ -84,8 +84,8 @@ int main() {
     A struct_example() {
         let a A;
         a.i = 1;
-        __A__meth__add(&a);
-        __A__meth__add(&a);
+        a.add()
+        a.add();
         put(a.i);
         return a;        
     }

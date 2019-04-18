@@ -3,11 +3,15 @@
 //
 
 #include <bits/stdint-uintn.h>
+#include <c++/7/optional>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/Casting.h>
+#include <stdexcept>
+#include <string>
+#include <utility>
 #include <visitor/llvm/compiler.h>
 #include <visitor/llvm/type.h>
 #include <parser/nodes/concrete.h>
@@ -103,7 +107,10 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
         }
         arg.setName(node.arg_list[i++]->identifier->symbol);
     }
-    _functions[identifier] = FuncProtWrapper{&node, func};
+    _functions[identifier] = FuncProtWrapper{&node, func, _curr_struct != nullptr};
+    if(_curr_struct) {
+        _curr_struct->methods[node.identifier->symbol] = &_functions[identifier];
+    }
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
@@ -165,16 +172,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
     // set compiling struct body context;
     _curr_struct = &s;
     for(auto& method: node.methods) {
-        s.methods[method->ident().symbol] = compile_method(s.str, method.get());
+        compile_method(s.str, method.get());
     }
     _curr_struct = nullptr;
 }
 
-llvm::Function* Visitor::LLVM::Compiler::compile_method(
+Visitor::LLVM::Compiler::FuncProtWrapper* Visitor::LLVM::Compiler::compile_method(
         const Parser::Nodes::StructDecl* str,
         const Parser::Nodes::FunctionDecl* meth) {
     meth->accept(*this);
-    return _module->getFunction(meth_identifier(meth->ident().symbol));
+    return &_functions[meth_identifier(meth->ident().symbol)];
 }
 
 std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& m_name) {
@@ -480,29 +487,66 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::DereferenceExpr &node) 
 
 // Postfix
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
-    // todo does it work for function ptrs and functions?
+    std::cerr << "Call expr()\n";
+    // save context
     auto old_action = _ptr_action;
+    auto old_context = _call_context;
+    auto old_named_func = _call_named_func;
+    auto old_meth_instance = _call_meth_instance;
+    // srt context
     _ptr_action = PtrAction::Load;
+    _call_context = true;
+    _call_named_func = nullptr; 
+    _call_meth_instance = nullptr;
+    std::cerr << "CE: Getting lhs\n";
+    // it works because if we have function identifier on 
+    // the left or access to a method via struct instance
+    // it will ignore the load and return ptr to function. 
     node.lhs->accept(*this); auto lhs = _ret_value;
+    std::cerr << "CE: Got lhs\n";
+    // retrieve context 
     _ptr_action = old_action;
+    _call_context = old_context;
 
+    auto str_instance = _call_meth_instance;
+    auto named_function = _call_named_func;
+    
+    _call_named_func = old_named_func;
+    _call_meth_instance = old_meth_instance;
+
+
+    // call 
+    std::cerr << "CE: Getting type of the lhs\n";
+    if(lhs == nullptr) {
+        std::cerr << "CE: LHS IS A NULLPTR\n";
+    }
     auto func_ptr_t = llvm::dyn_cast<llvm::PointerType>(lhs->getType());
-    if(!func_ptr_t) {
-        std::cerr << lhs->getName().str() << " is not a Func ptr type\n Type is ";
-        lhs->getType()->print(llvm::outs(), true, false);
-    }
+    std::cerr << "CE: Casted to ptr\n";    
     auto func_t = llvm::dyn_cast<llvm::FunctionType>(func_ptr_t->getElementType());
-    if(!func_t->isFunctionTy()) {
-        std::cerr << lhs->getName().str() << "is not a Func type\n Type is ";
-        func_ptr_t->getElementType()->print(llvm::outs(), true, false);
-    }
     if(!func_t) {
         throw std::runtime_error("LHS of call expression is expected to be a function ptr");
     }
-    if(func_t->params().size()!= node.args.size()) {
-        throw std::runtime_error("Incorrect number of arguments passed");
+    std::cerr << "Is method call?\n";
+    auto meth_call = named_function->is_method && str_instance;
+    std::cerr << (meth_call ? "Is a method call\n" : "Is not a method call\n");
+    if(!meth_call) {
+        if(named_function) {
+            std::cerr << "Function is: " << named_function->func->identifier->symbol << "\n";
+            std::cerr << "Is_method: " << (named_function->is_method ? "true" : "false") << "\n";
+        }
+        std::cerr << "str_instance: " << (str_instance ? "true": "false") << "\n";
+    }
+    std::uint32_t add_parameters = meth_call ? 1 : 0;
+    if(func_t->params().size() != (node.args.size() + add_parameters)) {
+        std::string mess{"Incorrect number of arguments passed. Expected: "};
+        mess += std::to_string(func_t->params().size() - add_parameters);
+        mess += " Got: " + std::to_string(node.args.size());
+        throw std::runtime_error(mess.c_str());
     }
     std::vector<llvm::Value*> args_v;
+    if(meth_call) {
+        args_v.push_back(str_instance);
+    }
     for(uint32_t i = 0; i != node.args.size(); ++i) {
         node.args[i]->accept(*this); auto arg = _ret_value;
         args_v.push_back(arg);
@@ -550,26 +594,82 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
+    std::cerr << "AE: Access expr\n";
     // get address of lhs for gep
     auto old_action = _ptr_action;
     _ptr_action = PtrAction::Address;
+    std::cerr << "AE: Getting lhs\n";
     node.lhs->accept(*this); auto lhs = _ret_value;
-    // todo for now we assume only members
-    // todo for methods me need to translate
-    // todo its identifier to func ptr to call later
+    std::cerr << "AE: Got lhs\n";
     Parser::Nodes::Identifier* ident = nullptr;
     if(ident = dynamic_cast<Parser::Nodes::Identifier*>(node.rhs.get()); ident == nullptr) {
         throw std::runtime_error("Expected identifier for the access operator");
     }
-    auto gep = access_struct_field(lhs, ident->symbol);
-    _ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
-    // todo but here is a problem, we really dont want to load function
-    // pointers if we return a method  
-    _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
+    std::cerr << "AE: Getting struct field\n";
+    auto [gep, is_method] = access_struct_field(lhs, ident->symbol);
+    std::cerr << "AE: Got struct field\n";    
+    if(is_method) {
+        std::cerr << "AE: Its a method!\n";
+        if(gep == nullptr) {
+            std::cerr << "AE: Returned method is a nullptr\n";
+        }
+        _ret_value = gep;
+        if(_call_context) {
+            std::cerr << "AE: setting call context\n";
+            _call_named_func = &_functions[meth_identifier(lhs->getName(), ident->symbol)];
+            // todo is it? it should
+            _call_meth_instance = lhs;
+            std::cerr << "AE: set call context\n";
+        }
+        // retrieve ptr action after return
+        // we dont want to load function ptrs
+        _ptr_action = old_action;
+        std::cerr << "AE: Return\n";
+    } else {
+        std::cerr << "AE: Its not a method!\n";
+        _ptr_action = old_action; 
+        _ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
+    }
 }
 
-llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, const std::string& field_name) {
+std::pair<llvm::Value*, bool> Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, const std::string& field_name) {
     // alloca ptr strip
+    auto [s, s_wrapper] = get_struct_value_with_info(str);
+    std::int32_t gep_index = s_wrapper->member_index(field_name);
+    if(gep_index < 0) {
+        // possibly a method
+        std::cerr << "AF: Possibly a method\n";
+        auto it = s_wrapper->methods.find(field_name);
+        if(it == s_wrapper->methods.end()) {
+            throw std::runtime_error("Uknown struct field " + field_name);
+        }
+        std::cerr << "AF: Found it " << it->second->func->identifier->symbol << "\n";
+        if(it->second->llvm_func == nullptr) {
+            std::cerr << "AF: Method llvm_func is a nullptr!\n";
+        }
+        return std::make_pair((llvm::Value*)it->second->llvm_func, true);
+    }
+    // its a field and we have it
+    std::vector<llvm::Value*> gep_indexes{
+        llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
+        llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
+    if(s->getType()->isStructTy()) {
+        auto anon = create_anon_var(
+            *_builder.GetInsertBlock()->getParent(),
+            "__anonym_value",
+            s->getType());
+        auto old_action = _ptr_action;
+        _ptr_action = PtrAction::Store;
+        perform_ptr_action(anon, s, "__anonym_store");
+        s = anon;
+        _ptr_action = old_action;
+    }
+    auto gep = _builder.CreateGEP(s, gep_indexes, "__gep_adr");
+    std::cerr << "Gep done, we are happu :)\n";
+    return std::make_pair(gep, false);
+}
+
+std::pair<llvm::Value*, Visitor::LLVM::Compiler::StructWrapper*> Visitor::LLVM::Compiler::get_struct_value_with_info(llvm::Value* str) {
     auto expr_type = strip_ptr_type(str);
     if(!(expr_type->isStructTy())) {
         // could be pointer to struct
@@ -584,49 +684,74 @@ llvm::Value* Visitor::LLVM::Compiler::access_struct_field(llvm::Value* str, cons
         _ptr_action = old_action;
     }
     auto& s_wrapper = _structs[llvm::dyn_cast<llvm::StructType>(expr_type)->getName()];
-    std::int32_t gep_index = s_wrapper.member_index(field_name);
-    std::vector<llvm::Value*> gep_indexes{
-        llvm::ConstantInt::get(_context, llvm::APInt(32, 0)),
-        llvm::ConstantInt::get(_context, llvm::APInt(32, (uint64_t)gep_index))};
-    if(str->getType()->isStructTy()) {
-        auto anon = create_anon_var(
-            *_builder.GetInsertBlock()->getParent(),
-            "__anonym_value",
-            str->getType());
-        auto old_action = _ptr_action;
-        _ptr_action = PtrAction::Store;
-        perform_ptr_action(anon, str, "__anonym_store");
-        str = anon;
-        _ptr_action = old_action;
-    }
-    auto gep = _builder.CreateGEP(str, gep_indexes, "__gep_adr");
-    std::cerr << "Gep done, we are happu :)\n";
-    return gep;
+    return std::make_pair(str, &s_wrapper);
 }
-
 
 // Primary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
-    auto var = _local_variables.find(node.symbol);
-    if(var == _local_variables.end()) {
-        auto func = _module->getFunction(node.symbol);
-        if(func == nullptr && _curr_struct) {
-            auto str_this = _local_variables[_this_identifier];
-            auto v = access_struct_field(str_this.llvm_alloca, node.symbol);
-            _ret_value = perform_ptr_action(v, nullptr, node.symbol);
-            return;
-        }
-        _ret_value = func;
+    if(auto var = get_local_var(node.symbol); var) {
+        _ret_value = perform_ptr_action(var.value()->llvm_alloca, nullptr, node.symbol);
         return;
     }
-    llvm::Value* v = var->second.llvm_alloca;
-    _ret_value = perform_ptr_action(v, nullptr, node.symbol);
+    if(auto func = get_function(node.symbol); func) {
+        if(_call_context) {
+            _call_named_func = func.value();
+            _call_meth_instance = nullptr;
+        }
+        _ret_value = func.value()->llvm_func;
+    }
+    if(auto var = get_struct_var(node.symbol); var) {
+        _ret_value = perform_ptr_action(var.value(), nullptr, node.symbol);
+    }
+    if(auto meth = get_struct_method(node.symbol); meth) {
+        if(_call_context) {
+            _call_named_func = meth.value();
+            _call_meth_instance = _local_variables[_this_identifier].llvm_alloca;
+        }
+        _ret_value = meth.value()->llvm_func;
+    }
+    throw std::runtime_error("Use of unknown identifier " + node.symbol);
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ParenthesisExpr &node) {
     node.expr->accept(*this);
 }
 
+std::optional<Visitor::LLVM::Compiler::VarWrapper*> Visitor::LLVM::Compiler::get_local_var(const std::string& name) {
+    if(auto it = _local_variables.find(name); it != _local_variables.end()) {
+        return &it->second;
+    }
+    return std::nullopt;
+}
+
+std::optional<Visitor::LLVM::Compiler::FuncProtWrapper*> Visitor::LLVM::Compiler::get_function(const std::string& name) {
+    if(auto it = _functions.find(name); it != _functions.end()) {
+        return &it->second;
+    }
+    return std::nullopt;
+}
+
+std::optional<llvm::Value*> Visitor::LLVM::Compiler::get_struct_var(const std::string& name) {
+    if(_curr_struct) {
+        auto str_this = _local_variables[_this_identifier];
+        auto [v, is_meth] = access_struct_field(str_this.llvm_alloca, name);
+        if(!is_meth) {
+            return v;
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<Visitor::LLVM::Compiler::FuncProtWrapper*> Visitor::LLVM::Compiler::get_struct_method(const std::string& name) {
+    if(_curr_struct) {
+        auto str_this = _local_variables[_this_identifier];
+        auto [v, is_meth] = access_struct_field(str_this.llvm_alloca, name);
+        if(is_meth) {
+            return &_functions[meth_identifier(name)];
+        }
+    }
+    return std::nullopt;
+} 
 
 // Consts
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IntConstant &node) {
@@ -780,7 +905,7 @@ std::int32_t Visitor::LLVM::Compiler::StructWrapper::member_index(const std::str
             return i;
         }
     }
-    throw std::runtime_error("Unknown struct member " + name);
+    return -1;
 }
 
 

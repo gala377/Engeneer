@@ -5,6 +5,7 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <c++/7/optional>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
 #include <parser/nodes/concrete.h>
@@ -100,14 +101,15 @@ namespace Visitor::LLVM {
         struct FuncProtWrapper {
             const Parser::Nodes::FunctionProt* func;
             llvm::Function* llvm_func;
+            
+            bool is_method;    
         };
 
         struct StructWrapper {
             const Parser::Nodes::StructDecl* str;
             llvm::StructType* llvm_str;
 
-            std::map<std::string, llvm::Function*> methods{};
-
+            std::map<std::string, FuncProtWrapper*> methods{};
             std::int32_t member_index(const std::string& name) const;
         };
 
@@ -138,6 +140,13 @@ namespace Visitor::LLVM {
         llvm::BasicBlock* _curr_loop_contr = nullptr;
 
         StructWrapper* _curr_struct = nullptr;
+        
+        // set to true if compiling lhs of a callexpr
+        bool _call_context = false;
+        // if call_context is true this poiter points to 
+        // a named function id its being called or nullptr otherwise
+        FuncProtWrapper* _call_named_func = nullptr;
+        llvm::Value* _call_meth_instance = nullptr;
 
         // what shall we do with pointers in llvm-ir?
         enum class PtrAction {
@@ -147,15 +156,29 @@ namespace Visitor::LLVM {
         // to pass values through calls
         llvm::Value* _ret_value;
 
-        // helper functions
+        // helper 
+        
+        // struct helpers
         StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
-        llvm::Function* compile_method(
+        FuncProtWrapper* compile_method(
             const Parser::Nodes::StructDecl* str,
             const Parser::Nodes::FunctionDecl* meth); 
         std::string meth_identifier(const std::string& m_name);
         std::string meth_identifier(const std::string& s_name, const std::string& m_name);
 
-        llvm::Value* access_struct_field(llvm::Value* str, const std::string& field_name); 
+        std::pair<llvm::Value*, bool> access_struct_field(llvm::Value* str, const std::string& field_name); 
+        std::pair<llvm::Value*, StructWrapper*> get_struct_value_with_info(llvm::Value* str);
+
+
+        // todo llvm::Value* access_struct_field(llvm::Value* str, std::uint64_t )        
+        llvm::Function* access_struct_method(llvm::Value* str, const std::string& meth_name);
+        
+
+        // find helpers
+        std::optional<VarWrapper*> get_local_var(const std::string& name);
+        std::optional<FuncProtWrapper*> get_function(const std::string& name);
+        std::optional<llvm::Value*> get_struct_var(const std::string& name);
+        std::optional<FuncProtWrapper*> get_struct_method(const std::string& name); 
 
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
         VarWrapper& create_local_var(
