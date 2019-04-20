@@ -25,7 +25,12 @@ int main() {
         i i32;
 
         void add() {
-            i = i+1;
+            i = i+2;
+            decr();
+        }
+
+        void decr() {
+            i = i-1;
         }
     }
 

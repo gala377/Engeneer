@@ -168,7 +168,7 @@ namespace Visitor::LLVM {
 
         std::pair<llvm::Value*, bool> access_struct_field(llvm::Value* str, const std::string& field_name); 
         std::pair<llvm::Value*, StructWrapper*> get_struct_value_with_info(llvm::Value* str);
-
+        std::string get_struct_type_name(llvm::Value* str);
 
         // todo llvm::Value* access_struct_field(llvm::Value* str, std::uint64_t )        
         llvm::Function* access_struct_method(llvm::Value* str, const std::string& meth_name);

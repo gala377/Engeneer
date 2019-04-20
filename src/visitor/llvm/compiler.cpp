@@ -528,6 +528,14 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
     }
     std::cerr << "Is method call?\n";
     auto meth_call = named_function->is_method && str_instance;
+    if(str_instance == nullptr) {
+        std::cerr << "CE: Str_instance is a nullptr\n";
+    }
+    if(named_function == nullptr) {
+        std::cerr << "CE: named function is nullptr as well\n";
+    } else {
+        std::cerr << "CE: named function is not null apparently\n";
+    }
     std::cerr << (meth_call ? "Is a method call\n" : "Is not a method call\n");
     if(!meth_call) {
         if(named_function) {
@@ -616,7 +624,14 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
         _ret_value = gep;
         if(_call_context) {
             std::cerr << "AE: setting call context\n";
-            _call_named_func = &_functions[meth_identifier(lhs->getName(), ident->symbol)];
+            // todo there is the problem, we get variable name 
+            // todo not the struct name 
+            auto meth_id = meth_identifier(get_struct_type_name(lhs), ident->symbol);
+            auto it = _functions.find(meth_id);
+            if(it == _functions.end()) {
+                std::cerr << "Could not find function: " << meth_id << "\n";
+            }
+            _call_named_func = &_functions[meth_id];
             // todo is it? it should
             _call_meth_instance = lhs;
             std::cerr << "AE: set call context\n";
@@ -687,6 +702,19 @@ std::pair<llvm::Value*, Visitor::LLVM::Compiler::StructWrapper*> Visitor::LLVM::
     return std::make_pair(str, &s_wrapper);
 }
 
+std::string Visitor::LLVM::Compiler::get_struct_type_name(llvm::Value* str) {
+    auto expr_type = strip_ptr_type(str);
+    if(!(expr_type->isStructTy())) {
+        // possible pointer to struct
+        expr_type = strip_ptr_type(expr_type);
+        if(!(expr_type->isStructTy())) {
+            throw std::runtime_error("Not a struct type!");            
+        }
+    }
+    return expr_type->getStructName();
+}
+
+
 // Primary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     if(auto var = get_local_var(node.symbol); var) {
@@ -699,9 +727,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
             _call_meth_instance = nullptr;
         }
         _ret_value = func.value()->llvm_func;
+        return;
     }
     if(auto var = get_struct_var(node.symbol); var) {
         _ret_value = perform_ptr_action(var.value(), nullptr, node.symbol);
+        return;
     }
     if(auto meth = get_struct_method(node.symbol); meth) {
         if(_call_context) {
@@ -709,6 +739,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
             _call_meth_instance = _local_variables[_this_identifier].llvm_alloca;
         }
         _ret_value = meth.value()->llvm_func;
+        return;
     }
     throw std::runtime_error("Use of unknown identifier " + node.symbol);
 }
