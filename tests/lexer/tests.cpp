@@ -1,7 +1,9 @@
 //
 // Created by igor on 30.09.18.
 //
+#ifndef BOOST_TEST_MODULE
 #define BOOST_TEST_MODULE Lexer_Tests
+#endif
 
 #include <boost/test/unit_test.hpp>
 

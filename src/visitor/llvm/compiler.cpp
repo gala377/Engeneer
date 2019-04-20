@@ -4,13 +4,15 @@
 
 #include <bits/stdint-uintn.h>
 #include <c++/7/optional>
+#include <llvm/ADT/Optional.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Value.h>
-#include <llvm/Support/Casting.h>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <visitor/llvm/compiler.h>
 #include <visitor/llvm/type.h>
@@ -25,6 +27,14 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Host.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetRegistry.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Target/TargetMachine.h>
+#include <llvm/Target/TargetOptions.h>
+#include <llvm/Support/Casting.h>
 
 // todo const and some kind of implicit dereferencing
 Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): Base(), _ast(ast) {}
@@ -38,7 +48,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
 // Program
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
-
+    init_compile_target();
     // declare struct opaque
     for(const auto& struct_def: _ast.iter_struct_decl()) {
         auto& s = declare_opaque(*struct_def.second);
@@ -72,7 +82,60 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // compile methods
     node.accept_children(*this);
     std::cerr << "Printing module\n\n\n";
-    _module->print(llvm::outs(), nullptr);
+    //_module->print(llvm::outs(), nullptr);
+    emit_obj_code();
+}
+
+void Visitor::LLVM::Compiler::init_compile_target() {
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
+    
+    auto target_triple = llvm::sys::getDefaultTargetTriple();
+    std::string error;
+    auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
+    if(!target) {
+        throw std::runtime_error(error);
+    }
+    auto cpu = "generic";
+    auto features = "";
+    llvm::TargetOptions opt;
+    auto rm = llvm::Optional<llvm::Reloc::Model>();
+    auto target_machine = target->createTargetMachine(
+        target_triple,
+        cpu,
+        features,
+        opt,
+        rm);
+
+    _module->setDataLayout(target_machine->createDataLayout());
+    _module->setTargetTriple(target_triple);
+    _target_machine = target_machine;
+    
+}
+
+void Visitor::LLVM::Compiler::emit_obj_code() {
+    auto filename = "output.o";
+    std::error_code ec;
+    llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OpenFlags::F_None);
+
+    if(ec) {
+        std::cerr << "Could not open file: " << ec.message() << "\n";
+        throw std::runtime_error(ec.message());
+    }
+
+    llvm::legacy::PassManager pass;
+    auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
+    
+    if(_target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
+        throw std::runtime_error("Target machine can't emit a file of this type");
+    }
+    
+    pass.run(*_module);
+    dest.flush();
+
 }
 
 // Top Level

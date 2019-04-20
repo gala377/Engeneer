@@ -14,9 +14,7 @@ set(CMAKE_CXX_COMPILER clang++)
 
 include_directories(include)
 add_subdirectory(src)
-# for now because as of now
-# or tests really dont do anything
-#add_subdirectory(tests)
+add_subdirectory(tests)
 
-#enable_testing()
-#add_test(NAME All COMMAND Test)
+enable_testing()
+add_test(NAME All COMMAND Test)

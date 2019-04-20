@@ -167,12 +167,8 @@ void test() {
 ----------------CodeBlock
 ------------------------VarDecl: int a
 ------------------------AssignmentExpr: =
---------------------------------AdditiveExpr: None
-----------------------------------------MultiplicativeExpr: None
-------------------------------------------------Identifier: a
---------------------------------AdditiveExpr: None
-----------------------------------------MultiplicativeExpr: None
-------------------------------------------------IntConst: 5
+--------------------------------Identifier: a
+--------------------------------IntConst: 5
 )"};
     check_ast_equal(input, output);
 }
@@ -188,13 +184,11 @@ void test() {
 --------FuncDef
 ----------------FuncHeader: void test()
 ----------------CodeBlock
-------------------------AssignmentExpr: None
---------------------------------AdditiveExpr: +
-----------------------------------------MultiplicativeExpr: None
-------------------------------------------------IntConst: 2
-----------------------------------------MultiplicativeExpr: *
-------------------------------------------------IntConst: 2
-------------------------------------------------IntConst: 2
+------------------------AdditiveExpr: +
+--------------------------------IntConst: 2
+--------------------------------MultiplicativeExpr: *
+----------------------------------------IntConst: 2
+----------------------------------------IntConst: 2
 )"};
     check_ast_equal(input, output);
 }
@@ -210,17 +204,12 @@ void test() {
 --------FuncDef
 ----------------FuncHeader: void test()
 ----------------CodeBlock
-------------------------AssignmentExpr: None
---------------------------------AdditiveExpr: None
-----------------------------------------MultiplicativeExpr: *
-------------------------------------------------Parenthesis: ()
---------------------------------------------------------AssignmentExpr: None
-----------------------------------------------------------------AdditiveExpr: +
-------------------------------------------------------------------------MultiplicativeExpr: None
---------------------------------------------------------------------------------IntConst: 2
-------------------------------------------------------------------------MultiplicativeExpr: None
---------------------------------------------------------------------------------IntConst: 2
+------------------------MultiplicativeExpr: *
+--------------------------------Parenthesis: ()
+----------------------------------------AdditiveExpr: +
 ------------------------------------------------IntConst: 2
+------------------------------------------------IntConst: 2
+--------------------------------IntConst: 2
 )"};
     check_ast_equal(input, output);
 }
@@ -235,31 +224,27 @@ void test() {
 --------FuncDef
 ----------------FuncHeader: void test()
 ----------------CodeBlock
-------------------------AssignmentExpr: None
---------------------------------AdditiveExpr: None
-----------------------------------------MultiplicativeExpr: None
-------------------------------------------------StringConst: Hello World
+------------------------StringConst: Hello World
 )"};
     check_ast_equal(input, output);
 }
 
-// BOOST_AUTO_TEST_SUITE(assignment_operator_on_var_decl) {
-//     std::string input{
-//         R"(
-// void test() {
-//     let a int = 5;
-// })"};
-//     std::string output{
-//         R"(Program
-// --------FuncDef
-// ----------------FuncHeader: void test()
-// ----------------CodeBlock
-// ------------------------Assignment: =
-// --------------------------------VarDecl: int a 
-// --------------------------------ConstInt: 5 
-// )"};
-//     check_ast_equal(input, output);
-// }
+BOOST_AUTO_TEST_CASE(assignment_operator_on_var_decl_2){
+    std::string input{
+        R"(
+void test() {
+    let a int = 5;
+})"};
+    std::string output{
+        R"(Program
+--------FuncDef
+----------------FuncHeader: void test()
+----------------CodeBlock
+------------------------VarDecl: int a
+--------------------------------IntConst: 5
+)"};
+    check_ast_equal(input, output);
+}
 
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -2,7 +2,9 @@
 // Created by igor on 30.12.18.
 //
 
+#ifndef BOOST_TEST_MODULEmacro
 #define BOOST_TEST_MODULE Parser_Tests
+#endif
 
 #include <boost/test/unit_test.hpp>
 

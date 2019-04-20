@@ -6,8 +6,5 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "lexer/source/file_tests.cpp"
-#include "lexer/source/string_tests.cpp"
-#include "lexer/lexer_tests.cpp"
-
-#include "parser/parser_tests.cpp"
+#include "parser/tests.cpp"
+#include "lexer/tests.cpp"

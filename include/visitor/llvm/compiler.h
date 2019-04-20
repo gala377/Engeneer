@@ -8,6 +8,7 @@
 #include <c++/7/optional>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
+#include <llvm/Support/TargetRegistry.h>
 #include <parser/nodes/concrete.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -42,16 +43,6 @@ namespace Visitor::LLVM {
         // Function
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
-        
-        // todo We need 2 different functions to compile structs
-        // todo one which would compile the type
-        // todo and the second one which will compile its methods
-        // todo it should go like this
-        // compile every function prototype (so if anything calls anything it exists)
-        // compile every method prototype (so if anything calls anything it exists)
-        // compile every struct as opaque (so fields which are structs always exist)
-        // compile every struct with types (so gep will work)
-        // now compile methods and functions 
         void visit(const Parser::Nodes::StructDecl &node) override;
 
         // Statement
@@ -128,6 +119,7 @@ namespace Visitor::LLVM {
         // todo maybe it changed and the tutorial hasn't been updated?
         // todo remember about mem2reg for alloca optimalizations
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
+        llvm::TargetMachine* _target_machine;
 
         const std::string _this_identifier{"self"};
 
@@ -148,7 +140,7 @@ namespace Visitor::LLVM {
         FuncProtWrapper* _call_named_func = nullptr;
         llvm::Value* _call_meth_instance = nullptr;
 
-        // what shall we do with pointers in llvm-ir?
+        // what shall we do with pointers in llvm-ir
         enum class PtrAction {
             Store, Load, Address, None
         };
@@ -157,7 +149,9 @@ namespace Visitor::LLVM {
         llvm::Value* _ret_value;
 
         // helper 
-        
+        void init_compile_target();
+        void emit_obj_code();
+
         // struct helpers
         StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
         FuncProtWrapper* compile_method(
