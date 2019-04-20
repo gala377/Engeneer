@@ -162,7 +162,10 @@ namespace Visitor::LLVM {
         StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
         FuncProtWrapper* compile_method(
             const Parser::Nodes::StructDecl* str,
-            const Parser::Nodes::FunctionDecl* meth); 
+            const Parser::Nodes::FunctionDecl* meth);
+        StructWrapper& declare_body(const Parser::Nodes::StructDecl& node);
+
+
         std::string meth_identifier(const std::string& m_name);
         std::string meth_identifier(const std::string& s_name, const std::string& m_name);
 

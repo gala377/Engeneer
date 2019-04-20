@@ -39,10 +39,12 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     // todo maybe init module here ?
 
+    // declare struct opaque
     for(const auto& struct_def: _ast.iter_struct_decl()) {
         auto& s = declare_opaque(*struct_def.second);
         _curr_struct = &s;
         for(const auto& method: s.str->methods) {
+            // declare all its methods prototypes
             if(auto func = dynamic_cast<Parser::Nodes::FunctionDef*>(method.get()); func) {
                 func->declaration->accept(*this);
                 continue;
@@ -51,15 +53,23 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
         }
         _curr_struct = nullptr;
     }
+    // declare all function protos
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
     }
-
     for(const auto& func_def: _ast.iter_func_def()) {
         func_def.second->declaration->accept(*this);
     }
+    // declare all struct bodies
+    for(const auto& struct_def: _ast.iter_struct_decl()) {
+        declare_body(*struct_def.second);
+    }
 
+    // todo compile all global variables 
+    // todo compile additional memory objects
 
+    // compile functions
+    // compile methods
     node.accept_children(*this);
     std::cerr << "Printing module\n\n\n";
     _module->print(llvm::outs(), nullptr);
@@ -162,13 +172,7 @@ Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_opaque(
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
-    auto& s = declare_opaque(node);
-    std::vector<llvm::Type*> fields;
-    for(auto& field: node.members) {
-        fields.emplace_back(Type::to_llvm(*(field->type), _context, _structs));
-    }
-    s.llvm_str->setBody(fields, false);
-    
+    auto& s = declare_opaque(node);    
     // set compiling struct body context;
     _curr_struct = &s;
     for(auto& method: node.methods) {
@@ -182,6 +186,16 @@ Visitor::LLVM::Compiler::FuncProtWrapper* Visitor::LLVM::Compiler::compile_metho
         const Parser::Nodes::FunctionDecl* meth) {
     meth->accept(*this);
     return &_functions[meth_identifier(meth->ident().symbol)];
+}
+Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_body(
+        const Parser::Nodes::StructDecl& node) {
+    auto& s = declare_opaque(node);
+    std::vector<llvm::Type*> fields;
+    for(auto& field: node.members) {
+        fields.emplace_back(Type::to_llvm(*(field->type), _context, _structs));
+    }
+    s.llvm_str->setBody(fields, false);
+    return s;       
 }
 
 std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& m_name) {

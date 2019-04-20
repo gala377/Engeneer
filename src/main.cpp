@@ -21,19 +21,6 @@ int main() {
         return putchar(v+65);
     }
 
-    struct A {
-        i i32;
-
-        void add() {
-            i = i+2;
-            decr();
-        }
-
-        void decr() {
-            i = i-1;
-        }
-    }
-
     struct B {
         array [3]i32;
     }
@@ -93,6 +80,19 @@ int main() {
         a[21] = 999;
         put_chars(&a as &[]i32);
         return a;
+    }
+
+    struct A {
+        i i32;
+
+        void add() {
+            i = i+2;
+            decr();
+        }
+
+        void decr() {
+            i = i-1;
+        }
     }
 
     A struct_example() {
