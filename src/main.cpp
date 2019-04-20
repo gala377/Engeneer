@@ -66,11 +66,20 @@ int main() {
         let a A = struct_example();
         put(a.i);
 
-        #let b B = new_B();
+        # todo remember to declare all types opaque
+        # todo then declare its fields when we have all types
+        # todo then declare function prototypes
+        # todo then start compiling
+        let b B = new_B();
         # i have no idea why this doesnt work? 
-        #let i i32 = 0;
-        #b.array[i] = 20;
-        #put(b.array[i]);
+        let i i32 = 0;
+        b.array[i] = 20;
+        put(b.array[i]);
+        #(&a).add();
+        #let b &A = &a;
+        #b.add();
+        #put(b.i);
+        #put(a.i);
         return 0;
     }
 

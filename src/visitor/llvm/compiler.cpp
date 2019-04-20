@@ -624,15 +624,19 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
         _ret_value = gep;
         if(_call_context) {
             std::cerr << "AE: setting call context\n";
-            // todo there is the problem, we get variable name 
-            // todo not the struct name 
             auto meth_id = meth_identifier(get_struct_type_name(lhs), ident->symbol);
             auto it = _functions.find(meth_id);
             if(it == _functions.end()) {
                 std::cerr << "Could not find function: " << meth_id << "\n";
             }
             _call_named_func = &_functions[meth_id];
-            // todo is it? it should
+            auto str_type = lhs->getType();
+            str_type = llvm::dyn_cast<llvm::PointerType>(str_type);
+            if(str_type->getPointerElementType()->isPointerTy()) {
+                _ptr_action = PtrAction::Load;
+                // implicit deref struct ptr
+                lhs = perform_ptr_action(lhs);
+            }
             _call_meth_instance = lhs;
             std::cerr << "AE: set call context\n";
         }
@@ -736,7 +740,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
     if(auto meth = get_struct_method(node.symbol); meth) {
         if(_call_context) {
             _call_named_func = meth.value();
-            _call_meth_instance = _local_variables[_this_identifier].llvm_alloca;
+            auto old_action = _ptr_action;
+            _ptr_action = PtrAction::Load;
+            // this is a ptr to ptr in llvm so we load it once
+            _call_meth_instance = perform_ptr_action(_local_variables[_this_identifier].llvm_alloca);
+            _ptr_action = old_action;
         }
         _ret_value = meth.value()->llvm_func;
         return;
