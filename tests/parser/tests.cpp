@@ -2,7 +2,7 @@
 // Created by igor on 30.12.18.
 //
 
-#ifndef BOOST_TEST_MODULEmacro
+#ifndef BOOST_TEST_MODULE
 #define BOOST_TEST_MODULE Parser_Tests
 #endif
 

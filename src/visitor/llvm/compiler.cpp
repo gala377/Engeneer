@@ -2,8 +2,6 @@
 // Created by igor on 17.02.19.
 //
 
-#include <bits/stdint-uintn.h>
-#include <c++/7/optional>
 #include <llvm/ADT/Optional.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>

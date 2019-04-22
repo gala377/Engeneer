@@ -6,6 +6,8 @@
 #include <lexer/source/string.h>
 #include <lexer/helpers.h>
 
+#include <boost/test/unit_test.hpp>
+
 // todo exceptions
 // alpha in numeric value
 

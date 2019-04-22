@@ -8,3 +8,4 @@
 
 #include "parser/tests.cpp"
 #include "lexer/tests.cpp"
+#include "visitor/tests.cpp"

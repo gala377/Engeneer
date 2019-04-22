@@ -7,7 +7,6 @@
 
 #include <tuple>
 #include <memory>
-#include <bits/unique_ptr.h>
 
 namespace Lexer::Source {
 

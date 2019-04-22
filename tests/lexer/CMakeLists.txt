@@ -4,5 +4,5 @@ target_link_libraries(lexer_tests
         Exception
         ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
-        stdc++fs
+	stdc++fs
         )

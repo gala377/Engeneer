@@ -21,87 +21,9 @@ int main() {
         return putchar(v+65);
     }
 
-    struct B {
-        array [3]i32;
-    }
-
-    B new_B() {
-        let b B;
-        let i i32 = 0;
-        while i < 2 {
-            b.array[i] = i;
-            i = i +1;
-        }
-        b.array[2] = 999;
-        put_chars(&b.array as &[]i32);
-        return b;
-    }
-
-    void put_chars(a &[]i32) {
-        let i i32 = 0;
-        while a[i] < 999 {
-            put(a[i]);
-            i = i + 1; 
-        }
-    }
-
     i32 main() {
-        #struct_example();
-        #put(array_example()[0]);
-        #put(struct_example().i);
-        #put_chars(&(new_B().array));
-        let a A = struct_example();
-        put(a.i);
-
-        # todo remember to declare all types opaque
-        # todo then declare its fields when we have all types
-        # todo then declare function prototypes
-        # todo then start compiling
-        let b B = new_B();
-        # i have no idea why this doesnt work? 
-        let i i32 = 0;
-        b.array[i] = 20;
-        put(b.array[i]);
-        #(&a).add();
-        #let b &A = &a;
-        #b.add();
-        #put(b.i);
-        #put(a.i);
+        put(0);
         return 0;
-    }
-
-    [22]i32 array_example() {
-        let i i32 = 0;
-        let a [22]i32;
-        while i < 21 { 
-            a[i] = i;
-            i = i+1;
-        }
-        a[21] = 999;
-        put_chars(&a as &[]i32);
-        return a;
-    }
-
-    struct A {
-        i i32;
-
-        void add() {
-            i = i+2;
-            decr();
-        }
-
-        void decr() {
-            i = i-1;
-        }
-    }
-
-    A struct_example() {
-        let a A;
-        a.i = 1;
-        a.add()
-        a.add();
-        put(a.i);
-        return a;        
     }
 )");
     Parser::Parser p(s);

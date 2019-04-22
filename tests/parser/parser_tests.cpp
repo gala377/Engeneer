@@ -4,10 +4,13 @@
 
 #include <iostream>
 
+#include <boost/test/unit_test.hpp>
+
 #include <parser/parser.h>
 #include <lexer/source/string.h>
 #include <exception/concrete.h>
 #include <visitor/log.h>
+
 
 BOOST_AUTO_TEST_SUITE()
 

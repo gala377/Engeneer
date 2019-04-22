@@ -14,7 +14,7 @@ namespace Lexer::Source {
     public:
         class StringPointer: public Pointer {
         public:
-            StringPointer(uint32_t i, String& s): Pointer(s), i(i) {}
+            StringPointer(uint32_t i, const String& s): Pointer(s), i(i) {}
 
             uint32_t i;
         };

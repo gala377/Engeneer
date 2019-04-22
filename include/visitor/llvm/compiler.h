@@ -5,7 +5,6 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
-#include <c++/7/optional>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/TargetRegistry.h>
