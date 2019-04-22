@@ -115,6 +115,14 @@ namespace Parser::Nodes {
         void accept(Parser::Visitor &v) const override;
     };
 
+    // todo
+    class MemoryDecl: public StructDecl {
+    public:
+        using StructDecl::StructDecl;
+
+        void accept(Parser::Visitor& v) const override;
+    };
+
 
     // Statement
     class Statement: public Base {

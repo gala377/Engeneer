@@ -24,6 +24,7 @@ namespace Parser {
         class TopLevelDecl;
         class GlobVariableDecl;
         class StructDecl;
+        class MemoryDecl;
 
         // Function
         class FunctionDecl;
@@ -106,6 +107,7 @@ namespace Parser {
         virtual void visit(const Nodes::FunctionProt& node) = 0;
         virtual void visit(const Nodes::FunctionDef& node) = 0;
         virtual void visit(const Nodes::StructDecl& node) = 0;
+        virtual void visit(const Nodes::MemoryDecl& node) = 0;
 
         // Statement
         virtual void visit(const Nodes::Statement& node) = 0;

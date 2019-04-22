@@ -31,11 +31,13 @@ namespace Parser {
         void note(Nodes::FunctionDef* f);
         void note(Nodes::GlobVariableDecl* v);
         void note(Nodes::StructDecl* s);
+        void note(Nodes::MemoryDecl* m);
 
         Nodes::FunctionProt* get_func_prot(const symbol_t& s) const;
         Nodes::FunctionDef* get_func_def(const symbol_t& s) const;
         Nodes::GlobVariableDecl* get_glob_var_decl(const symbol_t& s) const;
         Nodes::StructDecl* get_struct_decl(const symbol_t& s) const;
+        Nodes::MemoryDecl* get_memory_decl(const symbol_t& s) const;
 
         template <typename T>
         using const_iterator = typename glib::collections::CollectionConstIter<symbol_map<T>>;
@@ -44,14 +46,15 @@ namespace Parser {
         const_iterator<Nodes::FunctionDef*> iter_func_def() const;
         const_iterator<Nodes::GlobVariableDecl*> iter_glob_var_decl() const;
         const_iterator<Nodes::StructDecl*> iter_struct_decl() const;
+        const_iterator<Nodes::MemoryDecl*> iter_memory_decl() const;
     private:
         Nodes::Program _root;
-
 
         symbol_map<Nodes::FunctionProt*> function_protos;
         symbol_map<Nodes::FunctionDef*> function_defs;
         symbol_map<Nodes::GlobVariableDecl*> glob_var_decls;
         symbol_map<Nodes::StructDecl*> structs_decls;
+        symbol_map<Nodes::MemoryDecl*> memory_decls;
     };
 }
 

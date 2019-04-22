@@ -32,7 +32,8 @@ namespace Visitor {
         // Top Level
         void visit(const Parser::Nodes::GlobVariableDecl& node) override;
         void visit(const Parser::Nodes::StructDecl &node) override;
-
+        void visit(const Parser::Nodes::MemoryDecl &node) override;
+        
         // Function
         void visit(const Parser::Nodes::FunctionProt &node) override;
 

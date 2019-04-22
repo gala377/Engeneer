@@ -2,6 +2,7 @@
 // Created by igor on 30.12.18.
 //
 
+#include "parser/nodes/concrete.h"
 #include <iostream>
 
 #include <lexer/token.h>
@@ -48,6 +49,9 @@ void Parser::Parser::initialize_ast(AST &ast) const {
     for(auto& s: _structs_decls) {
         ast.note(s);
     }
+    for(auto& m: _memory_decls) {
+        ast.note(m);
+    }
 }
 
 // Parsing
@@ -67,7 +71,8 @@ std::unique_ptr<Parser::Nodes::TopLevelDecl> Parser::Parser::parse_top_level_dec
     return one_of<Nodes::TopLevelDecl>(
         &Parser::parse_glob_var_decl,
         &Parser::parse_func_decl,
-        &Parser::parse_struct_decl);
+        &Parser::parse_struct_decl,
+        &Parser::parse_memory_decl);
 }
 
 std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_decl() {
@@ -111,6 +116,31 @@ std::unique_ptr<Parser::Nodes::GlobVariableDecl> Parser::Parser::parse_glob_var_
         std::move(type),
         std::move(init_expr));
     _glob_var_decls.push_back(res.get());
+    return res;
+}
+
+std::unique_ptr<Parser::Nodes::MemoryDecl> Parser::Parser::parse_memory_decl() {
+    if(!parse_token(Lexer::Token::Id::Memory)) {
+        return nullptr;
+    }
+
+    auto identifier = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
+    if(!identifier) {
+        abort<Exception::ExpectedToken>(
+            _lexer.make_token(Lexer::Token::Id::Identifier, ""),
+            _lexer.curr_token(),
+            "Memory name expected");
+    }
+
+    auto wrapped_structs = parse_wraps_decl();
+    auto [members, methods] = parse_struct_body();
+
+    auto res = std::make_unique<Nodes::MemoryDecl>(
+        std::move(identifier),
+        std::move(members),
+        std::move(methods),
+        std::move(wrapped_structs));
+    _memory_decls.push_back(res.get());
     return res;
 }
 
@@ -175,7 +205,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
         error<Exception::ExpectedToken>(
             _lexer.make_token(Lexer::Token::Id::LeftBrace, "{"),
             _lexer.curr_token(),
-            "Struct body is expected to be a code block");
+            "Struct or memory body is expected to be a code block");
     }
 
     while(true) {
@@ -195,7 +225,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
                 abort<Exception::BaseSyntax>(
                     _lexer.curr_token(),
                     "Couldn't parse member type. "
-                    "Declarations in struct body need to be functions or variables");
+                    "Declarations in struct or memory body need to be functions or variables");
             }
             if(!parse_token(Lexer::Token::Id::Semicolon)) {
                 error<Exception::ExpectedToken>(
@@ -248,7 +278,7 @@ Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
         error<Exception::ExpectedToken>(
             _lexer.make_token(Lexer::Token::Id::RightBrace, "}"),
             _lexer.curr_token(),
-            "Struct body not closed");
+            "Struct or memory body not closed");
     }
     return std::make_tuple(std::move(members), std::move(methods));
 }

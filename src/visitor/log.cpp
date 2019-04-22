@@ -74,6 +74,23 @@ void Visitor::Stringify::visit(const Parser::Nodes::StructDecl &node) {
     }
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::MemoryDecl &node) {
+    std::string mess = "MemoryDecl: " + node.identifier->symbol;
+    if(!node.wrapped_structs.empty()) {
+        mess += " wraps ";
+        for(auto& s: node.wrapped_structs) {
+            mess += s->symbol + ", ";
+        }
+    }
+    stringify(node, std::move(mess));
+
+    for(auto& m: node.members) {
+        m->accept(*this);
+    }
+    for(auto& m: node.methods) {
+        m->accept(*this);
+    }
+}
 
 // Function
 void Visitor::Stringify::visit(const Parser::Nodes::FunctionProt &node) {

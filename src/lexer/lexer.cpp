@@ -27,6 +27,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"val", Token::Id::Val},
         {"as", Token::Id::As},
         {"fn", Token::Id::Fn},
+        {"memory", Token::Id::Memory},
 };
 
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {

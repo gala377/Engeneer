@@ -56,5 +56,6 @@ std::string Lexer::Source::String::source_around(Lexer::Source::Base::const_poin
 }
 
 std::string Lexer::Source::String::source_around(Lexer::Source::String::const_pointer &p, uint32_t size) const {
+    return _raw;
     return _raw.substr(std::max((std::uint32_t)0, p.i - size), 2*size);
 }

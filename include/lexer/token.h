@@ -42,6 +42,7 @@ namespace Lexer {
             Val,
             As,
             Fn,
+            Memory,
 
             // Operators
             Assignment=200,

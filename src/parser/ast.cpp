@@ -2,6 +2,7 @@
 // Created by igor on 30.12.18.
 //
 
+#include "parser/nodes/concrete.h"
 #include <iostream>
 
 #include <parser/ast.h>
@@ -27,6 +28,7 @@ void Parser::AST::note(Parser::Nodes::FunctionDef *f) {
         throw std::runtime_error("Function redeclaration");
     }
     function_defs[f->declaration->identifier->symbol] = f;
+    // todo avoid collision with global variables
     note(f->declaration.get());
 }
 
@@ -34,6 +36,7 @@ void Parser::AST::note(Parser::Nodes::GlobVariableDecl *v) {
     if(auto res = glob_var_decls.find(v->identifier->symbol); res != glob_var_decls.end()) {
         throw std::runtime_error("Variable redeclaration");
     }
+    // todo avoid collisions with function names 
     glob_var_decls[v->identifier->symbol] = v;
 }
 
@@ -44,7 +47,12 @@ void Parser::AST::note(Parser::Nodes::StructDecl *s) {
     structs_decls[s->identifier->symbol] = s;
 }
 
-
+void Parser::AST::note(Parser::Nodes::MemoryDecl *m) {
+    if(auto res = memory_decls.find(m->identifier->symbol); res != memory_decls.end()) {
+        throw std::runtime_error("Memory redeclaration");
+    }
+    memory_decls[m->identifier->symbol] = m;
+}
 
 
 Parser::Nodes::FunctionProt *Parser::AST::get_func_prot(const Parser::AST::symbol_t &s) const {
@@ -79,6 +87,14 @@ Parser::Nodes::StructDecl *Parser::AST::get_struct_decl(const Parser::AST::symbo
     }
 }
 
+Parser::Nodes::MemoryDecl *Parser::AST::get_memory_decl(const Parser::AST::symbol_t &s) const {
+    if(auto res = memory_decls.find(s); res == memory_decls.end()) {
+        return nullptr;
+    } else {
+        return res->second;
+    }
+}
+
 
 Parser::AST::const_iterator<Parser::Nodes::FunctionProt*> Parser::AST::iter_func_prot() const {
     return glib::collections::CollectionConstIter(function_protos);
@@ -94,4 +110,8 @@ Parser::AST::const_iterator<Parser::Nodes::GlobVariableDecl*> Parser::AST::iter_
 
 Parser::AST::const_iterator<Parser::Nodes::StructDecl*> Parser::AST::iter_struct_decl() const {
     return glib::collections::CollectionConstIter(structs_decls);
+}
+
+Parser::AST::const_iterator<Parser::Nodes::MemoryDecl*> Parser::AST::iter_memory_decl() const {
+    return glib::collections::CollectionConstIter(memory_decls);
 }

@@ -34,6 +34,7 @@ namespace Parser {
         std::vector<Nodes::FunctionDef*> _function_defs;
         std::vector<Nodes::GlobVariableDecl*> _glob_var_decls;
         std::vector<Nodes::StructDecl*> _structs_decls;
+        std::vector<Nodes::MemoryDecl*> _memory_decls;
 
         void initialize_ast(AST& ast) const;
         // Parsers
@@ -44,6 +45,7 @@ namespace Parser {
         std::unique_ptr<Nodes::TopLevelDecl> parse_top_level_decl();
         std::unique_ptr<Nodes::GlobVariableDecl> parse_glob_var_decl();
         std::unique_ptr<Nodes::StructDecl> parse_struct_decl();
+        std::unique_ptr<Nodes::MemoryDecl> parse_memory_decl();
 
         // Function
         std::unique_ptr<Nodes::FunctionDecl> parse_func_decl();

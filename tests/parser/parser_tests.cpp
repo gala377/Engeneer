@@ -249,5 +249,28 @@ void test() {
     check_ast_equal(input, output);
 }
 
+BOOST_AUTO_TEST_CASE(basic_memory_decl) {
+    std::string input{R"(
+    memory Heap {
+        a int;
+
+        void meth() {
+
+        }
+
+        void meth2();
+    }
+)"};
+    std::string output{
+        R"(Program
+--------MemoryDecl: Heap
+----------------VarDecl: int a
+----------------FuncDef
+------------------------FuncHeader: void meth()
+------------------------CodeBlock
+----------------FuncHeader: void meth2()
+)"};
+    check_ast_equal(input, output);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

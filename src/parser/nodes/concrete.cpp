@@ -116,6 +116,10 @@ void Parser::Nodes::StructDecl::set_depth(std::uint32_t depth) {
     }
 }
 
+void Parser::Nodes::MemoryDecl::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
+
 
 // Statement
 void Parser::Nodes::Statement::accept(Parser::Visitor &v) const {
