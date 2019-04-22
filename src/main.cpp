@@ -21,10 +21,13 @@ int main() {
         return putchar(v+65);
     }
 
+    
     i32 main() {
-        put(0);
+        put(a);
         return 0;
     }
+
+    let a i32 = 1;
 )");
     Parser::Parser p(s);
     Parser::AST ast;

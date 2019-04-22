@@ -5,9 +5,11 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/TargetRegistry.h>
+#include <memory>
 #include <parser/nodes/concrete.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
@@ -43,6 +45,7 @@ namespace Visitor::LLVM {
         void visit(const Parser::Nodes::FunctionProt &node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
         void visit(const Parser::Nodes::StructDecl &node) override;
+        void visit(const Parser::Nodes::GlobVariableDecl &node) override;
 
         // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
@@ -88,6 +91,11 @@ namespace Visitor::LLVM {
             llvm::AllocaInst* llvm_alloca;
         };
 
+        struct GlobalVarWrapper {
+            const Parser::Nodes::GlobVariableDecl* var;
+            llvm::GlobalVariable* llvm_var;
+        };
+
         struct FuncProtWrapper {
             const Parser::Nodes::FunctionProt* func;
             llvm::Function* llvm_func;
@@ -105,6 +113,7 @@ namespace Visitor::LLVM {
 
         using func_map_t = std::map<std::string, FuncProtWrapper>;
         using var_map_t = std::map<std::string, VarWrapper>;
+        using gvar_map_t = std::map<std::string, GlobalVarWrapper>;
         using str_map_t = std::map<std::string, StructWrapper>;
     private:
         Parser::AST& _ast;
@@ -136,6 +145,7 @@ namespace Visitor::LLVM {
 
         struct Context {
             var_map_t local_variables{};
+            gvar_map_t global_variables{};
             func_map_t functions{};
             str_map_t structs{};
 
@@ -184,6 +194,8 @@ namespace Visitor::LLVM {
         std::optional<FuncProtWrapper*> get_function(const std::string& name);
         std::optional<llvm::Value*> get_struct_var(const std::string& name);
         std::optional<FuncProtWrapper*> get_struct_method(const std::string& name); 
+        std::optional<GlobalVarWrapper*> get_global_var(const std::string& name);
+
 
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
         VarWrapper& create_local_var(

@@ -54,11 +54,11 @@ void compile_to_binary() {
 
 std::string add_testing_prelude(const std::string& source) {
     std::string prelude=R"(
-i32 putchar(_ i32);
-i32 put(ch i32) {
-    return putchar(ch + 65);
-}
-)";
+    i32 putchar(_ i32);
+    i32 put(ch i32) {
+        return putchar(ch + 65);
+    }
+    )";
     return prelude + source;
 }
 
@@ -273,6 +273,29 @@ BOOST_AUTO_TEST_CASE(casting_float_to_integer) {
             put(b);
             return 0; 
         }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(global_variables) {
+    std::string in{R"(
+    let a i32 = 1;
+    i32 main() {
+        put(a);
+        return 0;
+    }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(global_variables_after_func_def) {
+    std::string in{R"(
+    i32 main() {
+        put(a);
+        return 0;
+    }
+
+    let a i32 = 1;
     )"};
     check_output(in, "B");
 }

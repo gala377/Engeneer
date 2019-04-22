@@ -3,8 +3,11 @@
 //
 
 #include <llvm/ADT/Optional.h>
+#include <llvm/IR/Constant.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
+#include <llvm/IR/GlobalValue.h>
+#include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Value.h>
@@ -73,7 +76,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
         declare_body(*struct_def.second);
     }
 
-    // todo compile all global variables 
+    for(const auto& var: _ast.iter_glob_var_decl()) {
+        var.second->accept(*this);
+    }
     // todo compile additional memory objects
 
     // compile functions
@@ -130,10 +135,9 @@ void Visitor::LLVM::Compiler::emit_obj_code() {
     if(_target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
         throw std::runtime_error("Target machine can't emit a file of this type");
     }
-    
     pass.run(*_module);
     dest.flush();
-
+    delete _target_machine;
 }
 
 // Top Level
@@ -221,6 +225,31 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     if(func_w->second.func->type->identifier().symbol == Type::void_id) {
         _builder.CreateRetVoid();
     }
+}
+
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::GlobVariableDecl &node) {
+    if(auto it = _ctx.global_variables.find(node.identifier->symbol); it != _ctx.global_variables.end()) {
+        return;
+    }
+    if(!node.init_expr) {
+        throw std::runtime_error("Init expression of a global variable cannot be empty");
+    }
+    node.init_expr->accept(*this); auto init = _ctx.ret_value;
+    auto const_init = llvm::dyn_cast<llvm::Constant>(init);
+    if(!const_init) {
+        throw std::runtime_error("Global variables can only be initialized with constant values");
+    }
+    auto glob_var = new llvm::GlobalVariable(
+        *_module,
+        Type::to_llvm(*node.type, _context, _ctx.structs),
+        false, // if its const 
+        llvm::GlobalValue::InternalLinkage,
+        const_init,
+        node.identifier->symbol);
+    _ctx.global_variables[node.identifier->symbol] = {
+        &node,
+        glob_var,
+    };
 }
 
 Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_opaque(const Parser::Nodes::StructDecl &node) {
@@ -767,6 +796,10 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
         _ctx.ret_value = perform_ptr_action(var.value()->llvm_alloca, nullptr, node.symbol);
         return;
     }
+    if(auto var = get_global_var(node.symbol); var) {
+        _ctx.ret_value = perform_ptr_action(var.value()->llvm_var, nullptr, node.symbol);
+        return;
+    }
     if(auto func = get_function(node.symbol); func) {
         if(_ctx.call_ctx.is_call) {
             _ctx.call_ctx = {true, func.value(), nullptr};
@@ -833,6 +866,13 @@ std::optional<Visitor::LLVM::Compiler::FuncProtWrapper*> Visitor::LLVM::Compiler
     }
     return std::nullopt;
 } 
+
+std::optional<Visitor::LLVM::Compiler::GlobalVarWrapper*> Visitor::LLVM::Compiler::get_global_var(const std::string& name) {
+    if(auto it = _ctx.global_variables.find(name); it != _ctx.global_variables.end()) {
+        return &it->second;
+    }
+    return std::nullopt;
+}
 
 // Consts
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IntConstant &node) {
