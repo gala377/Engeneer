@@ -93,11 +93,11 @@ void check_output(const std::string& in, const std::string& out) {
 BOOST_AUTO_TEST_CASE(printing_simple_integer_const) {
     std::string in{R"(
         i32 main() {
-            put(0);
+            put(1);
             return 0;
         }
     )"};
-    check_output(in, "A");
+    check_output(in, "B");
 }
 
 BOOST_AUTO_TEST_CASE(calling_a_method_on_a_struct_ptr) {
@@ -175,6 +175,102 @@ BOOST_AUTO_TEST_CASE(accessing_array_on_struct) {
         i32 main() {
             let a A = get_a();
             put(a.array[1]);
+            return 0; 
+        }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(struct_access) {
+    std::string in{R"(
+        struct A {
+            a i32;
+            b f32;
+            d i32;
+        }
+
+        i32 main() {
+            let a A;
+            a.a = 0;
+            a.b = 1.0;
+            a.d = 1;
+            put(a.d);
+            return 0; 
+        }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(struct_indexing) {
+    std::string in{R"(
+        struct A {
+            a i32;
+            b f32;
+            d i32;
+        }
+
+        i32 main() {
+            let a A;
+            a.a = 0;
+            a.b = 1.0;
+            a.d = 1;
+            put(a[2]);
+            return 0; 
+        }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(acessing_struct_fields_in_array) {
+    std::string in{R"(
+        struct A {
+            a i32;
+        }
+
+        [10]A data() {
+            let a [10]A; 
+            let i i32 = 0;
+            while i < 10 {
+                let b A; 
+                b.a = i;
+                a[i] = b;
+                i = i +1;
+            }
+            return a;
+        } 
+
+        i32 main() {
+            let a [10]A = data();
+            let i i32 = 0;
+            while i < 10 {
+                put(a[i].a);
+                i = i +1;
+            }
+            return 0;
+        }
+    )"};
+    check_output(in, "ABCDEFGHIJ");
+}
+
+BOOST_AUTO_TEST_CASE(casting_integer_to_float) {
+    std::string in{R"(
+        i32 main() {
+            let a i32 = 1;
+            let b f32 = a as f32;
+            let c i32 = b as i32;
+            put(c);
+            return 0; 
+        }
+    )"};
+    check_output(in, "B");
+}
+
+BOOST_AUTO_TEST_CASE(casting_float_to_integer) {
+    std::string in{R"(
+        i32 main() {
+            let a f32 = 2.0;
+            let b i32 = a as i32; 
+            put(b);
             return 0; 
         }
     )"};

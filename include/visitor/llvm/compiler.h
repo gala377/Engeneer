@@ -120,32 +120,43 @@ namespace Visitor::LLVM {
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
         llvm::TargetMachine* _target_machine;
 
-        const std::string _this_identifier{"self"};
-
-        // Context
-        var_map_t _local_variables;
-        func_map_t _functions;
-        str_map_t _structs;
-
-        llvm::BasicBlock* _curr_loop = nullptr;
-        llvm::BasicBlock* _curr_loop_contr = nullptr;
-
-        StructWrapper* _curr_struct = nullptr;
+        const std::string _this_identifier{"this"};
         
-        // set to true if compiling lhs of a callexpr
-        bool _call_context = false;
-        // if call_context is true this poiter points to 
-        // a named function id its being called or nullptr otherwise
-        FuncProtWrapper* _call_named_func = nullptr;
-        llvm::Value* _call_meth_instance = nullptr;
-
         // what shall we do with pointers in llvm-ir
         enum class PtrAction {
             Store, Load, Address, None
         };
-        PtrAction _ptr_action{PtrAction::Load};
-        // to pass values through calls
-        llvm::Value* _ret_value;
+
+        struct CallContext {
+            // set to true if compiling lhs of a callexpr
+            bool is_call{false};
+            FuncProtWrapper* func{nullptr};
+            llvm::Value* this_instance{nullptr};
+        };
+
+        struct Context {
+            var_map_t local_variables{};
+            func_map_t functions{};
+            str_map_t structs{};
+
+            // to pass values through calls
+            llvm::Value* ret_value{nullptr};
+
+            // start of the current loop block
+            llvm::BasicBlock* loop{nullptr};
+            // control block of the current loop
+            llvm::BasicBlock* loop_contr{nullptr};
+
+            // if compiling a struct points to it
+            StructWrapper* curr_struct{nullptr};
+
+            PtrAction ptr_action{PtrAction::Load};
+
+            CallContext call_ctx{};
+
+        };
+
+        Context _ctx{};
 
         // helper 
         void init_compile_target();
@@ -158,7 +169,6 @@ namespace Visitor::LLVM {
             const Parser::Nodes::FunctionDecl* meth);
         StructWrapper& declare_body(const Parser::Nodes::StructDecl& node);
 
-
         std::string meth_identifier(const std::string& m_name);
         std::string meth_identifier(const std::string& s_name, const std::string& m_name);
 
@@ -169,7 +179,6 @@ namespace Visitor::LLVM {
         // todo llvm::Value* access_struct_field(llvm::Value* str, std::uint64_t )        
         llvm::Function* access_struct_method(llvm::Value* str, const std::string& meth_name);
         
-
         // find helpers
         std::optional<VarWrapper*> get_local_var(const std::string& name);
         std::optional<FuncProtWrapper*> get_function(const std::string& name);
@@ -185,6 +194,9 @@ namespace Visitor::LLVM {
             llvm::Function &func,
             const std::string& identifier,
             llvm::Type* type);
+
+        using call_info = std::tuple<llvm::Value*, llvm::Value*, FuncProtWrapper*>;    
+        call_info compile_call_lhs(const Parser::Nodes::Expression &lhs);
 
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
 

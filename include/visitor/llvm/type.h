@@ -5,6 +5,7 @@
 #ifndef TKOM2_VISITOR_TYPE_H
 #define TKOM2_VISITOR_TYPE_H
 
+#include <llvm/IR/DerivedTypes.h>
 #include <parser/visitor.h>
 
 #include <visitor/base.h>
@@ -31,6 +32,7 @@ namespace Visitor::LLVM::Type {
         const std::string f32_id{"f32"};
         const std::string f64_id{"f64"};
         const std::string f128_id{"f128"};
+        const std::string any_ptr_id{"any"};
 
         using type_handler = std::function<llvm::Type*(const Parser::Types::BaseType&, llvm::LLVMContext&)>;
         using handlers_map = std::map<std::string, type_handler>;
@@ -146,6 +148,12 @@ namespace Visitor::LLVM::Type {
                         f128_id,
                         [](const Parser::Types::BaseType& type, llvm::LLVMContext& context) -> llvm::Type* {
                             return llvm::Type::getFP128Ty(context);
+                        }
+                },
+                {
+                        any_ptr_id,
+                        [](const Parser::Types::BaseType& type, llvm::LLVMContext& context) -> llvm::Type* {
+                            return llvm::PointerType::getInt8PtrTy(context);
                         }
                 },
         };
