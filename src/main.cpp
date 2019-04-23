@@ -14,6 +14,9 @@
 #include <exception/handler.h>
 
 int main() {
+    // todo wrapping a pointer
+    // like so
+    // struct A wraps &B 
     Lexer::Source::String s(R"(
     
     any malloc(_ i32);
