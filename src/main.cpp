@@ -17,8 +17,21 @@ int main() {
     Lexer::Source::String s(R"(
     
     any malloc(_ i32);
-    void free(_ any);
-    // todo
+    void free(_ any);    
+
+    i32 putchar(_ i32);
+    i32 put(v i32) {
+        return putchar(v+65);
+    }
+
+    i32 main() {
+        let a &i32 = __memory__Array.dynamic_alloc(4) as &i32;
+        val a = 1;
+        put(val a);
+        put(__memory__Array.index);
+        return 0;
+    }
+
     memory Heap {
         any dynamic_alloc(size i32) {
             return malloc(size);
@@ -29,18 +42,19 @@ int main() {
         }
     }
 
-    i32 putchar(_ i32);
-    i32 put(v i32) {
-        return putchar(v+65);
-    }
+    memory Array {
+        mem [100]byte;
+        index i32;
 
-    i32 main() {
-        let heap Heap;
-        let a &i32 = heap.dynamic_alloc(4);
-        val a = 1;
-        put(val a);
-        heap.free(a);
-        return 0;
+        void init() {
+            index = 1;
+        }
+
+        any dynamic_alloc(size i32) {
+            let m any = &mem[index] as any;
+            index = index + size;
+            return m;
+        }
     }
 )");
     Parser::Parser p(s);

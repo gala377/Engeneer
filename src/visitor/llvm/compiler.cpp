@@ -4,6 +4,7 @@
 
 #include <llvm/ADT/Optional.h>
 #include <llvm/IR/Constant.h>
+#include <llvm/IR/Constants.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/GlobalValue.h>
@@ -11,10 +12,12 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Value.h>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <system_error>
 #include <utility>
+#include <vector>
 #include <visitor/llvm/compiler.h>
 #include <visitor/llvm/type.h>
 #include <parser/nodes/concrete.h>
@@ -64,6 +67,21 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
         }
         _ctx.curr_struct = nullptr;
     }
+    // the same for mem defs
+    // todo refactor
+    for(const auto& mem_def: _ast.iter_memory_decl()) {
+        auto& s = declare_opaque(*mem_def.second);
+        _ctx.curr_struct = &s;
+        for(const auto& method: s.str->methods) {
+            // declare all its methods prototypes
+            if(auto func = dynamic_cast<Parser::Nodes::FunctionDef*>(method.get()); func) {
+                func->declaration->accept(*this);
+                continue;
+            }
+            method->accept(*this);
+        }
+        _ctx.curr_struct = nullptr;
+    }
     // declare all function protos
     for(const auto& func_proto: _ast.iter_func_prot()) {
         func_proto.second->accept(*this);
@@ -76,18 +94,22 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
         declare_body(*struct_def.second);
     }
 
+    for(const auto& mem_def: _ast.iter_memory_decl()) {
+        declare_body(*mem_def.second);
+        add_memory_global_var(*mem_def.second);
+    }
+
     for(const auto& var: _ast.iter_glob_var_decl()) {
         var.second->accept(*this);
     }
-    // todo compile additional memory objects
 
     // compile functions
     // compile methods
     node.accept_children(*this);
-    //std::cerr << "Printing module\n\n\n";
     _module->print(llvm::outs(), nullptr);
     emit_obj_code();
 }
+
 
 void Visitor::LLVM::Compiler::init_compile_target() {
     llvm::InitializeAllTargetInfos();
@@ -221,9 +243,31 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
         ++i;
     }
     //std::cerr << "In function " << func_name << "\n";
+    if(func_name == "main") {
+        add_memory_initializers();
+    }
     node.body->accept(*this);
     if(func_w->second.func->type->identifier().symbol == Type::void_id) {
         _builder.CreateRetVoid();
+    }
+}
+
+void Visitor::LLVM::Compiler::add_memory_initializers() {
+    for(auto& s: _ctx.structs) {
+        if(!s.second.is_memory) {
+            continue;
+        }
+        if(auto meth = s.second.methods.find(_mem_init_meth_name); meth == s.second.methods.end()) {
+            continue;
+        } 
+        auto& glob_var = _ctx.global_variables[mem_glob_identifier(s.second.str->identifier->symbol)];
+        auto meth_name = meth_identifier(
+            s.second.str->identifier->symbol,
+            _mem_init_meth_name);
+        auto lhs = _ctx.functions[meth_name].llvm_func;
+        std::vector<llvm::Value*> args;
+        args.push_back(glob_var.llvm_var);
+        _builder.CreateCall(lhs, args);
     }
 }
 
@@ -261,6 +305,12 @@ Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_opaque(
     return _ctx.structs[node.identifier->symbol];
 }
 
+Visitor::LLVM::Compiler::StructWrapper& Visitor::LLVM::Compiler::declare_opaque(const Parser::Nodes::MemoryDecl &node) {
+    auto& s = declare_opaque(static_cast<const Parser::Nodes::StructDecl&>(node));
+    s.is_memory = true;
+    return s;
+}
+
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StructDecl &node) {
     auto& s = declare_opaque(node);    
     // set compiling struct body context;
@@ -294,6 +344,36 @@ std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& m_name) 
 
 std::string Visitor::LLVM::Compiler::meth_identifier(const std::string& s_name, const std::string& m_name) {
     return "__" + s_name + "__meth__" + m_name;
+}
+
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MemoryDecl &node) {
+    visit(static_cast<const Parser::Nodes::StructDecl&>(node));
+}
+
+Visitor::LLVM::Compiler::GlobalVarWrapper& Visitor::LLVM::Compiler::add_memory_global_var(const Parser::Nodes::MemoryDecl& node) {
+    auto identifier = mem_glob_identifier(node.identifier->symbol);
+    auto type = Type::to_llvm(
+        Parser::Types::SimpleType(
+            std::make_unique<Parser::Nodes::Identifier>(node.identifier->symbol)),
+        _context,
+        _ctx.structs);
+    auto glob_var = new llvm::GlobalVariable(
+        *_module,
+        type,
+        false, // if its const 
+        llvm::GlobalValue::InternalLinkage,
+        llvm::ConstantAggregateZero::get(type),
+        identifier);
+    _ctx.global_variables[identifier] = {
+        nullptr,
+        glob_var,
+    };
+    return _ctx.global_variables[identifier];
+}
+
+
+std::string Visitor::LLVM::Compiler::mem_glob_identifier(const std::string& m_name) {
+    return "__memory__" + m_name;
 }
 
 // Statement

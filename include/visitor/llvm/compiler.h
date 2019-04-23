@@ -46,6 +46,7 @@ namespace Visitor::LLVM {
         void visit(const Parser::Nodes::FunctionDef &node) override;
         void visit(const Parser::Nodes::StructDecl &node) override;
         void visit(const Parser::Nodes::GlobVariableDecl &node) override;
+        void visit(const Parser::Nodes::MemoryDecl& node) override;
 
         // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
@@ -107,6 +108,8 @@ namespace Visitor::LLVM {
             const Parser::Nodes::StructDecl* str;
             llvm::StructType* llvm_str;
 
+            bool is_memory{false}; 
+
             std::map<std::string, FuncProtWrapper*> methods{};
             std::int32_t member_index(const std::string& name) const;
         };
@@ -130,6 +133,7 @@ namespace Visitor::LLVM {
         llvm::TargetMachine* _target_machine;
 
         const std::string _this_identifier{"this"};
+        const std::string _mem_init_meth_name{"init"};
         
         // what shall we do with pointers in llvm-ir
         enum class PtrAction {
@@ -172,15 +176,21 @@ namespace Visitor::LLVM {
         void init_compile_target();
         void emit_obj_code();
 
-        // struct helpers
+        void add_memory_initializers();
+
         StructWrapper& declare_opaque(const Parser::Nodes::StructDecl &node);
+        StructWrapper& declare_opaque(const Parser::Nodes::MemoryDecl &node);
+
         FuncProtWrapper* compile_method(
             const Parser::Nodes::StructDecl* str,
             const Parser::Nodes::FunctionDecl* meth);
         StructWrapper& declare_body(const Parser::Nodes::StructDecl& node);
+        GlobalVarWrapper& add_memory_global_var(const Parser::Nodes::MemoryDecl& node);
 
         std::string meth_identifier(const std::string& m_name);
         std::string meth_identifier(const std::string& s_name, const std::string& m_name);
+
+        std::string mem_glob_identifier(const std::string& m_name);
 
         std::pair<llvm::Value*, bool> access_struct_field(llvm::Value* str, const std::string& field_name); 
         std::pair<llvm::Value*, StructWrapper*> get_struct_value_with_info(llvm::Value* str);
@@ -195,7 +205,6 @@ namespace Visitor::LLVM {
         std::optional<llvm::Value*> get_struct_var(const std::string& name);
         std::optional<FuncProtWrapper*> get_struct_method(const std::string& name); 
         std::optional<GlobalVarWrapper*> get_global_var(const std::string& name);
-
 
         VarWrapper& create_local_var(llvm::Function &func, const Parser::Nodes::VariableDecl &node);
         VarWrapper& create_local_var(
