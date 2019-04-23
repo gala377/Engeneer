@@ -24,37 +24,34 @@ int main() {
         return putchar(v+65);
     }
 
+    struct A {
+        void foo() {
+            put(0);
+        }
+
+        i32 bar(a &[]i32, b [10]i32, c fn(i32, i32)->i32) {
+            return 0;
+        }
+    }
+
+    struct B wraps C {
+        cos i32;
+        cos2 i32;
+
+        void foo2() {
+            put(0);
+        }
+    }
+
+
+    struct C wraps B {
+        void foo() {
+            put(0);
+        }
+    }
+
     i32 main() {
-        let a &i32 = __memory__Array.dynamic_alloc(4) as &i32;
-        val a = 1;
-        put(val a);
-        put(__memory__Array.index);
         return 0;
-    }
-
-    memory Heap {
-        any dynamic_alloc(size i32) {
-            return malloc(size);
-        }
-
-        void free(ptr any) {
-            free(ptr);
-        }
-    }
-
-    memory Array {
-        mem [100]byte;
-        index i32;
-
-        void init() {
-            index = 1;
-        }
-
-        any dynamic_alloc(size i32) {
-            let m any = &mem[index] as any;
-            index = index + size;
-            return m;
-        }
     }
 )");
     Parser::Parser p(s);

@@ -14,6 +14,7 @@ namespace Parser::Types {
     class BaseType {
     public:
         virtual const Nodes::Identifier& identifier() const = 0;
+        virtual std::unique_ptr<BaseType> copy() const = 0;
 
         virtual ~BaseType() = default;
     };

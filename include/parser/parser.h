@@ -119,7 +119,11 @@ namespace Parser {
         unique_vec<Nodes::Identifier> parse_wraps_decl();
         using struct_body_parse_res_t = std::tuple<unique_vec<Nodes::VariableDecl>, unique_vec<Nodes::FunctionDecl>>;
         struct_body_parse_res_t parse_struct_body();
-
+        void unwind_wraps_decl(Nodes::StructDecl& node);
+        void generate_wrapped_methods(Nodes::StructDecl& node, const Nodes::StructDecl& wrapping);
+        std::unique_ptr<Nodes::FunctionProt> copy_func_prot(const Nodes::FunctionDecl& func);
+        std::unique_ptr<Nodes::CodeBlock> gen_delegates_body(const Nodes::StructDecl& wrapping, const Nodes::FunctionProt& func);
+        
         // Stmt helpers
         std::unique_ptr<Nodes::Statement> parse_semicolon_terminated_stmt();
         std::unique_ptr<Nodes::Statement> parse_custom_terminated_stmt();
@@ -131,7 +135,6 @@ namespace Parser {
         std::unique_ptr<Types::SimpleType> parse_simple_type();
         std::unique_ptr<Types::FunctionType> parse_func_type();
         unique_vec<Types::BaseType> parse_func_type_args();
-
 
         // postfix helpers
         using call_args_t = unique_vec<Nodes::Expression>;

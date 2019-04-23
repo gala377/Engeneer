@@ -19,10 +19,17 @@ namespace Parser::Types {
         std::unique_ptr<Nodes::Identifier> ident;
 
         const Nodes::Identifier& identifier() const override;
+        std::unique_ptr<BaseType> copy() const override;
     };
 
     class ComplexType: public BaseType {
     public:
+        ComplexType() = default;
+        ComplexType(
+            bool is_const,
+            bool is_ptr,
+            std::unique_ptr<BaseType>&& to_type);
+
         // true if type is const of underlying type
         // if it's ptr as well its a const ptr.
         bool is_const{false};
@@ -32,6 +39,7 @@ namespace Parser::Types {
         std::unique_ptr<BaseType> underlying_type{nullptr};
 
         const Nodes::Identifier& identifier() const override;
+        std::unique_ptr<BaseType> copy() const override;    
     };
 
     class ArrayType: public BaseType {
@@ -42,6 +50,7 @@ namespace Parser::Types {
         std::unique_ptr<BaseType> underlying_type{nullptr};
 
         const Nodes::Identifier &identifier() const override;
+        std::unique_ptr<BaseType> copy() const override;
     };
 
     class FunctionType: public BaseType {
@@ -52,6 +61,7 @@ namespace Parser::Types {
         std::vector<std::unique_ptr<BaseType>> argument_types;
 
         const Nodes::Identifier &identifier() const override;
+        std::unique_ptr<BaseType> copy() const override;
     };
 }
 

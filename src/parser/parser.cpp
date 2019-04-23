@@ -2,13 +2,18 @@
 // Created by igor on 30.12.18.
 //
 
+#include "exception/base.h"
 #include "parser/nodes/concrete.h"
+#include "parser/type.h"
+#include <algorithm>
 #include <iostream>
 
 #include <lexer/token.h>
 
+#include <memory>
 #include <parser/parser.h>
 #include <exception/concrete.h>
+#include <vector>
 
 // Class Interface
 
@@ -32,9 +37,97 @@ Parser::AST Parser::Parser::parse() {
                 _lexer.curr_token(),
                 "End of source expected");
     }
+    for(auto& s: _structs_decls) {
+        unwind_wraps_decl(*s);
+    }
     initialize_ast(ast);
     return ast;
 }
+
+void Parser::Parser::unwind_wraps_decl(Nodes::StructDecl& node) {
+    for(auto& ident: node.wrapped_structs) {
+        node.members.emplace_back(std::make_unique<Nodes::VariableDecl>(
+            std::make_unique<Nodes::Identifier>(ident->symbol),
+            std::make_unique<Types::SimpleType>(
+                std::make_unique<Nodes::Identifier>(ident->symbol))));
+        const auto& wrapping = std::find_if(
+            _structs_decls.begin(),
+            _structs_decls.end(),
+            [&ident](Nodes::StructDecl* item) -> bool {
+                return item->identifier->symbol == ident->symbol;
+            });
+        if(wrapping == _structs_decls.end()) {
+            abort<Exception::BaseSyntax>(
+                // todo it points to end of file 
+                _lexer.curr_token(),
+                std::string{"Undefined type in wraps decl "} + ident->symbol);
+        }
+        generate_wrapped_methods(node, **wrapping);
+    }
+}
+
+void Parser::Parser::generate_wrapped_methods(Nodes::StructDecl& node, const Nodes::StructDecl& wrapping) {
+    for(auto& meth: wrapping.methods) {
+        auto it = std::find_if(
+            node.methods.begin(),
+            node.methods.end(), 
+            [&meth](auto& item) -> bool {
+                return meth->ident().symbol == item->ident().symbol;
+            }
+        );
+        if(it != node.methods.end()) {
+            continue;
+        }
+        auto func_prot = copy_func_prot(*meth);
+        auto body = gen_delegates_body(wrapping, *func_prot); 
+        node.methods.emplace_back(
+             std::make_unique<Nodes::FunctionDef>(
+                std::move(func_prot),
+                std::move(body)));
+    }   
+}
+
+std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::copy_func_prot(const Nodes::FunctionDecl& func) {
+    const Nodes::FunctionProt* o_prot = nullptr;
+    if(o_prot = dynamic_cast<const Nodes::FunctionProt*>(&func); !o_prot) {
+        o_prot = dynamic_cast<const Nodes::FunctionDef*>(&func)->declaration.get();
+    }
+    auto ident = std::make_unique<Nodes::Identifier>(
+        o_prot->identifier->symbol);
+    auto ret = o_prot->type->copy();
+    std::vector<std::unique_ptr<Nodes::VariableDecl>> args;
+    for(auto& arg: o_prot->arg_list) {
+        args.emplace_back(
+            std::make_unique<Nodes::VariableDecl>(
+                std::make_unique<Nodes::Identifier>(arg->identifier->symbol),
+                arg->type->copy()));
+    }
+    return std::make_unique<Nodes::FunctionProt>(
+        std::move(ident),
+        std::move(ret),
+        std::move(args));
+}
+
+std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::gen_delegates_body(
+        const Nodes::StructDecl& wrapping,
+        const Nodes::FunctionProt& func) {
+    auto code_block = std::make_unique<Nodes::CodeBlock>();
+    std::vector<std::unique_ptr<Nodes::Expression>> args;
+    for(auto& arg: func.arg_list) {
+        args.emplace_back(
+            std::make_unique<Nodes::Identifier>(arg->identifier->symbol));
+    }
+
+    auto ret = std::make_unique<Nodes::ReturnStmt>(
+        std::make_unique<Nodes::CallExpr>(
+            std::make_unique<Nodes::AccessExpr>(
+                std::make_unique<Nodes::Identifier>(wrapping.identifier->symbol),
+                std::make_unique<Nodes::Identifier>(func.identifier->symbol)),
+            std::move(args))
+    );
+    code_block->add_child(std::move(ret));
+    return code_block;  
+}   
 
 void Parser::Parser::initialize_ast(AST &ast) const {
     for(auto& p: _function_protos) {
