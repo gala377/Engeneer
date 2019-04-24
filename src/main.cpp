@@ -27,28 +27,65 @@ int main() {
         return putchar(v+65);
     }
 
-    memory Heap {
+    void iprint(n i64) { 
+        if n > 9 as i64 { 
+            let a i64 = n / 10 as i64;
+            n = n - 10 as i64 * a;
+            iprint(a);
+        }
+        putchar(48 + n as i32);
+    }
 
-        any dynamic_alloc(size i64) {
-            put(size);
-            return malloc(size);
+    memory HeapChunk {
+
+        base any;
+        index i64;
+
+
+        void init() {
+            base = malloc(100);
+            index = 0 as i64; 
         }
 
-        void free(ptr any) {
-            free(ptr);
+        any dynamic_alloc(size i64) {
+            if index + size > 100 as i64 {
+                return 0 as any;
+            }
+            index = index + size;
+            let addr i64 = base as i64 + index; 
+            return addr as any; 
+        }
+    }
+
+    memory StaticHeap {
+        base any;
+        size i64;
+
+        void init() {
+            size = 100;
+            base = malloc(size);
+        }
+
+        any static_alloc(address i64, size i64) {
+            if address > this.size {
+                return 0 as any;
+            }
+            return (base as i64 + address) as any;
         }
     }
 
     i32 main() {
-        @Heap let a i32 = 1;
+        @HeapChunk let a i32 = 1;
+        @HeapChunk let b i32 = 2;
 
-        
-
-        let b i32;
-        let c &i8 = &b as &i32;
-        
-        a = a + 1;
         put(a);
+        put(b);
+
+        @StaticHeap(10) let d i32 = 1;
+        @StaticHeap(20) let e i32 = 2;
+        @StaticHeap(10) let f i32;
+
+        put(d); put(e); put(f);
         return 0;
     }
 )");

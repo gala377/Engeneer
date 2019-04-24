@@ -325,4 +325,63 @@ BOOST_AUTO_TEST_CASE(wrapping_structs_works_as_intended) {
     check_output(in, "B");
 }
 
+BOOST_AUTO_TEST_CASE(at_statement_with_dynamic_alloc_and_primitive_type) {
+    std::string in{R"(
+    any malloc(_ i32);
+    void free(_ any);
+
+    memory Heap {
+
+        any dynamic_alloc(size i64) {
+            put(size);
+            return malloc(size);
+        }
+
+        void free(ptr any) {
+            free(ptr);
+        }
+    }
+
+    i32 main() {
+        @Heap let a i32 = 1;        
+        a = a + 1;
+        put(a);
+        return 0;
+    }
+)"};
+    check_output(in, "EC");
+}
+
+BOOST_AUTO_TEST_CASE(at_statement_with_dynamic_alloc_and_struct_type) {
+    std::string in{R"(
+    any malloc(_ i32);
+    void free(_ any);
+
+    struct A {
+        a i32;
+        b i64;
+    }
+
+    memory Heap {
+        any dynamic_alloc(size i64) {
+            put(size);
+            return malloc(size);
+        }
+
+        void free(ptr any) {
+            free(ptr);
+        }
+    }
+
+    i32 main() {
+        @Heap let a A;        
+        a.b = 2;
+        a = a.b + 1;
+        put(a.b);
+        return 0;
+    }
+)"};
+    check_output(in, "PD");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
