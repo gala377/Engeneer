@@ -28,32 +28,22 @@ int main() {
     }
 
     struct A {
-        void foo() {
-            put(0);
-        }
-
-        i32 bar(a &[]i32, b [10]i32, c fn(i32, i32)->i32) {
-            return 0;
+        v i32;
+        void put() {
+            put(v);
         }
     }
 
-    struct B wraps C {
-        cos i32;
-        cos2 i32;
-
-        void foo2() {
-            put(0);
-        }
-    }
-
-
-    struct C wraps B {
-        void foo() {
-            put(0);
+    struct B wraps A {
+        void inc() {
+            A.v = A.v + 1;
         }
     }
 
     i32 main() {
+        let b B;
+        b.inc();
+        b.put();
         return 0;
     }
 )");

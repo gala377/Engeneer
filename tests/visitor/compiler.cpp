@@ -300,4 +300,29 @@ BOOST_AUTO_TEST_CASE(global_variables_after_func_def) {
     check_output(in, "B");
 }
 
+BOOST_AUTO_TEST_CASE(wrapping_structs_works_as_intended) {
+    std::string in{R"(
+    struct A {
+        v i32;
+        void put() {
+            put(v);
+        }
+    }
+
+    struct B wraps A {
+        void inc() {
+            A.v = A.v + 1;
+        }
+    }
+
+    i32 main() {
+        let b B;
+        b.inc();
+        b.put();
+        return 0;
+    }
+)"};
+    check_output(in, "B");
+}
+
 BOOST_AUTO_TEST_SUITE_END()
