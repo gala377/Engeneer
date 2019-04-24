@@ -213,7 +213,6 @@ void Parser::Nodes::ReturnStmt::set_depth(std::uint32_t depth) {
     }
 }
 
-
 void Parser::Nodes::BreakStmt::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
@@ -224,6 +223,26 @@ void Parser::Nodes::ContinueStmt::accept(Parser::Visitor &v) const {
 }
 
 
+Parser::Nodes::AtStmt::AtStmt(
+            std::unique_ptr<Identifier>&& ident,
+            std::unique_ptr<VariableDecl>&& var_decl,
+            std::unique_ptr<Expression>&& address):
+            identifier{std::move(ident)},
+            var_decl{std::move(var_decl)},
+            address{std::move(address)} {}
+
+void Parser::Nodes::AtStmt::set_depth(std::uint32_t depth) {
+    Statement::set_depth(depth);
+    var_decl->set_depth(_depth+1);
+    identifier->set_depth(_depth+1);
+    if(address) {
+        address->set_depth(_depth+1);
+    }
+}
+
+void Parser::Nodes::AtStmt::accept(Parser::Visitor &v) const {
+    v.visit(*this);
+}
 
 // Expressions
 void Parser::Nodes::Expression::accept(Parser::Visitor &v) const {

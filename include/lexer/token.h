@@ -80,6 +80,7 @@ namespace Lexer {
             Colon,
             Dot,
             Arrow,
+            At,
 
             DoubleMinus,
             DoublePlus,

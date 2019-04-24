@@ -2,6 +2,7 @@
 // Created by igor on 30.12.18.
 //
 
+#include "parser/nodes/concrete.h"
 #include <visitor/base.h>
 
 
@@ -64,6 +65,10 @@ void Visitor::Base::visit(const Parser::Nodes::CodeBlock &node) {
 }
 
 void Visitor::Base::visit(const Parser::Nodes::VariableDecl &node) {
+    visit(static_cast<const Parser::Nodes::Base&>(node));
+}
+
+void Visitor::Base::visit(const Parser::Nodes::AtStmt &node) {
     visit(static_cast<const Parser::Nodes::Base&>(node));
 }
 

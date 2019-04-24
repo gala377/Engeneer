@@ -9,6 +9,7 @@
 #include <parser/parser.h>
 #include <lexer/source/string.h>
 #include <exception/concrete.h>
+#include <string>
 #include <visitor/log.h>
 
 
@@ -269,6 +270,76 @@ BOOST_AUTO_TEST_CASE(basic_memory_decl) {
 ------------------------FuncHeader: void meth()
 ------------------------CodeBlock
 ----------------FuncHeader: void meth2()
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(at_stmt_static_alloc) {
+    std::string input{R"(
+        void foo() {
+            @Heap(1+1) let i int = 32;
+        }
+    )"};
+    std::string output{R"(Program
+--------FuncDef
+----------------FuncHeader: void foo()
+----------------CodeBlock
+------------------------AtStmt: Heap
+--------------------------------VarDecl: int i
+----------------------------------------IntConst: 32
+--------------------------------AdditiveExpr: +
+----------------------------------------IntConst: 1
+----------------------------------------IntConst: 1
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(at_stmt_static_alloc_without_init_expr) {
+    std::string input{R"(
+        void foo() {
+            @Heap(foo) let i int;
+        }
+    )"};
+    std::string output{R"(Program
+--------FuncDef
+----------------FuncHeader: void foo()
+----------------CodeBlock
+------------------------AtStmt: Heap
+--------------------------------VarDecl: int i
+--------------------------------Identifier: foo
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(at_stmt_dynamic_alloc) {
+    std::string input{R"(
+        void foo() {
+            @Heap let i int = 32;
+        }
+    )"};
+    std::string output{R"(Program
+--------FuncDef
+----------------FuncHeader: void foo()
+----------------CodeBlock
+------------------------AtStmt: Heap
+--------------------------------VarDecl: int i
+----------------------------------------IntConst: 32
+)"};
+    check_ast_equal(input, output);
+}
+
+BOOST_AUTO_TEST_CASE(at_stmt_dynamic_alloc_without_init_expr) {
+    std::string input{R"(
+        void foo() {
+            @Heap let i int;
+        }
+    )"};
+    std::string output{R"(Program
+--------FuncDef
+----------------FuncHeader: void foo()
+----------------CodeBlock
+------------------------AtStmt: Heap
+--------------------------------VarDecl: int i
 )"};
     check_ast_equal(input, output);
 }

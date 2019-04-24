@@ -12,22 +12,6 @@
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/IR/Value.h>
-#include <memory>
-#include <stdexcept>
-#include <string>
-#include <system_error>
-#include <utility>
-#include <vector>
-#include <visitor/llvm/compiler.h>
-#include <visitor/llvm/type.h>
-#include <parser/nodes/concrete.h>
-#include <parser/type.h>
-#include <parser/type.h>
-
-#include <iostream>
-#include <cstdio>
-#include <cstdlib>
-
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
@@ -39,6 +23,22 @@
 #include <llvm/Target/TargetMachine.h>
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/Support/Casting.h>
+
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <system_error>
+#include <utility>
+#include <vector>
+#include <iostream>
+#include <cstdio>
+#include <cstdlib>
+
+#include <visitor/llvm/compiler.h>
+#include <visitor/llvm/type.h>
+#include <parser/nodes/concrete.h>
+#include <parser/type.h>
+#include <parser/type.h>
 
 // todo const and some kind of implicit dereferencing
 Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): Base(), _ast(ast) {}
@@ -373,7 +373,7 @@ Visitor::LLVM::Compiler::GlobalVarWrapper& Visitor::LLVM::Compiler::add_memory_g
 
 
 std::string Visitor::LLVM::Compiler::mem_glob_identifier(const std::string& m_name) {
-    return "__memory__" + m_name;
+    return m_name;
 }
 
 // Statement

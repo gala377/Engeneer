@@ -5,6 +5,7 @@
 #ifndef TKOM2_CONCRETE_H
 #define TKOM2_CONCRETE_H
 
+#include <memory>
 #include <optional>
 
 #include <parser/nodes/base.h>
@@ -151,6 +152,21 @@ namespace Parser::Nodes {
 
         void set_depth(std::uint32_t depth) override;
 
+        void accept(Parser::Visitor &v) const override;
+    };
+
+    class AtStmt: public Statement {
+    public:
+        AtStmt(
+            std::unique_ptr<Identifier>&& ident,
+            std::unique_ptr<VariableDecl>&& var_decl,
+            std::unique_ptr<Expression>&& address = nullptr);
+
+        std::unique_ptr<Identifier> identifier;
+        std::unique_ptr<VariableDecl> var_decl;
+        std::unique_ptr<Expression> address;
+
+        void set_depth(std::uint32_t depth) override;
         void accept(Parser::Visitor &v) const override;
     };
 

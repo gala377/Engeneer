@@ -40,6 +40,7 @@ namespace Visitor {
         // Statement
         void visit(const Parser::Nodes::CodeBlock &node) override;
         void visit(const Parser::Nodes::VariableDecl &node) override;
+        void visit(const Parser::Nodes::AtStmt& node) override;
         void visit(const Parser::Nodes::FunctionDef &node) override;
         void visit(const Parser::Nodes::FunctionDecl &node) override;
         void visit(const Parser::Nodes::BlockStmt &node) override;

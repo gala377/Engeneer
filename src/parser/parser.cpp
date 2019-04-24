@@ -39,6 +39,7 @@ Parser::AST Parser::Parser::parse() {
     }
     for(auto& s: _structs_decls) {
         unwind_wraps_decl(*s);
+        s->set_depth(s->depth());
     }
     initialize_ast(ast);
     return ast;
@@ -471,6 +472,7 @@ std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_statement() {
 std::unique_ptr<Parser::Nodes::Statement> Parser::Parser::parse_semicolon_terminated_stmt() {
     auto res = one_of<Nodes::Statement>(
         &Parser::parse_var_decl,
+        &Parser::parse_at_stmt,
         &Parser::parse_expr,
         &Parser::parse_break_stmt,
         &Parser::parse_continue_stmt);
@@ -544,6 +546,44 @@ std::unique_ptr<Parser::Nodes::VariableDecl> Parser::Parser::parse_var_decl() {
         std::move(identifier),
         std::move(type),
         std::move(init_expr));
+}
+
+std::unique_ptr<Parser::Nodes::AtStmt> Parser::Parser::parse_at_stmt() {
+    if(!parse_token(Lexer::Token::Id::At)) {
+        return nullptr;
+    }
+    auto identifier = parse_cast<Nodes::Identifier>(&Parser::parse_ident);
+    if(!identifier) {
+        abort<Exception::ExpectedToken>(
+            _lexer.make_token(Lexer::Token::Id::At, "@"),
+            _lexer.curr_token(),
+            "Expected identifier after @ operator");
+    }
+    std::unique_ptr<Nodes::Expression> address;
+    if(parse_token(Lexer::Token::Id::LeftParenthesis)) {
+        address = parse_expr();
+        if(!address) {
+            abort<Exception::BaseSyntax>(
+                _lexer.curr_token(),
+                "Expression expected in static allocation");
+        }
+        if(!parse_token(Lexer::Token::Id::RightParenthesis)) {
+            error<Exception::ExpectedToken>(
+                _lexer.make_token(Lexer::Token::Id::RightParenthesis, ")"),
+                _lexer.curr_token());
+        }
+    }
+    auto var_decl = parse_var_decl();
+    if(!var_decl) {
+        abort<Exception::ExpectedToken>(
+            _lexer.make_token(Lexer::Token::Id::Let, "let"),
+            _lexer.curr_token(),
+            "Variable declaration expected after at statement");
+    }
+    return std::make_unique<Nodes::AtStmt>(
+        std::move(identifier),
+        std::move(var_decl),
+        std::move(address));
 }
 
 std::unique_ptr<Parser::Nodes::BlockStmt> Parser::Parser::parse_block_stmt() {

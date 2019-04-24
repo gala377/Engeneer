@@ -2,6 +2,7 @@
 // Created by igor on 30.12.18.
 //
 
+#include "parser/nodes/concrete.h"
 #include <iostream>
 
 #include <visitor/log.h>
@@ -126,6 +127,13 @@ void Visitor::Stringify::visit(const Parser::Nodes::VariableDecl &node) {
     }
 }
 
+void Visitor::Stringify::visit(const Parser::Nodes::AtStmt &node) {
+    stringify(node, "AtStmt: " + node.identifier->symbol);
+    node.var_decl->accept(*this);
+    if(node.address) {
+        node.address->accept(*this);
+    }
+}
 
 void Visitor::Stringify::visit(const Parser::Nodes::BlockStmt &node) {
     stringify(node, "BlockStmt");

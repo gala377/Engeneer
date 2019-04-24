@@ -24,7 +24,8 @@ namespace Lexer {
             '!',
             ';',
             '.',
-            '&', '|', '^'
+            '&', '|', '^',
+            '@',
     };
 
     bool is_new_line(const char ch);

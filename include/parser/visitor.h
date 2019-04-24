@@ -41,6 +41,7 @@ namespace Parser {
         class ReturnStmt;
         class BreakStmt;
         class ContinueStmt;
+        class AtStmt;
 
         // Expressions
         class Expression;
@@ -113,6 +114,7 @@ namespace Parser {
         virtual void visit(const Nodes::Statement& node) = 0;
         virtual void visit(const Nodes::CodeBlock& node) = 0;
         virtual void visit(const Nodes::VariableDecl& node) = 0;
+        virtual void visit(const Nodes::AtStmt& node) = 0;
         virtual void visit(const Nodes::BlockStmt& node) = 0;
         virtual void visit(const Nodes::IfStmt& node) = 0;
         virtual void visit(const Nodes::WhileStmt& node) = 0;

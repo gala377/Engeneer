@@ -67,6 +67,7 @@ const Lexer::Lexer::SymbolMap Lexer::Lexer::_OPERATORS = {
         {"!", Token::Id::Negation},
         {".", Token::Id::Dot},
         {"->", Token::Id::Arrow},
+        {"@", Token::Id::At},
 };
 
 Lexer::Lexer::Lexer(Source::Base &source):
