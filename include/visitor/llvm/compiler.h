@@ -7,6 +7,7 @@
 
 #include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/TargetRegistry.h>
 #include <memory>
@@ -90,7 +91,7 @@ namespace Visitor::LLVM {
         // Class Interface
         struct VarWrapper {
             const Parser::Nodes::VariableDecl* var;
-            llvm::AllocaInst* llvm_alloca;
+            llvm::Value* llvm_alloca;
         };
 
         struct GlobalVarWrapper {
@@ -221,6 +222,7 @@ namespace Visitor::LLVM {
         call_info compile_call_lhs(const Parser::Nodes::Expression &lhs);
 
         llvm::Value* cast(llvm::Value* from, llvm::Value* to);
+        llvm::Value* cast(llvm::Value* from, const Parser::Types::BaseType& to);
 
         std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
         llvm::Type* strip_ptr_type(llvm::Type *v);

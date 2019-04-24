@@ -452,6 +452,83 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
     }
 }
 
+void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AtStmt& node) {
+    // check variable
+    if(auto v = _ctx.local_variables.find(node.var_decl->identifier->symbol); v != _ctx.local_variables.end()) {
+        throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
+    }
+    // get data
+    auto name = node.identifier->symbol;
+    auto mem = _ctx.structs.find(name);
+    if(mem == _ctx.structs.end()) {
+        throw std::runtime_error("Use of undeclared memory object " + name);
+    }
+    if(!mem->second.is_memory) {
+        throw std::runtime_error(name + " is not a memory object but a struct");
+    }
+    // get mem obj
+    auto& glob_var = _ctx.global_variables[mem_glob_identifier(mem->second.str->identifier->symbol)];
+    // check for meth
+    std::string meth_name = node.address ? "static_alloc" : "dynamic_alloc";
+    if(auto meth = mem->second.methods.find(meth_name); meth == mem->second.methods.end()) {
+            std::string mess = "No method " + meth_name;
+            mess += " defined on memory " + name;
+            throw std::runtime_error(mess);
+    }
+    auto func_name = meth_identifier(node.identifier->symbol, meth_name);
+    auto lhs = _ctx.functions[func_name].llvm_func;
+    std::vector<llvm::Value*> args;
+    args.push_back(glob_var.llvm_var);
+    if(node.address) {
+        node.address->accept(*this); auto address = _ctx.ret_value;
+        args.push_back(address);
+    }
+    // get size
+    auto type = Parser::Types::ComplexType(false, true, node.var_decl->type->copy());
+    std::cerr << "Making pointer type from our type\n";
+    auto llvm_type = llvm::dyn_cast<llvm::PointerType>(
+        Type::to_llvm(type, _context, _ctx.structs));
+    std::cerr << "Done\n";
+    if(llvm_type->isPointerTy()) {
+        std::cerr << "It is indeed a pointer type!\n";
+    }
+    auto gep = _builder.CreateGEP(
+        llvm_type->getElementType(),
+        llvm::ConstantPointerNull::get(llvm_type),
+        llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(1))),
+        "__type_size_gep");
+    std::cerr << "After GEP\n";
+    auto size = _builder.CreatePtrToInt(gep, llvm::Type::getInt64Ty(_context), "__type_size"); 
+    args.push_back(size);
+    std::cerr << "And so we make call\n";
+    llvm::Value* var = _builder.CreateCall(lhs, args, node.var_decl->identifier->symbol);
+    std::cerr << "And a cast\n";
+    
+    // true means they are signed
+    var = _builder.CreateCast(
+            llvm::CastInst::getCastOpcode(
+                    var, true,
+                    llvm_type, true),
+            var,
+            llvm_type,
+            node.var_decl->identifier->symbol);
+
+
+    if(node.var_decl->init_expr) {
+        node.var_decl->init_expr->accept(*this); auto init = _ctx.ret_value;
+        if(!init) {
+            throw std::runtime_error("Could not compile variable init expr");
+        }
+        auto old_action = _ctx.ptr_action;
+        _ctx.ptr_action = PtrAction::Store;
+        perform_ptr_action(var, init);
+        _ctx.ptr_action = old_action;   
+    }
+    std::cerr << "And we are done!\n";
+    _ctx.local_variables[node.var_decl->identifier->symbol] = {node.var_decl.get(), var};
+    _ctx.ret_value = var;
+}
+
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IfStmt &node) {
     node.cond->accept(*this); auto cond = _ctx.ret_value;
     auto func = _builder.GetInsertBlock()->getParent();
@@ -1038,6 +1115,27 @@ llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
         throw std::runtime_error("Could not compile cast");
     }
     //std::cerr << "Cast ended!\n";
+    return cast;
+}
+
+llvm::Value* Visitor::LLVM::Compiler::cast(llvm::Value* from, const Parser::Types::BaseType& to) {
+    auto from_type = from->getType();
+    auto to_type = Type::to_llvm(to, _context, _ctx.structs);
+
+    if(!llvm::CastInst::isCastable(from_type, to_type)) {
+        throw std::runtime_error("Cannot cast types");
+    }
+    // true means they are signed
+    auto cast = _builder.CreateCast(
+            llvm::CastInst::getCastOpcode(
+                    from, true,
+                    to_type, true),
+            from,
+            to_type,
+            "__cast_tmp");
+    if(!cast) {
+        throw std::runtime_error("Could not compile cast");
+    }
     return cast;
 }
 

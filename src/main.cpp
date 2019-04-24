@@ -27,23 +27,28 @@ int main() {
         return putchar(v+65);
     }
 
-    struct A {
-        v i32;
-        void put() {
-            put(v);
-        }
-    }
+    memory Heap {
 
-    struct B wraps A {
-        void inc() {
-            A.v = A.v + 1;
+        any dynamic_alloc(size i64) {
+            put(size);
+            return malloc(size);
+        }
+
+        void free(ptr any) {
+            free(ptr);
         }
     }
 
     i32 main() {
-        let b B;
-        b.inc();
-        b.put();
+        @Heap let a i32 = 1;
+
+        
+
+        let b i32;
+        let c &i8 = &b as &i32;
+        
+        a = a + 1;
+        put(a);
         return 0;
     }
 )");
