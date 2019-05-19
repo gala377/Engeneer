@@ -4,11 +4,10 @@
 
 #include <iostream>
 
-#include <lexer/source/string.h>
 #include <visitor/log.h>
 #include <parser/parser.h>
 #include <visitor/llvm/compiler.h>
-
+#include <lexer/source/file.h>
 #include <exception/base.h>
 #include <exception/concrete.h>
 #include <exception/handler.h>
@@ -17,36 +16,7 @@ int main() {
     // todo wrapping a pointer
     // like so
     // struct A wraps &B 
-    Lexer::Source::String s(R"(
-    
-    any malloc(_ i32);
-    void free(_ any);    
-
-    i32 putchar(_ i32);
-    i32 put(v i32) {
-        return putchar(v+65);
-    }
-
-    void iprint(n i64) { 
-        if n > 9 as i64 { 
-            let a i64 = n / 10 as i64;
-            n = n - 10 as i64 * a;
-            iprint(a);
-        }
-        putchar(48 + n as i32);
-    }
-
-    struct A {
-        v i32;
-    }
-
-    i32 main() {
-        let a A;
-        a.v = 1;
-        put(a.v);
-        return 0;
-    }
-)");
+    Lexer::Source::File s("input.esl");
     Parser::Parser p(s);
     Parser::AST ast;
     try {

@@ -5,9 +5,11 @@
 #ifndef TKOM2_FILE_H
 #define TKOM2_FILE_H
 
+#include <bits/stdint-uintn.h>
 #include <fstream>
 
 #include <lexer/source/base.h>
+#include <vector>
 
 
 namespace Lexer::Source {
@@ -30,8 +32,21 @@ namespace Lexer::Source {
 
         const char *name() const override;
 
+        class FilePointer: public Pointer {
+        public:
+            FilePointer(uint32_t offset, const File& f): Pointer(f), offset(offset) {} 
+            uint32_t offset;
+        };
+
+        typedef FilePointer pointer;
+        typedef const FilePointer const_pointer;
+
+        Base::const_pointer& current_pointer() override;
+        std::string source_around(Base::const_pointer& p, uint32_t size = 10) const override;
+        virtual std::string source_around(const_pointer& p, uint32_t size = 10) const;
+
     private:
-        std::ifstream _file;
+        mutable std::ifstream _file;
         std::string _file_path;
 
         std::uint32_t _file_line{1};
@@ -39,6 +54,8 @@ namespace Lexer::Source {
 
         char _curr_char{'\0'};
         char _next_char{'\0'};
+
+        std::vector<FilePointer> _ptrs;
     };
 }
 
