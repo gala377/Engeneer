@@ -41,7 +41,7 @@
 #include <parser/type.h>
 
 // todo const and some kind of implicit dereferencing
-Visitor::LLVM::Compiler::Compiler(Parser::AST &ast): Base(), _ast(ast) {}
+Visitor::LLVM::Compiler::Compiler(Parser::AST &ast, std::string ofname): Base(), _ast(ast), _output_file_name(ofname) {}
 
 // Base
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
@@ -142,10 +142,9 @@ void Visitor::LLVM::Compiler::init_compile_target() {
 }
 
 void Visitor::LLVM::Compiler::emit_obj_code() {
-    auto filename = "output.o";
+    auto filename = _output_file_name;
     std::error_code ec;
     llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OpenFlags::F_None);
-
     if(ec) {
         std::cerr << "Could not open file: " << ec.message() << "\n";
         throw std::runtime_error(ec.message());

@@ -31,7 +31,7 @@ namespace Visitor::LLVM {
 
     class Compiler: public Visitor::Base {
     public:
-        explicit Compiler(Parser::AST& ast);
+        explicit Compiler(Parser::AST& ast, std::string ofname = "output.o");
 
         // Visitor
         // Base
@@ -136,7 +136,8 @@ namespace Visitor::LLVM {
 
         const std::string _this_identifier{"this"};
         const std::string _mem_init_meth_name{"init"};
-        
+        std::string _output_file_name;
+
         // what shall we do with pointers in llvm-ir
         enum class PtrAction {
             Store, Load, Address, None

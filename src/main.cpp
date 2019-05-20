@@ -12,10 +12,21 @@
 #include <exception/concrete.h>
 #include <exception/handler.h>
 
-int main() {
-    // todo wrapping a pointer
-    // like so
-    // struct A wraps &B 
+void print_help() {
+    std::string help_mess{R"(
+Basic system language compiler.
+Usage:
+    input_file output_file_name
+)"};
+    std::cout << help_mess;
+}
+
+int main(int argc, char** argv) {
+    if(argc != 3) {
+        print_help();
+        return 1;
+    }
+    std::string file_name{argv[1]};
     Lexer::Source::File s("input.esl");
     Parser::Parser p(s);
     Parser::AST ast;
@@ -26,7 +37,7 @@ int main() {
         std::cerr << "Parsing error\n";
         std::cerr << e.what();
     }
-    Visitor::LLVM::Compiler comp(ast);
+    Visitor::LLVM::Compiler comp(ast, argv[2]);
     Visitor::Stringify v(ast);
     ast.accept(v);
     std::cerr << "Code parsed!\n\n""";
