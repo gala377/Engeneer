@@ -27,7 +27,7 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::string file_name{argv[1]};
-    Lexer::Source::File s("input.esl");
+    Lexer::Source::File s(file_name);
     Parser::Parser p(s);
     Parser::AST ast;
     try {
