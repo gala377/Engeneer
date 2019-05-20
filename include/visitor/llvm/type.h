@@ -46,49 +46,6 @@ namespace Visitor::LLVM::Type {
         std::uint32_t float_size(llvm::Type* t);
         std::uint32_t int_size(llvm::Type* t);
 
-        class TypeDeduction: Base {
-        public:
-            TypeDeduction(const Compiler::func_map_t& functions, const Compiler::var_map_t& variables);
-
-        private:
-
-            void visit(const Parser::Nodes::LogicalOrExpr &node) override;
-            void visit(const Parser::Nodes::LogicalAndExpr &node) override;
-            void visit(const Parser::Nodes::InclusiveOrExpr &node) override;
-            void visit(const Parser::Nodes::ExclusiveOrExpr &node) override;
-            void visit(const Parser::Nodes::AndExpr &node) override;
-
-            void visit(const Parser::Nodes::EqualityExpr &node) override;
-            void visit(const Parser::Nodes::RelationalExpr &node) override;
-            void visit(const Parser::Nodes::ShiftExpr &node) override;
-
-            void visit(const Parser::Nodes::AdditiveExpr &node) override;
-            void visit(const Parser::Nodes::MultiplicativeExpr &node) override;
-
-            void visit(const Parser::Nodes::NegativeExpr &node) override;
-            void visit(const Parser::Nodes::NegationExpr &node) override;
-
-            void visit(const Parser::Nodes::CallExpr &node) override;
-            void visit(const Parser::Nodes::IndexExpr &node) override;
-            void visit(const Parser::Nodes::AccessExpr &node) override;
-            void visit(const Parser::Nodes::Identifier &node) override;
-            void visit(const Parser::Nodes::ParenthesisExpr &node) override;
-
-            void visit(const Parser::Nodes::IntConstant &node) override;
-            void visit(const Parser::Nodes::StringConstant &node) override;
-            void visit(const Parser::Nodes::FloatConstant &node) override;
-
-            Parser::Types::BaseType* result{nullptr};
-        protected:
-            const Compiler::func_map_t& _functions;
-            const Compiler::var_map_t& _variables;
-
-            std::unique_ptr<Parser::Types::BaseType> _owned_type{nullptr};
-        };
-
-        // todo
-        class Verifier: Base {};
-
         static const handlers_map _type_handlers = {
                 {
                         void_id,
