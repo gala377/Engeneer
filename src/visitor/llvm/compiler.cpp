@@ -60,7 +60,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
 // End
 // Program
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
-    //init_func_pass_manager();
+    init_func_pass_manager();
     init_compile_target();
     // declare struct opaque
     for(const auto& struct_def: _ast.iter_struct_decl()) {

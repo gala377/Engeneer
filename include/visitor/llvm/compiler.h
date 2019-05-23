@@ -126,9 +126,9 @@ namespace Visitor::LLVM {
         Parser::AST& _ast;
 
         llvm::LLVMContext _context;
-        llvm::IRBuilder<> _builder{_context};
-        // todo more modules and linking against them
         std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("Main", _context);
+        llvm::IRBuilder<> _builder{_context};
+
         // todo pass manager per module? Its marked as legacy?
         // todo its legacy and we cannot find the passes so
         // todo maybe it changed and the tutorial hasn't been updated?
