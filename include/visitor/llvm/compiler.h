@@ -10,15 +10,17 @@
 #include <llvm/IR/Type.h>
 #include <llvm/IR/Value.h>
 #include <llvm/Support/TargetRegistry.h>
-#include <memory>
 #include <parser/nodes/concrete.h>
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/Function.h>
+#include <llvm/IR/PassManager.h>
+
 #include <set>
+#include <string>
+#include <memory>
 
 #include <parser/visitor.h>
 #include <parser/ast.h>
-#include <string>
 #include <visitor/base.h>
 
 #include <llvm/Pass.h>
@@ -126,12 +128,13 @@ namespace Visitor::LLVM {
         llvm::LLVMContext _context;
         llvm::IRBuilder<> _builder{_context};
         // todo more modules and linking against them
-        std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("TestJit", _context);
+        std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("Main", _context);
         // todo pass manager per module? Its marked as legacy?
         // todo its legacy and we cannot find the passes so
         // todo maybe it changed and the tutorial hasn't been updated?
         // todo remember about mem2reg for alloca optimalizations
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
+
         llvm::TargetMachine* _target_machine;
 
         const std::string _this_identifier{"this"};
@@ -176,6 +179,7 @@ namespace Visitor::LLVM {
         Context _ctx{};
 
         // helper 
+        void init_func_pass_manager();
         void init_compile_target();
         void emit_obj_code();
 

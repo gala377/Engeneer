@@ -14,7 +14,16 @@
 #include <llvm/IR/Value.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/ADT/STLExtras.h>
+#include <llvm/Pass.h>
 #include <llvm/Transforms/InstCombine/InstCombine.h>
+#include <llvm/Transforms/Utils/Mem2Reg.h>
+#include <llvm/Transforms/Utils/PromoteMemToReg.h>
+#include <llvm/Transforms/IPO/DeadArgumentElimination.h>
+#include <llvm/Transforms/Scalar.h>
+#include <llvm/Transforms/Utils.h>
+#include <llvm/Transforms/Scalar/SimplifyCFG.h>
+#include <llvm/Transforms/Scalar/Reassociate.h>
+#include <llvm/Transforms/Scalar/NewGVN.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/Host.h>
 #include <llvm/Support/raw_ostream.h>
@@ -51,7 +60,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
 // End
 // Program
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
-    // todo maybe init module here ?
+    //init_func_pass_manager();
     init_compile_target();
     // declare struct opaque
     for(const auto& struct_def: _ast.iter_struct_decl()) {
@@ -110,6 +119,13 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
     emit_obj_code();
 }
 
+void Visitor::LLVM::Compiler::init_func_pass_manager() {
+    _func_pass_manager->add(llvm::createPromoteMemoryToRegisterPass());
+    _func_pass_manager->add(llvm::createInstructionCombiningPass());
+    _func_pass_manager->add(llvm::createReassociatePass());
+    _func_pass_manager->add(llvm::createCFGSimplificationPass());
+    _func_pass_manager->doInitialization();
+}
 
 void Visitor::LLVM::Compiler::init_compile_target() {
     llvm::InitializeAllTargetInfos();
@@ -249,6 +265,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     if(func_w->second.func->type->identifier().symbol == Type::void_id) {
         _builder.CreateRetVoid();
     }
+
+    llvm::verifyFunction(*func_w->second.llvm_func);
+    _func_pass_manager->run(*func_w->second.llvm_func);
 }
 
 void Visitor::LLVM::Compiler::add_memory_initializers() {
