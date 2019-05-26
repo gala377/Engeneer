@@ -168,7 +168,6 @@ void Visitor::LLVM::Compiler::emit_obj_code() {
 
     llvm::legacy::PassManager pass;
     auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
-    
     if(_target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
         throw std::runtime_error("Target machine can't emit a file of this type");
     }

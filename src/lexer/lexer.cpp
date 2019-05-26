@@ -2,6 +2,8 @@
 // Created by igor on 15.12.18.
 //
 
+#include "exception/base.h"
+#include "exception/concrete.h"
 #include <lexer/lexer.h>
 #include <lexer/helpers.h>
 
@@ -157,7 +159,7 @@ std::tuple<std::uint32_t, std::uint32_t> Lexer::Lexer::in_source_pos() const {
     return _source.curr_source_position();
 }
 
-Lexer::Lexer::TokenAssemblerId Lexer::Lexer::char_to_assembler_id(const char &ch) const {
+Lexer::Lexer::TokenAssemblerId Lexer::Lexer::char_to_assembler_id(const char &ch) {
     if(is_beginning_of_the_identifier(ch)) {
         return TokenAssemblerId::Identifier;
     } else if(is_digit(ch)) {
@@ -173,7 +175,7 @@ Lexer::Lexer::TokenAssemblerId Lexer::Lexer::char_to_assembler_id(const char &ch
     } else if(is_comment(ch)) {
         return TokenAssemblerId::Comment;
     }
-    throw std::runtime_error("Unknown character!");
+    abort_w<Exception::UnexpectedCharacter>(ch);
 }
 
 
@@ -227,30 +229,30 @@ std::tuple<bool, std::string> Lexer::Lexer::_assemble_numeric(char current) {
         while (is_digit(current)) {
             symbol += std::exchange(current, _source.next_char());
             if (is_alpha(current)) {
-                throw std::runtime_error("Expected numeric value got " + std::string{current});
+                abort_w<Exception::BaseSyntax>("Expected numeric value got " + std::string{current});        
             }
         }
     } else {
         symbol += std::exchange(current, _source.next_char());
         if(is_digit(current)) {
-            throw std::runtime_error("Integers cannot begin with 0");
+            abort_w<Exception::BaseSyntax>("Integers cannot begin with 0");        
         }
     }
     if(current == '.') {
         is_float = true;
         symbol += std::exchange(current, _source.next_char());
         if(!is_digit(current)) {
-            throw std::runtime_error("Expected at least one digit after '.'");
+            abort_w<Exception::BaseSyntax>("Expected at least one digit after '.'");        
         }
         while (is_digit(current)) {
             symbol += std::exchange(current, _source.next_char());
             if (is_alpha(current)) {
-                throw std::runtime_error("Expected numeric value got " + std::string{current});
+                abort_w<Exception::BaseSyntax>("Expected numeric value got " + std::string{current});        
             }
         }
     }
     if(symbol.empty()) {
-        throw std::runtime_error("Could not assemble const expr!");
+        abort_w<Exception::BaseSyntax>("Could not assemble const expression.");        
     }
 
     return std::make_tuple(is_float, symbol);
@@ -262,7 +264,7 @@ std::string Lexer::Lexer::_assemble_identifier(char current) {
         symbol += std::exchange(current, _source.next_char());
     }
     if(symbol.empty()) {
-        throw std::runtime_error("Could not assemble identifier!");
+        abort_w<Exception::BaseSyntax>("Could not assemble identifier.");
     }
     return symbol;
 }
@@ -280,7 +282,7 @@ std::string Lexer::Lexer::_assemble_operator(char current) {
         current = _source.next_char();
     }
     if (symbol.empty()) {
-        throw std::runtime_error("Could not assemble operator");
+        abort_w<Exception::BaseSyntax>("Could not assemble operator.");
     }
     return symbol;
 }
@@ -290,7 +292,7 @@ std::string Lexer::Lexer::_assemble_string(char current) {
     current = _source.next_char();
     while(!is_string(current)) {
         if(is_eof(current)) {
-            throw std::runtime_error("Expected end of string got eof");
+            abort_w<Exception::BaseSyntax>("Expected end of string got eof.");
         }
         symbol += current;
         current = _source.next_char();

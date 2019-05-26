@@ -59,7 +59,7 @@ namespace Lexer {
         void _init_token_assemblers();
         void _init_curr_token();
 
-        TokenAssemblerId char_to_assembler_id(const char& ch) const;
+        TokenAssemblerId char_to_assembler_id(const char& ch);
 
         Token _process_blank_char(char ch);
         Token _process_numeric(char ch);
@@ -74,6 +74,16 @@ namespace Lexer {
         std::string _assemble_operator(char ch);
         std::string _assemble_string(char ch);
         std::string _assemble_comment(char ch);
+
+        template <typename T, typename Arg>
+        void abort_w(Arg&& mess) {
+            abort<T>(
+                _source.name(),
+                _source.curr_line(),
+                _source.curr_in_line_position(),
+                _source.current_pointer(),
+                std::forward<Arg>(mess));
+        }
 
     };
 

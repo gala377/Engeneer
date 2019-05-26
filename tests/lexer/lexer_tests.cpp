@@ -2,6 +2,7 @@
 // Created by igor on 16.12.18.
 //
 
+#include "exception/handler.h"
 #include <lexer/lexer.h>
 #include <lexer/source/string.h>
 #include <lexer/helpers.h>
@@ -175,7 +176,7 @@ BOOST_AUTO_TEST_SUITE()
 
     BOOST_AUTO_TEST_CASE(zero_value_integer_with_trailing_digits) {
         Lexer::Source::String s(R"(0123)");
-        BOOST_CHECK_THROW(Lexer::Lexer l(s), std::runtime_error);
+        BOOST_CHECK_THROW(Lexer::Lexer l(s), Exception::Handler::Abort);
     }
 
     BOOST_AUTO_TEST_CASE(zero_value_float) {
@@ -188,12 +189,12 @@ BOOST_AUTO_TEST_SUITE()
 
     BOOST_AUTO_TEST_CASE(zero_value_float_without_digits_after_dot) {
         Lexer::Source::String s(R"(0.)");
-        BOOST_CHECK_THROW(Lexer::Lexer l(s), std::runtime_error);
+        BOOST_CHECK_THROW(Lexer::Lexer l(s), Exception::Handler::Abort);
     }
 
     BOOST_AUTO_TEST_CASE(float_without_digits_after_dot) {
         Lexer::Source::String s(R"(12412.)");
-        BOOST_CHECK_THROW(Lexer::Lexer l(s), std::runtime_error);
+        BOOST_CHECK_THROW(Lexer::Lexer l(s), Exception::Handler::Abort);
     }
 
     BOOST_AUTO_TEST_CASE(normal_float_lexing) {
@@ -206,7 +207,7 @@ BOOST_AUTO_TEST_SUITE()
 
     BOOST_AUTO_TEST_CASE(illformed_float_starting_from_dot) {
         Lexer::Source::String s(R"(.0213)");
-        BOOST_CHECK_THROW(Lexer::Lexer l(s), std::runtime_error);
+        BOOST_CHECK_THROW(Lexer::Lexer l(s), Exception::Handler::Abort);
     }
 
 

@@ -25,6 +25,16 @@ namespace Exception {
 
     };
 
+    class UnexpectedCharacter: public BaseSyntax {
+    public:
+        UnexpectedCharacter(
+            std::string file,
+            std::uint32_t line,
+            std::uint32_t in_line,
+            Lexer::Source::Base::const_pointer& ptr,
+            const char character); 
+    };
+
 }
 
 #endif //TKOM2_CONCRETE_H

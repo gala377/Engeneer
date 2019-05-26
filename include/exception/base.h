@@ -47,16 +47,18 @@ namespace Exception {
             const std::string& mess);
     };
 
-    class BaseSyntax: public  BaseFilePositioned {
+    class BaseSyntax: public BaseFilePositioned {
     public:
-        BaseSyntax(
-            std::string file,
-            std::uint32_t line,
-            std::uint32_t in_line,
-            Lexer::Source::Base::const_pointer& ptr,
-            const std::string& mess);
+        using BaseFilePositioned::BaseFilePositioned;
 
         BaseSyntax(const Lexer::Token& tok, const std::string& mess);
+    };
+
+    class BaseCompilation: public BaseFilePositioned {
+    public:
+        using BaseFilePositioned::BaseFilePositioned;
+
+        BaseCompilation(const Lexer::Token& tok, const std::string& mess);
     };
 }
 

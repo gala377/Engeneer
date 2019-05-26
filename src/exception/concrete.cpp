@@ -2,6 +2,8 @@
 // Created by rafalgal on 26.02.19.
 //
 
+#include "exception/base.h"
+#include <boost/format/format_fwd.hpp>
 #include <exception/concrete.h>
 #include <boost/format.hpp>
 
@@ -36,3 +38,18 @@ Exception::ExpectedToken::ExpectedToken(const Lexer::Token &expected,
                     % Lexer::str(actual.id)
                     % actual.symbol
                     % details).str()} {}
+
+Exception::UnexpectedCharacter::UnexpectedCharacter(
+            std::string file,
+            std::uint32_t line,
+            std::uint32_t in_line,
+            Lexer::Source::Base::const_pointer& ptr,
+            const char character) : 
+    BaseSyntax{file,
+                line,
+                in_line,
+                ptr,
+                (boost::format(R"(unexpected character: %1%)") 
+                % character).str()} {}
+
+
