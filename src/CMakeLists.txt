@@ -18,8 +18,8 @@ llvm_map_components_to_libnames(llvm_libs support core irreader)
 message(STATUS "LLVM LIBS: ${llvm_libs}")
 
 
-add_executable(main main.cpp)
-target_link_libraries(main
+add_executable(rgc main.cpp)
+target_link_libraries(rgc
         Lexer
         Parser
         Visitors

@@ -17,7 +17,7 @@ const Parser::Nodes::Identifier &Parser::Types::SimpleType::identifier() const {
 
 std::unique_ptr<Parser::Types::BaseType> Parser::Types::SimpleType::copy() const {
     return std::make_unique<SimpleType>(
-        std::make_unique<Nodes::Identifier>(ident->symbol));
+        std::make_unique<Nodes::Identifier>(ident->symbol, ident->span()));
 }
 
 

@@ -2,6 +2,7 @@
 // Created by igor on 17.02.19.
 //
 
+#include "exception/base.h"
 #include <llvm/ADT/Optional.h>
 #include <llvm/IR/Constant.h>
 #include <llvm/IR/Constants.h>
@@ -49,12 +50,11 @@
 #include <parser/type.h>
 #include <parser/type.h>
 
-// todo const and some kind of implicit dereferencing
-Visitor::LLVM::Compiler::Compiler(Parser::AST &ast, std::string ofname): Base(), _ast(ast), _output_file_name(ofname) {}
+Visitor::LLVM::Compiler::Compiler(Parser::AST &ast, std::string ofname): Base(), Exception::HandlingMixin(), _ast(ast), _output_file_name(ofname) {}
 
 // Base
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Base &node) {
-    throw std::runtime_error("Cannot compile base node!");
+    abort<Exception::BaseCompilation>(node, "Syntax not supported.");
 }
 
 // End
@@ -77,7 +77,6 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Program &node) {
         _ctx.curr_struct = nullptr;
     }
     // the same for mem defs
-    // todo refactor
     for(const auto& mem_def: _ast.iter_memory_decl()) {
         auto& s = declare_opaque(*mem_def.second);
         _ctx.curr_struct = &s;
@@ -138,7 +137,7 @@ void Visitor::LLVM::Compiler::init_compile_target() {
     std::string error;
     auto target = llvm::TargetRegistry::lookupTarget(target_triple, error);
     if(!target) {
-        throw std::runtime_error(error);
+        abort<Exception::BaseCompilation>(_ast.root(), error);
     }
     auto cpu = "generic";
     auto features = "";
@@ -163,13 +162,13 @@ void Visitor::LLVM::Compiler::emit_obj_code() {
     llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OpenFlags::F_None);
     if(ec) {
         std::cerr << "Could not open file: " << ec.message() << "\n";
-        throw std::runtime_error(ec.message());
+        abort<Exception::BaseCompilation>(_ast.root(), ec.message());
     }
 
     llvm::legacy::PassManager pass;
     auto file_type = llvm::TargetMachine::CGFT_ObjectFile;
     if(_target_machine->addPassesToEmitFile(pass, dest, nullptr, file_type)) {
-        throw std::runtime_error("Target machine can't emit a file of this type");
+        abort<Exception::BaseCompilation>(_ast.root(), ec.message());
     }
     pass.run(*_module);
     dest.flush();
@@ -206,7 +205,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionProt &node) {
             identifier,
             _module.get());
     if(!func) {
-        throw std::runtime_error("Could not compile function!");
+        abort<Exception::BaseCompilation>(node, "Could not compile function!");
     }
     unsigned int i = 0;
     bool this_id_set = false;
@@ -233,7 +232,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
 
     auto llvm_func = func_w->second.llvm_func;
     if(!llvm_func->empty()) {
-        throw std::runtime_error("Redefinition of func " + func_name);
+        abort<Exception::BaseCompilation>(node, "Redefinition of func " + func_name);
     }
 
     auto basic_block = llvm::BasicBlock::Create(_context, "entry", llvm_func);
@@ -245,6 +244,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
     for(auto& arg: llvm_func->args()) {
         if(_ctx.curr_struct && !this_arg_set) {
             this_arg_set = true;
+            _curr_span = &node.span();
             auto var = create_local_var(
                 *llvm_func,
                 _this_identifier,
@@ -252,11 +252,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FunctionDef &node) {
             _builder.CreateStore(&arg, var.llvm_alloca);
             continue;
         }
+        _curr_span = &node.span();
         auto var = create_local_var(*llvm_func, *func_w->second.func->arg_list[i]);
         _builder.CreateStore(&arg, var.llvm_alloca);
         ++i;
     }
-    //std::cerr << "In function " << func_name << "\n";
     if(func_name == "main") {
         add_memory_initializers();
     }
@@ -293,12 +293,12 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::GlobVariableDecl &node)
         return;
     }
     if(!node.init_expr) {
-        throw std::runtime_error("Init expression of a global variable cannot be empty");
+        abort<Exception::BaseCompilation>(node, "Init expression of a global variable cannot be empty");
     }
     node.init_expr->accept(*this); auto init = _ctx.ret_value;
     auto const_init = llvm::dyn_cast<llvm::Constant>(init);
     if(!const_init) {
-        throw std::runtime_error("Global variables can only be initialized with constant values");
+        abort<Exception::BaseCompilation>(node, "Global variables can only be initialized with constant values");
     }
     auto glob_var = new llvm::GlobalVariable(
         *_module,
@@ -371,7 +371,9 @@ Visitor::LLVM::Compiler::GlobalVarWrapper& Visitor::LLVM::Compiler::add_memory_g
     auto identifier = mem_glob_identifier(node.identifier->symbol);
     auto type = Type::to_llvm(
         Parser::Types::SimpleType(
-            std::make_unique<Parser::Nodes::Identifier>(node.identifier->symbol)),
+            std::make_unique<Parser::Nodes::Identifier>(
+                node.identifier->symbol,
+                node.identifier->span())),
         _context,
         _ctx.structs);
     auto glob_var = new llvm::GlobalVariable(
@@ -436,14 +438,14 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::WhileStmt &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::BreakStmt &node) {
     if(!_ctx.loop_contr) {
-        throw std::runtime_error("Cannot break outside of loop");
+        abort<Exception::BaseCompilation>(node, "Cannot break outside of loop");
     }
     _builder.CreateBr(_ctx.loop_contr);
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ContinueStmt &node) {
     if(!_ctx.loop) {
-        throw std::runtime_error("Cannot continue outside of loop");
+        abort<Exception::BaseCompilation>(node, "Cannot continue outside of loop");
     }
     _builder.CreateBr(_ctx.loop);
 }
@@ -454,16 +456,18 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::BlockStmt &node) {
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
     if(auto v = _ctx.local_variables.find(node.identifier->symbol); v != _ctx.local_variables.end()) {
-        throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
+        abort<Exception::BaseCompilation>(node, "Redeclaration of a variable! " + node.identifier->symbol);
     }
+    _curr_span = &node.span();
     auto var = create_local_var(*_builder.GetInsertBlock()->getParent(), node);
     if(node.init_expr) {
         node.init_expr->accept(*this); auto init = _ctx.ret_value;
         if(!init) {
-            throw std::runtime_error("Could not compile variable init expr");
+            abort<Exception::BaseCompilation>(node, "Could not compile variable init expr");
         }
         auto old_action = _ctx.ptr_action;
         _ctx.ptr_action = PtrAction::Store;
+        _curr_span = &node.span();
         perform_ptr_action(var.llvm_alloca, init);
         _ctx.ptr_action = old_action;
     }
@@ -472,16 +476,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::VariableDecl &node) {
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AtStmt& node) {
     // check variable
     if(auto v = _ctx.local_variables.find(node.var_decl->identifier->symbol); v != _ctx.local_variables.end()) {
-        throw std::runtime_error("Redeclaration of a variable! " + node.identifier->symbol);
+        abort<Exception::BaseCompilation>(node, "Redeclaration of a variable! " + node.identifier->symbol);
     }
     // get data
     auto name = node.identifier->symbol;
     auto mem = _ctx.structs.find(name);
     if(mem == _ctx.structs.end()) {
-        throw std::runtime_error("Use of undeclared memory object " + name);
+        abort<Exception::BaseCompilation>(node, "Use of undeclared memory object " + name);
     }
     if(!mem->second.is_memory) {
-        throw std::runtime_error(name + " is not a memory object but a struct");
+        abort<Exception::BaseCompilation>(node, name + " is not a memory object but a struct");
     }
     // get mem obj
     auto& glob_var = _ctx.global_variables[mem_glob_identifier(mem->second.str->identifier->symbol)];
@@ -490,7 +494,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AtStmt& node) {
     if(auto meth = mem->second.methods.find(meth_name); meth == mem->second.methods.end()) {
             std::string mess = "No method " + meth_name;
             mess += " defined on memory " + name;
-            throw std::runtime_error(mess);
+            abort<Exception::BaseCompilation>(node, mess);
     }
     auto func_name = meth_identifier(node.identifier->symbol, meth_name);
     auto lhs = _ctx.functions[func_name].llvm_func;
@@ -502,24 +506,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AtStmt& node) {
     }
     // get size
     auto type = Parser::Types::ComplexType(false, true, node.var_decl->type->copy());
-    std::cerr << "Making pointer type from our type\n";
     auto llvm_type = llvm::dyn_cast<llvm::PointerType>(
         Type::to_llvm(type, _context, _ctx.structs));
-    std::cerr << "Done\n";
-    if(llvm_type->isPointerTy()) {
-        std::cerr << "It is indeed a pointer type!\n";
-    }
     auto gep = _builder.CreateGEP(
         llvm_type->getElementType(),
         llvm::ConstantPointerNull::get(llvm_type),
         llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(1))),
         "__type_size_gep");
-    std::cerr << "After GEP\n";
     auto size = _builder.CreatePtrToInt(gep, llvm::Type::getInt64Ty(_context), "__type_size"); 
     args.push_back(size);
-    std::cerr << "And so we make call\n";
     llvm::Value* var = _builder.CreateCall(lhs, args, node.var_decl->identifier->symbol);
-    std::cerr << "And a cast\n";
     
     // true means they are signed
     var = _builder.CreateCast(
@@ -534,14 +530,14 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AtStmt& node) {
     if(node.var_decl->init_expr) {
         node.var_decl->init_expr->accept(*this); auto init = _ctx.ret_value;
         if(!init) {
-            throw std::runtime_error("Could not compile variable init expr");
+            abort<Exception::BaseCompilation>(node, "Could not compile variable init expr");
         }
         auto old_action = _ctx.ptr_action;
         _ctx.ptr_action = PtrAction::Store;
+        _curr_span = &node.span();
         perform_ptr_action(var, init);
         _ctx.ptr_action = old_action;   
     }
-    std::cerr << "And we are done!\n";
     _ctx.local_variables[node.var_decl->identifier->symbol] = {node.var_decl.get(), var};
     _ctx.ret_value = var;
 }
@@ -594,14 +590,9 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ReturnStmt &node) {
 }
 // Expression
 // Binary
-// todo for now only signed cmp
-// todo we dont now how to make unsigned ints
-// todo in future versions we need to know the type of the lhs
-// todo and the rhs to make appropriate cmp
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
     node.lhs->accept(*this); auto lhs = _ctx.ret_value;
     node.rhs->accept(*this); auto rhs = _ctx.ret_value;
-    //auto [lhs, rhs] = promote(t_lhs, t_rhs);
 
     if (lhs->getType()->isIntegerTy()) {
             switch(node.op.id) {
@@ -618,7 +609,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
                 _ctx.ret_value = _builder.CreateICmpSGE(lhs, rhs, "__cmptemp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
     if (lhs->getType()->isFloatingPointTy()) {
@@ -636,7 +627,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::RelationalExpr &node) {
                 _ctx.ret_value = _builder.CreateFCmpUGE(lhs, rhs, "__cmptemp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
 }
@@ -646,15 +637,16 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AssignmentExpr &node) {
     _ctx.ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ctx.ret_value;
     if (!lhs) {
-        throw std::runtime_error("Could not compile lhs of an assignment");
+        abort<Exception::BaseCompilation>(node, "Could not compile lhs of an assignment");
     }
     _ctx.ptr_action = PtrAction::Load;
     node.rhs->accept(*this); auto rhs = _ctx.ret_value;
     if (!rhs) {
-        throw std::runtime_error("Could not compile left side of the assignment");
+        abort<Exception::BaseCompilation>(node, "Could not compile left side of the assignment");
     }
 
     _ctx.ptr_action = PtrAction::Store;
+    _curr_span = &node.span();
     perform_ptr_action(lhs, rhs);
     _ctx.ptr_action = old_action;
 }
@@ -672,7 +664,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
                 _ctx.ret_value = _builder.CreateSub(lhs, rhs, "__addtmp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
     if (lhs->getType()->isFloatingPointTy()) {
@@ -684,7 +676,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AdditiveExpr &node) {
                 _ctx.ret_value = _builder.CreateFSub(lhs, rhs, "__addtmp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
 }
@@ -700,12 +692,11 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
                 _ctx.ret_value = _builder.CreateMul(lhs, rhs, "__multmp");
                 break;
             case Lexer::Token::Id::Division:
-                // todo for now its unsigned division, we can do signed division
                 // but its kinda more comlpicated
                 _ctx.ret_value = _builder.CreateUDiv(lhs, rhs, "__multmp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
     if(lhs->getType()->isFloatingPointTy()) {
@@ -718,7 +709,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::MultiplicativeExpr &nod
                 _ctx.ret_value = _builder.CreateFDiv(lhs, rhs, "__multmp");
                 break;
             default:
-                throw std::runtime_error("Unexpected operator during addition operator");
+                abort<Exception::BaseCompilation>(node, "Unexpected operator during addition operator");
         }
     }
 }
@@ -731,7 +722,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
     auto to_type = Type::to_llvm(*node.type, _context, _ctx.structs);
 
     if(!llvm::CastInst::isCastable(from_type, to_type)) {
-        throw std::runtime_error("Cannot cast types");
+        abort<Exception::BaseCompilation>(node, "Cannot cast types");
     }
     // true means they are signed
     auto cast = _builder.CreateCast(
@@ -742,7 +733,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CastExpr &node) {
             to_type,
             "__cast_tmp");
     if(!cast) {
-        throw std::runtime_error("Could not compile cast");
+        abort<Exception::BaseCompilation>(node, "Could not compile cast");
     }
     _ctx.ret_value = cast;
 }
@@ -760,6 +751,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::DereferenceExpr &node) 
     _ctx.ptr_action = PtrAction::Load;
     node.rhs->accept(*this);
     _ctx.ptr_action = old_action;
+    _curr_span = &node.span();
     _ctx.ret_value = perform_ptr_action(_ctx.ret_value, nullptr, "__deref_val");
 }
 
@@ -768,19 +760,17 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
     auto [lhs, this_inst, func] = compile_call_lhs(*node.lhs);
 
     auto func_ptr_t = llvm::dyn_cast<llvm::PointerType>(lhs->getType());
-    //std::cerr << "CE: Casted to ptr\n";    
     auto func_t = llvm::dyn_cast<llvm::FunctionType>(func_ptr_t->getElementType());
     if(!func_t) {
-        throw std::runtime_error("LHS of call expression is expected to be a function ptr");
+        abort<Exception::BaseCompilation>(node, "LHS of call expression is expected to be a function ptr");
     }
-    //std::cerr << "Is method call?\n";
     auto is_meth_call = func->is_method && this_inst;
     std::uint32_t add_parameters = is_meth_call ? 1 : 0;
     if(func_t->params().size() != (node.args.size() + add_parameters)) {
         std::string mess{"Incorrect number of arguments passed. Expected: "};
         mess += std::to_string(func_t->params().size() - add_parameters);
         mess += " Got: " + std::to_string(node.args.size());
-        throw std::runtime_error(mess.c_str());
+        abort<Exception::BaseCompilation>(node, mess);
     }
     std::vector<llvm::Value*> args_v;
     if(is_meth_call) {
@@ -790,7 +780,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
         node.args[i]->accept(*this); auto arg = _ctx.ret_value;
         args_v.push_back(arg);
         if(!args_v.back()) {
-            throw std::runtime_error("Could not emit function call argument");
+            abort<Exception::BaseCompilation>(node, "Could not emit function call argument");
         }
     }
     if(func_t->getReturnType() == llvm::Type::getVoidTy(_context)) {
@@ -804,12 +794,12 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::CallExpr &node) {
 Visitor::LLVM::Compiler::call_info Visitor::LLVM::Compiler::compile_call_lhs(const Parser::Nodes::Expression &lhs) {
     auto old_action = _ctx.ptr_action;
     auto old_context = _ctx.call_ctx;
-    // set context
+
     _ctx.ptr_action = PtrAction::Load;
     _ctx.call_ctx = {true, nullptr, nullptr};
-    //std::cerr << "CE: Getting lhs\n";
+
     lhs.accept(*this); auto call_lhs = _ctx.ret_value;
-    //std::cerr << "CE: Got lhs\n";
+    
     auto str_instance = _ctx.call_ctx.this_instance;
     auto named_function = _ctx.call_ctx.func;
 
@@ -820,10 +810,10 @@ Visitor::LLVM::Compiler::call_info Visitor::LLVM::Compiler::compile_call_lhs(con
 
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
-    //std::cerr << "Indexing\n";
     auto old_action = _ctx.ptr_action;
     _ctx.ptr_action = PtrAction::Address;
     node.lhs->accept(*this); auto lhs = _ctx.ret_value;
+    _curr_span = &node.span();
     _ctx.ptr_action = PtrAction::Load;
     if(strip_ptr_type(lhs)->isPointerTy()) {
         // pointer to index type
@@ -841,53 +831,51 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IndexExpr &node) {
             lhs->getType());
         auto old_action = _ctx.ptr_action;
         _ctx.ptr_action = PtrAction::Store;
+        _curr_span = &node.span();
         perform_ptr_action(anon, lhs, "__anonym_store");
         lhs = anon;
         _ctx.ptr_action = old_action;
     }
     auto gep = _builder.CreateGEP(lhs, gep_indexes, "__gep_adr");
     _ctx.ptr_action = old_action; // Retrieve old action here so we know if we want to load or just ptr
+    _curr_span = &node.span();
     _ctx.ret_value = perform_ptr_action(gep, nullptr, "__gep_val");
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::AccessExpr &node) {
-    //std::cerr << "AE: Access expr\n";
     // get address of lhs for gep
     auto old_action = _ctx.ptr_action;
     _ctx.ptr_action = PtrAction::Address;
-    //std::cerr << "AE: Getting lhs\n";
+
     node.lhs->accept(*this); auto lhs = _ctx.ret_value;
-    //std::cerr << "AE: Got lhs\n";
+
     Parser::Nodes::Identifier* ident = nullptr;
     if(ident = dynamic_cast<Parser::Nodes::Identifier*>(node.rhs.get()); ident == nullptr) {
-        throw std::runtime_error("Expected identifier for the access operator");
+        abort<Exception::BaseCompilation>(node, "Expected identifier for the access operator");
     }
-    //std::cerr << "AE: Getting struct field\n";
+    _curr_span = &node.span();
     auto [field, is_method] = access_struct_field(lhs, ident->symbol);
-    //std::cerr << "AE: Got struct field\n";    
     if(is_method) {
-        //std::cerr << "AE: Its a method!\n";
         _ctx.ptr_action = old_action;
         // returning function ptr, we dont load it
         _ctx.ret_value = field;
         if(_ctx.call_ctx.is_call) {
-            //std::cerr << "AE: setting call context\n";
+            _curr_span = &node.span();
             auto meth_id = meth_identifier(get_struct_type_name(lhs), ident->symbol);
             _ctx.call_ctx.func = &(_ctx.functions[meth_id]);
 
             auto str_type = lhs->getType();
             str_type = llvm::dyn_cast<llvm::PointerType>(str_type);
             if(str_type->getPointerElementType()->isPointerTy()) {
+                _curr_span = &node.span();
                 _ctx.ptr_action = PtrAction::Load;
                 // implicit deref struct ptr
                 lhs = perform_ptr_action(lhs);
             }
             _ctx.call_ctx.this_instance = lhs;
-            //std::cerr << "AE: set call context\n";
         }
-        //std::cerr << "AE: Return\n";
     } else {
-        //std::cerr << "AE: Its not a method!\n";
+        _curr_span = &node.span();
         _ctx.ptr_action = old_action; 
         _ctx.ret_value = perform_ptr_action(field, nullptr, "__gep_val");
     }
@@ -899,14 +887,9 @@ std::pair<llvm::Value*, bool> Visitor::LLVM::Compiler::access_struct_field(llvm:
     std::int32_t gep_index = s_wrapper->member_index(field_name);
     if(gep_index < 0) {
         // possibly a method
-        //std::cerr << "AF: Possibly a method\n";
         auto it = s_wrapper->methods.find(field_name);
         if(it == s_wrapper->methods.end()) {
-            throw std::runtime_error("Uknown struct field " + field_name);
-        }
-        //std::cerr << "AF: Found it " << it->second->func->identifier->symbol << "\n";
-        if(it->second->llvm_func == nullptr) {
-            //std::cerr << "AF: Method llvm_func is a nullptr!\n";
+            abort<Exception::BaseCompilation>(*_curr_span, "Uknown struct field " + field_name);
         }
         return std::make_pair((llvm::Value*)it->second->llvm_func, true);
     }
@@ -929,7 +912,6 @@ std::pair<llvm::Value*, bool> Visitor::LLVM::Compiler::access_struct_field(llvm:
         _ctx.ptr_action = old_action;
     }
     auto gep = _builder.CreateGEP(s, gep_indexes, "__gep_adr");
-    //std::cerr << "Gep done, we are happu :)\n";
     return std::make_pair(gep, false);
 }
 
@@ -939,7 +921,7 @@ std::pair<llvm::Value*, Visitor::LLVM::Compiler::StructWrapper*> Visitor::LLVM::
         // could be pointer to struct
         expr_type = strip_ptr_type(expr_type);
         if(!(expr_type->isStructTy())) {
-            throw std::runtime_error("Access can only be done on structs");            
+            abort<Exception::BaseCompilation>(*_curr_span, "Access can only be done on structs");            
         }
         // implicit pointer dereference
         auto old_action = _ctx.ptr_action;
@@ -957,7 +939,7 @@ std::string Visitor::LLVM::Compiler::get_struct_type_name(llvm::Value* str) {
         // possible pointer to struct
         expr_type = strip_ptr_type(expr_type);
         if(!(expr_type->isStructTy())) {
-            throw std::runtime_error("Not a struct type!");            
+            abort<Exception::BaseCompilation>(*_curr_span, "Not a struct type!");            
         }
     }
     return expr_type->getStructName();
@@ -966,6 +948,7 @@ std::string Visitor::LLVM::Compiler::get_struct_type_name(llvm::Value* str) {
 
 // Primary
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
+    _curr_span = &node.span();    
     if(auto var = get_local_var(node.symbol); var) {
         _ctx.ret_value = perform_ptr_action(var.value()->llvm_alloca, nullptr, node.symbol);
         return;
@@ -998,7 +981,7 @@ void Visitor::LLVM::Compiler::visit(const Parser::Nodes::Identifier &node) {
         _ctx.ret_value = meth.value()->llvm_func;
         return;
     }
-    throw std::runtime_error("Use of unknown identifier " + node.symbol);
+    abort<Exception::BaseCompilation>(node, "Use of unknown identifier " + node.symbol);
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::ParenthesisExpr &node) {
@@ -1022,6 +1005,7 @@ std::optional<Visitor::LLVM::Compiler::FuncProtWrapper*> Visitor::LLVM::Compiler
 std::optional<llvm::Value*> Visitor::LLVM::Compiler::get_struct_var(const std::string& name) {
     if(_ctx.curr_struct) {
         auto str_this = _ctx.local_variables[_this_identifier];
+        _curr_span = &_ctx.curr_struct->str->span();
         auto [v, is_meth] = access_struct_field(str_this.llvm_alloca, name);
         if(!is_meth) {
             return v;
@@ -1033,6 +1017,7 @@ std::optional<llvm::Value*> Visitor::LLVM::Compiler::get_struct_var(const std::s
 std::optional<Visitor::LLVM::Compiler::FuncProtWrapper*> Visitor::LLVM::Compiler::get_struct_method(const std::string& name) {
     if(_ctx.curr_struct) {
         auto str_this = _ctx.local_variables[_this_identifier];
+        _curr_span = &_ctx.curr_struct->str->span();
         auto [v, is_meth] = access_struct_field(str_this.llvm_alloca, name);
         if(is_meth) {
             return &_ctx.functions[meth_identifier(name)];
@@ -1050,16 +1035,14 @@ std::optional<Visitor::LLVM::Compiler::GlobalVarWrapper*> Visitor::LLVM::Compile
 
 // Consts
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::IntConstant &node) {
-    // todo for now ints are just 32 bits
     _ctx.ret_value = llvm::ConstantInt::get(_context, llvm::APInt(32, uint32_t(node.value)));
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::StringConstant &node) {
-    throw std::runtime_error("No string support yet");
+    abort<Exception::BaseCompilation>(node, "No string support yet");
 }
 
 void Visitor::LLVM::Compiler::visit(const Parser::Nodes::FloatConstant &node) {
-    // todo for now just doubles
     _ctx.ret_value = llvm::ConstantFP::get(_context, llvm::APFloat(node.value));
 }
 
@@ -1069,7 +1052,7 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
         const Parser::Nodes::VariableDecl &node) {
 
     if(_ctx.local_variables.count(node.identifier->symbol) > 0) {
-        throw std::runtime_error("Variable redeclaration " + node.identifier->symbol);
+        abort<Exception::BaseCompilation>(node, "Variable redeclaration " + node.identifier->symbol);
     }
     llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
     auto alloca = tmp_b.CreateAlloca(
@@ -1087,7 +1070,7 @@ Visitor::LLVM::Compiler::VarWrapper& Visitor::LLVM::Compiler::create_local_var(
             llvm::Type* type) {
 
     if(_ctx.local_variables.count(identifier) > 0) {
-        throw std::runtime_error("Variable redeclaration " + identifier);
+        abort<Exception::BaseCompilation>(*_curr_span, "Variable redeclaration " + identifier);
     }
     llvm::IRBuilder<> tmp_b(&func.getEntryBlock(), func.getEntryBlock().begin());
     auto alloca = tmp_b.CreateAlloca(
@@ -1110,75 +1093,6 @@ llvm::AllocaInst* Visitor::LLVM::Compiler::create_anon_var(
 }
 
 
-llvm::Value *Visitor::LLVM::Compiler::cast(llvm::Value *from, llvm::Value *to) {
-    //std::cerr << "Cast: " << from->getName().str() << " to: " << to->getName().str() << "\n";
-    auto to_type = strip_ptr_type(to);
-    auto from_type = strip_ptr_type(from);
-    if(from_type == to_type) {
-        return from;
-    }
-    if(!llvm::CastInst::isCastable(from_type, to_type)) {
-        throw std::runtime_error("Cannot cast types");
-    }
-    // true means they are signed
-    auto cast = _builder.CreateCast(
-        llvm::CastInst::getCastOpcode(
-            from, true,
-            to_type, true),
-        from,
-        to_type,
-        "__cast_tmp");
-    if(!cast) {
-        throw std::runtime_error("Could not compile cast");
-    }
-    //std::cerr << "Cast ended!\n";
-    return cast;
-}
-
-llvm::Value* Visitor::LLVM::Compiler::cast(llvm::Value* from, const Parser::Types::BaseType& to) {
-    auto from_type = from->getType();
-    auto to_type = Type::to_llvm(to, _context, _ctx.structs);
-
-    if(!llvm::CastInst::isCastable(from_type, to_type)) {
-        throw std::runtime_error("Cannot cast types");
-    }
-    // true means they are signed
-    auto cast = _builder.CreateCast(
-            llvm::CastInst::getCastOpcode(
-                    from, true,
-                    to_type, true),
-            from,
-            to_type,
-            "__cast_tmp");
-    if(!cast) {
-        throw std::runtime_error("Could not compile cast");
-    }
-    return cast;
-}
-
-std::tuple<llvm::Value*, llvm::Value*> Visitor::LLVM::Compiler::promote(llvm::Value *lhs, llvm::Value *rhs) {
-    auto l_type = strip_ptr_type(lhs);
-    auto r_type = strip_ptr_type(rhs);
-    if (l_type->isIntegerTy() && r_type->isIntegerTy()) {
-       if(Type::int_size(l_type) > Type::int_size(r_type)) {
-            rhs = cast(rhs, lhs);
-       } else {
-            lhs = cast(lhs, rhs);
-       }
-    } else if (l_type->isFloatingPointTy() && r_type->isIntegerTy()) {
-        rhs = cast(rhs, lhs);
-    } else if (l_type->isIntegerTy() && r_type->isFloatingPointTy()) {
-        lhs = cast(lhs, rhs);
-    } else if(l_type->isFloatingPointTy() && r_type->isFloatingPointTy()) {
-        if(Type::float_size(l_type) > Type::float_size(r_type)) {
-            rhs = cast(rhs, lhs);
-        } else {
-            lhs = cast(lhs, rhs);
-        }
-    }
-    return std::make_tuple(lhs, rhs);
-}
-
 llvm::Type *Visitor::LLVM::Compiler::strip_ptr_type(llvm::Type *v) {
     auto v_type = v;
     if(auto type_tmp = llvm::dyn_cast<llvm::PointerType>(v_type); type_tmp) {
@@ -1197,19 +1111,15 @@ llvm::Value *Visitor::LLVM::Compiler::perform_ptr_action(
 
     switch (_ctx.ptr_action) {
         case PtrAction::None:
-            //std::cerr << "Ptr action is None\n";
             return nullptr;
         case PtrAction::Store:
-            //std::cerr << "Ptr action is store to " << ptr->getName().str() << "\n";
             if(!v) {
-                throw std::runtime_error("Store of a null value");
+                abort<Exception::BaseCompilation>(*_curr_span, "Store of a null value");
             }
             return _builder.CreateStore(v, ptr);
         case PtrAction::Load:
-            //std::cerr << "ptr action is load as " << load_s << " from: " << ptr->getName().str() <<"\n";
             return _builder.CreateLoad(ptr, load_s);
         case PtrAction::Address:
-            //std::cerr << "ptr actions is address of " << ptr->getName().str() << "\n";
             return ptr;
     }
 }

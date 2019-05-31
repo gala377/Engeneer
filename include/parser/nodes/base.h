@@ -7,8 +7,10 @@
 
 #include <vector>
 #include <memory>
+#include <optional>
 
 #include <parser/visitor.h>
+#include <lexer/token.h>
 
 namespace Parser {
     class Visitor;
@@ -22,15 +24,20 @@ namespace Parser::Nodes {
         virtual ~Base() = default;
         
         explicit Base(std::uint32_t depth);
+        explicit Base(Lexer::Token::Span span);
+        Base(Lexer::Token::Span span, std::uint32_t depth);
 
         virtual const std::uint32_t& depth() const;
         virtual void set_depth(std::uint32_t depth);
 
-        // todo this kinda works, but i doubt it will in the long run
+        virtual const Lexer::Token::Span& span() const; 
+        virtual void set_span(Lexer::Token::Span span);
+
         virtual void accept(Parser::Visitor &v) const;
 
     protected:
         std::uint32_t _depth{0};
+        std::optional<Lexer::Token::Span> _span;
     };
 
     class BaseParent: public Base {

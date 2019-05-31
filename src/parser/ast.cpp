@@ -28,7 +28,6 @@ void Parser::AST::note(Parser::Nodes::FunctionDef *f) {
         throw std::runtime_error("Function redeclaration");
     }
     function_defs[f->declaration->identifier->symbol] = f;
-    // todo avoid collision with global variables
     note(f->declaration.get());
 }
 
@@ -36,7 +35,6 @@ void Parser::AST::note(Parser::Nodes::GlobVariableDecl *v) {
     if(auto res = glob_var_decls.find(v->identifier->symbol); res != glob_var_decls.end()) {
         throw std::runtime_error("Variable redeclaration");
     }
-    // todo avoid collisions with function names 
     glob_var_decls[v->identifier->symbol] = v;
 }
 

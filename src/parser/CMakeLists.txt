@@ -3,7 +3,6 @@ add_library(Parser
         nodes/concrete.cpp
         ast.cpp
         parser.cpp
-        visitor.cpp
         type.cpp)
 target_link_libraries(Parser
         Lexer

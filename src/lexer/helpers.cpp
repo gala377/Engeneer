@@ -86,8 +86,6 @@ namespace Lexer {
         return ch == '"';
     }
 
-    // todo change on checking if '\0'
-    // is how we should show end of file
     bool is_eof(const char ch) {
         return ch == '\0';
     }

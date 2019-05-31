@@ -34,7 +34,9 @@ Parser::Nodes::GlobVariableDecl::GlobVariableDecl(
         std::unique_ptr<Expression>&& init_expr):
         identifier(std::move(identifier)),
         type(std::move(type)),
-        init_expr(std::move(init_expr)) {}
+        init_expr(std::move(init_expr)) {
+    set_span(this->identifier->span());
+}
 
 void Parser::Nodes::GlobVariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -60,7 +62,9 @@ Parser::Nodes::FunctionProt::FunctionProt(
         std::vector<std::unique_ptr<Parser::Nodes::VariableDecl>> &&arg_list) :
         identifier(std::move(identifier)),
         type(std::move(type)),
-        arg_list(std::move(arg_list)) {}
+        arg_list(std::move(arg_list)) {
+        set_span(this->identifier->span());
+}
 
 void Parser::Nodes::FunctionProt::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -76,6 +80,7 @@ Parser::Nodes::FunctionDef::FunctionDef(
         declaration(std::move(decl)), body(std::move(body)) {
     this->declaration->set_depth(_depth+1);
     this->body->set_depth(_depth+1);
+    set_span(this->declaration->span());
 }
 
 void Parser::Nodes::FunctionDef::set_depth(std::uint32_t depth) {
@@ -100,7 +105,9 @@ Parser::Nodes::StructDecl::StructDecl(std::unique_ptr<Identifier>&& identifier,
                                       identifier{std::move(identifier)},
                                       members{std::move(members)},
                                       methods{std::move(methods)},
-                                      wrapped_structs{std::move(wrapped_structs)} {}
+                                      wrapped_structs{std::move(wrapped_structs)} {
+    set_span(this->identifier->span());
+}
 
 void Parser::Nodes::StructDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -138,7 +145,9 @@ Parser::Nodes::VariableDecl::VariableDecl(
         std::unique_ptr<Parser::Nodes::Expression>&& init_expr):
         identifier(std::move(identifier)),
         type(std::move(type)),
-        init_expr(std::move(init_expr)) {}
+        init_expr(std::move(init_expr)) {
+    set_span(this->identifier->span());
+}
 
 void Parser::Nodes::VariableDecl::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -152,7 +161,9 @@ void Parser::Nodes::VariableDecl::set_depth(std::uint32_t depth) {
 }
 
 
-Parser::Nodes::BlockStmt::BlockStmt(std::unique_ptr<Parser::Nodes::CodeBlock> &&body): body(std::move(body)) {}
+Parser::Nodes::BlockStmt::BlockStmt(std::unique_ptr<Parser::Nodes::CodeBlock> &&body): body(std::move(body)) {\
+    set_span(this->body->span());
+}
 
 void Parser::Nodes::BlockStmt::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -169,7 +180,9 @@ Parser::Nodes::IfStmt::IfStmt(std::unique_ptr<Parser::Nodes::Expression> &&cond,
                               std::unique_ptr<Parser::Nodes::BlockStmt> &&else_clause):
                               BlockStmt(std::move(body)),
                               cond(std::move(cond)),
-                              else_clause(std::move(else_clause)) {}
+                              else_clause(std::move(else_clause)) {
+    set_span(this->cond->span());
+}
 
 void Parser::Nodes::IfStmt::set_depth(std::uint32_t depth) {
     BlockStmt::set_depth(depth);
@@ -187,7 +200,9 @@ void Parser::Nodes::IfStmt::accept(Parser::Visitor &v) const {
 Parser::Nodes::WhileStmt::WhileStmt(std::unique_ptr<Parser::Nodes::Expression> &&cond,
                                     std::unique_ptr<Parser::Nodes::CodeBlock> &&body):
                                     BlockStmt(std::move(body)),
-                                    cond(std::move(cond)) {}
+                                    cond(std::move(cond)) {
+    set_span(this->cond->span());
+}
 
 void Parser::Nodes::WhileStmt::set_depth(std::uint32_t depth) {
     BlockStmt::set_depth(depth);
@@ -200,7 +215,11 @@ void Parser::Nodes::WhileStmt::accept(Parser::Visitor &v) const {
 
 
 Parser::Nodes::ReturnStmt::ReturnStmt(std::unique_ptr<Parser::Nodes::Expression> &&expr):
-                                      expr(std::move(expr)) {}
+                                      expr(std::move(expr)) {
+    if(this->expr) {
+        set_span(this->expr->span());
+    }
+}
 
 void Parser::Nodes::ReturnStmt::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -229,7 +248,9 @@ Parser::Nodes::AtStmt::AtStmt(
             std::unique_ptr<Expression>&& address):
             identifier{std::move(ident)},
             var_decl{std::move(var_decl)},
-            address{std::move(address)} {}
+            address{std::move(address)} {
+    set_span(this->identifier->span());
+}
 
 void Parser::Nodes::AtStmt::set_depth(std::uint32_t depth) {
     Statement::set_depth(depth);
@@ -256,7 +277,9 @@ Parser::Nodes::BinaryExpr::BinaryExpr(
         std::unique_ptr<Parser::Nodes::Expression> &&lhs,
         const Lexer::Token& op,
         std::unique_ptr<Parser::Nodes::Expression> &&rhs):
-        lhs(std::move(lhs)), rhs(std::move(rhs)), op(op) {}
+        lhs(std::move(lhs)), rhs(std::move(rhs)), op(op) {
+    set_span(this->lhs->span());
+}
 
 void Parser::Nodes::BinaryExpr::set_depth(std::uint32_t depth) {
     Base::set_depth(depth);
@@ -331,7 +354,9 @@ void Parser::Nodes::MultiplicativeExpr::accept(Parser::Visitor &v) const {
 Parser::Nodes::UnaryExpr::UnaryExpr(
         const Lexer::Token& op,
         std::unique_ptr<Parser::Nodes::Expression> &&rhs):
-        op(op), rhs(std::move(rhs)) {}
+        op(op), rhs(std::move(rhs)) {
+    set_span(this->op.span);
+}
 
 void Parser::Nodes::UnaryExpr::set_depth(std::uint32_t depth) {
     Base::set_depth(depth);
@@ -361,7 +386,9 @@ void Parser::Nodes::DereferenceExpr::accept(Parser::Visitor &v) const {
 
 // Postfix
 Parser::Nodes::PostfixExpr::PostfixExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs):
-    lhs(std::move(lhs)) {}
+    lhs(std::move(lhs)) {
+    set_span(this->lhs->span());
+}
 
 void Parser::Nodes::PostfixExpr::set_depth(std::uint32_t depth) {
     Base::set_depth(depth);
@@ -375,7 +402,9 @@ void Parser::Nodes::PostfixExpr::accept(Parser::Visitor &v) const {
 
 Parser::Nodes::CastExpr::CastExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
                                   std::unique_ptr<Parser::Types::BaseType> &&type):
-                                  lhs(std::move(lhs)), type(std::move(type)) {}
+                                  lhs(std::move(lhs)), type(std::move(type)) {
+    set_span(this->lhs->span());
+}
 
 void Parser::Nodes::CastExpr::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -389,7 +418,7 @@ void Parser::Nodes::CastExpr::set_depth(std::uint32_t depth) {
 
 Parser::Nodes::CallExpr::CallExpr(std::unique_ptr<Parser::Nodes::Expression> &&lhs,
                                   std::vector<std::unique_ptr<Parser::Nodes::Expression>> &&args):
-                                  PostfixExpr(std::move(lhs)), args(std::move(args)){}
+                                  PostfixExpr(std::move(lhs)), args(std::move(args)) {}
 
 
 void Parser::Nodes::CallExpr::set_depth(std::uint32_t depth) {
@@ -440,7 +469,15 @@ void Parser::Nodes::PrimaryExpr::accept(Parser::Visitor &v) const {
 }
 
 
-Parser::Nodes::Identifier::Identifier(const std::string& symbol) : symbol(symbol) {};
+Parser::Nodes::Identifier::Identifier(const Lexer::Token& tok): 
+    symbol(tok.symbol) {
+    set_span(tok.span);
+};
+
+Parser::Nodes::Identifier::Identifier(const std::string& symbol, Lexer::Token::Span span):
+    symbol(symbol) {
+    set_span(std::move(span));
+}
 
 void Parser::Nodes::Identifier::accept(Parser::Visitor &v) const {
     v.visit(*this);
@@ -450,6 +487,7 @@ void Parser::Nodes::Identifier::accept(Parser::Visitor &v) const {
 Parser::Nodes::ParenthesisExpr::ParenthesisExpr(std::unique_ptr<Parser::Nodes::Expression> &&expr):
         expr(std::move(expr)) {
     this->expr->set_depth(_depth + 1);
+    set_span(this->expr->span());
 }
 
 void Parser::Nodes::ParenthesisExpr::set_depth(std::uint32_t depth) {
@@ -469,21 +507,27 @@ void Parser::Nodes::Constant::accept(Parser::Visitor &v) const {
 }
 
 
-Parser::Nodes::IntConstant::IntConstant(int value): value(value) {}
+Parser::Nodes::IntConstant::IntConstant(int value, Lexer::Token::Span span): value(value) {
+    set_span(std::move(span));
+}
 
 void Parser::Nodes::IntConstant::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
 
-Parser::Nodes::StringConstant::StringConstant(const std::string& value): value(value) {}
+Parser::Nodes::StringConstant::StringConstant(const std::string& value, Lexer::Token::Span span): value(value) {
+    set_span(std::move(span));
+}
 
 void Parser::Nodes::StringConstant::accept(Parser::Visitor &v) const {
     v.visit(*this);
 }
 
 
-Parser::Nodes::FloatConstant::FloatConstant(double value): value(value) {}
+Parser::Nodes::FloatConstant::FloatConstant(double value, Lexer::Token::Span span): value(value) {
+    set_span(std::move(span));
+}
 
 void Parser::Nodes::FloatConstant::accept(Parser::Visitor &v) const {
     v.visit(*this);

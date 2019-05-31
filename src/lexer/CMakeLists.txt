@@ -5,3 +5,5 @@ add_library(Lexer
         lexer.cpp
         token.cpp
         helpers.cpp)
+target_link_libraries(Lexer
+        Exception) 

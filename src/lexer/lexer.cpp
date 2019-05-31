@@ -8,11 +8,6 @@
 #include <lexer/helpers.h>
 
 
-// todo max lenght for the indentifiers
-// todo  error reporting instead of throw?
-// todo  but should me abort? What kind of errors should they be?
-// todo  like Syntax or what?
-
 const Lexer::Lexer::SymbolMap Lexer::Lexer::_KEYWORDS = {
         {"if", Token::Id::If},
         {"else", Token::Id::Else},
@@ -81,7 +76,6 @@ Lexer::Lexer::Lexer(Source::Base &source):
     _init_curr_token();
 }
 
-// todo how to?
 Lexer::Lexer::Lexer(Source::Base &source, Exception::Handler &h):
     HandlingMixin(h),
     _source(source),
@@ -121,10 +115,6 @@ const Lexer::Token Lexer::Lexer::peek() const {
     return _next_token;
 }
 
-// todo
-// for now skips new lines and blank characters
-// change in later
-// maybe context again?
 const Lexer::Token Lexer::Lexer::next_token() {
     auto ch = _source.curr_char();
     auto asm_id = char_to_assembler_id(ch);
@@ -186,8 +176,6 @@ Lexer::Token Lexer::Lexer::_process_blank_char(char ch) {
     return Token{Token::Id::Space, {ch}, _source};
 }
 
-// todo integer and float distinction later maybe double and so on
-// because now it returns just integers
 Lexer::Token Lexer::Lexer::_process_numeric(char ch) {
     auto [is_float, symbol] = _assemble_numeric(ch);
     return Token {

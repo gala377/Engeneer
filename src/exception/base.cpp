@@ -30,11 +30,20 @@ Exception::BaseSyntax::BaseSyntax(const Lexer::Token &tok, const std::string &me
         mess
     } {}
 
-Exception::BaseCompilation::BaseCompilation(const Lexer::Token &tok, const std::string& mess):
+Exception::BaseCompilation::BaseCompilation(const Parser::Nodes::Base& node, const std::string& mess):
     BaseCompilation {
-        tok.span.source_name,
-        tok.span.line,
-        tok.span.beg_pos,
-        tok.span.ptr,
+        node.span().source_name,
+        node.span().line,
+        node.span().beg_pos,
+        node.span().ptr,
+        mess
+    } {}
+
+Exception::BaseCompilation::BaseCompilation(const Lexer::Token::Span& span, const std::string& mess): 
+    BaseCompilation {
+        span.source_name,
+        span.line,
+        span.beg_pos,
+        span.ptr,
         mess
     } {}

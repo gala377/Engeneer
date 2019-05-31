@@ -37,7 +37,6 @@ namespace Lexer {
             Number,
             Operator,
             String,
-            //Char,
             Blank,
             Eof,
             Comment,

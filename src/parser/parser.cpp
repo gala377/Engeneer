@@ -48,9 +48,9 @@ Parser::AST Parser::Parser::parse() {
 void Parser::Parser::unwind_wraps_decl(Nodes::StructDecl& node) {
     for(auto& ident: node.wrapped_structs) {
         node.members.emplace_back(std::make_unique<Nodes::VariableDecl>(
-            std::make_unique<Nodes::Identifier>(ident->symbol),
+            std::make_unique<Nodes::Identifier>(ident->symbol, ident->span()),
             std::make_unique<Types::SimpleType>(
-                std::make_unique<Nodes::Identifier>(ident->symbol))));
+                std::make_unique<Nodes::Identifier>(ident->symbol, ident->span()))));
         const auto& wrapping = std::find_if(
             _structs_decls.begin(),
             _structs_decls.end(),
@@ -59,7 +59,6 @@ void Parser::Parser::unwind_wraps_decl(Nodes::StructDecl& node) {
             });
         if(wrapping == _structs_decls.end()) {
             abort<Exception::BaseSyntax>(
-                // todo it points to end of file 
                 _lexer.curr_token(),
                 std::string{"Undefined type in wraps decl "} + ident->symbol);
         }
@@ -94,13 +93,13 @@ std::unique_ptr<Parser::Nodes::FunctionProt> Parser::Parser::copy_func_prot(cons
         o_prot = dynamic_cast<const Nodes::FunctionDef*>(&func)->declaration.get();
     }
     auto ident = std::make_unique<Nodes::Identifier>(
-        o_prot->identifier->symbol);
+        o_prot->identifier->symbol, o_prot->identifier->span());
     auto ret = o_prot->type->copy();
     std::vector<std::unique_ptr<Nodes::VariableDecl>> args;
     for(auto& arg: o_prot->arg_list) {
         args.emplace_back(
             std::make_unique<Nodes::VariableDecl>(
-                std::make_unique<Nodes::Identifier>(arg->identifier->symbol),
+                std::make_unique<Nodes::Identifier>(arg->identifier->symbol, arg->identifier->span()),
                 arg->type->copy()));
     }
     return std::make_unique<Nodes::FunctionProt>(
@@ -116,14 +115,14 @@ std::unique_ptr<Parser::Nodes::CodeBlock> Parser::Parser::gen_delegates_body(
     std::vector<std::unique_ptr<Nodes::Expression>> args;
     for(auto& arg: func.arg_list) {
         args.emplace_back(
-            std::make_unique<Nodes::Identifier>(arg->identifier->symbol));
+            std::make_unique<Nodes::Identifier>(arg->identifier->symbol, arg->identifier->span()));
     }
 
     auto ret = std::make_unique<Nodes::ReturnStmt>(
         std::make_unique<Nodes::CallExpr>(
             std::make_unique<Nodes::AccessExpr>(
-                std::make_unique<Nodes::Identifier>(wrapping.identifier->symbol),
-                std::make_unique<Nodes::Identifier>(func.identifier->symbol)),
+                std::make_unique<Nodes::Identifier>(wrapping.identifier->symbol, wrapping.identifier->span()),
+                std::make_unique<Nodes::Identifier>(func.identifier->symbol, wrapping.identifier->span())),
             std::move(args))
     );
     code_block->add_child(std::move(ret));
@@ -239,8 +238,6 @@ std::unique_ptr<Parser::Nodes::MemoryDecl> Parser::Parser::parse_memory_decl() {
 }
 
 std::unique_ptr<Parser::Nodes::StructDecl> Parser::Parser::parse_struct_decl() {
-    // todo we didnt want to have a struct keyword but its really hard to parse it
-    // todo so I leave it for now and maybe delete it later? I dont know?
     if(!parse_token(Lexer::Token::Id::Struct)) {
         return nullptr;
     }
@@ -291,7 +288,6 @@ Parser::Parser::unique_vec<Parser::Nodes::Identifier> Parser::Parser::parse_wrap
     return wrapped_structs;
 }
 
-// todo refactor
 Parser::Parser::struct_body_parse_res_t Parser::Parser::parse_struct_body() {
     unique_vec<Nodes::VariableDecl> members;
     unique_vec<Nodes::FunctionDecl> methods;
@@ -687,8 +683,6 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_expr() {
 
 
 // Binary
-// todo make assignment stack, for now it does not
-
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_assig_expr() {
     auto lhs = parse_logical_or_expr();
     if(!lhs) {
@@ -1117,7 +1111,7 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_prim_expr() {
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_ident() {
     auto res = parse_token(Lexer::Token::Id::Identifier);
-    return res ? std::make_unique<Nodes::Identifier>(res->symbol) : nullptr;
+    return res ? std::make_unique<Nodes::Identifier>(*res) : nullptr;
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_parenthesis() {
@@ -1147,18 +1141,18 @@ std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_const() {
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_int() {
     auto res = parse_token(Lexer::Token::Id::Integer);
-    return res ? std::make_unique<Nodes::IntConstant>(std::stoi(res->symbol)) : nullptr;
+    return res ? std::make_unique<Nodes::IntConstant>(std::stoi(res->symbol), res->span) : nullptr;
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_string() {
 
     auto res = parse_token(Lexer::Token::Id::String);
-    return res ? std::make_unique<Nodes::StringConstant>(res->symbol) : nullptr;
+    return res ? std::make_unique<Nodes::StringConstant>(res->symbol, res->span) : nullptr;
 }
 
 std::unique_ptr<Parser::Nodes::Expression> Parser::Parser::parse_float() {
     auto res = parse_token(Lexer::Token::Id::Float);
-    return res ? std::make_unique<Nodes::FloatConstant>(std::stod(res->symbol)) : nullptr;
+    return res ? std::make_unique<Nodes::FloatConstant>(std::stod(res->symbol), res->span) : nullptr;
 }
 
 // Token Parsers
@@ -1218,12 +1212,11 @@ std::unique_ptr<Parser::Types::ComplexType> Parser::Parser::parse_complex_type()
 }
 
 std::unique_ptr<Parser::Types::ArrayType> Parser::Parser::parse_array_type() {
-    if(!parse_token(Lexer::Token::Id::LeftSquareBracket)) {
+    std::optional<Lexer::Token> tok;
+    if(tok = parse_token(Lexer::Token::Id::LeftSquareBracket); !tok) {
         return nullptr;
     }
-    // todo for now just integers, later maybe expressions which are consts
-    // todo that would be nice
-    auto size = std::make_unique<Nodes::IntConstant>(0);
+    auto size = std::make_unique<Nodes::IntConstant>(0, tok->span);
     if(!parse_token(Lexer::Token::Id::RightSquareBracket)) {
         size = parse_cast<Nodes::IntConstant>(&Parser::parse_int);
         if(!size) {

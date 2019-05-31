@@ -5,6 +5,7 @@
 #ifndef TKOM2_LLVM_H
 #define TKOM2_LLVM_H
 
+#include "exception/handler.h"
 #include <llvm/IR/GlobalVariable.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Type.h>
@@ -22,6 +23,7 @@
 #include <parser/visitor.h>
 #include <parser/ast.h>
 #include <visitor/base.h>
+#include <exception/handling_mixin.h>
 
 #include <llvm/Pass.h>
 #include <llvm/IR/LLVMContext.h>
@@ -31,7 +33,7 @@
 
 namespace Visitor::LLVM {
 
-    class Compiler: public Visitor::Base {
+    class Compiler: public Visitor::Base, public Exception::HandlingMixin {
     public:
         explicit Compiler(Parser::AST& ast, std::string ofname = "output.o");
 
@@ -128,11 +130,6 @@ namespace Visitor::LLVM {
         llvm::LLVMContext _context;
         std::unique_ptr<llvm::Module> _module = std::make_unique<llvm::Module>("Main", _context);
         llvm::IRBuilder<> _builder{_context};
-
-        // todo pass manager per module? Its marked as legacy?
-        // todo its legacy and we cannot find the passes so
-        // todo maybe it changed and the tutorial hasn't been updated?
-        // todo remember about mem2reg for alloca optimalizations
         std::unique_ptr<llvm::legacy::FunctionPassManager> _func_pass_manager = std::make_unique<llvm::legacy::FunctionPassManager>(_module.get());
 
         llvm::TargetMachine* _target_machine;
@@ -203,8 +200,8 @@ namespace Visitor::LLVM {
         std::pair<llvm::Value*, StructWrapper*> get_struct_value_with_info(llvm::Value* str);
         std::string get_struct_type_name(llvm::Value* str);
 
-        // todo llvm::Value* access_struct_field(llvm::Value* str, std::uint64_t )        
         llvm::Function* access_struct_method(llvm::Value* str, const std::string& meth_name);
+        const Lexer::Token::Span* _curr_span;
         
         // find helpers
         std::optional<VarWrapper*> get_local_var(const std::string& name);
@@ -226,10 +223,7 @@ namespace Visitor::LLVM {
         using call_info = std::tuple<llvm::Value*, llvm::Value*, FuncProtWrapper*>;    
         call_info compile_call_lhs(const Parser::Nodes::Expression &lhs);
 
-        llvm::Value* cast(llvm::Value* from, llvm::Value* to);
-        llvm::Value* cast(llvm::Value* from, const Parser::Types::BaseType& to);
 
-        std::tuple<llvm::Value*, llvm::Value*> promote(llvm::Value* lhs, llvm::Value* rhs);
         llvm::Type* strip_ptr_type(llvm::Type *v);
         llvm::Type* strip_ptr_type(llvm::Value* v);
 

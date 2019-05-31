@@ -448,7 +448,8 @@ namespace Parser::Nodes {
 
     class Identifier: public PrimaryExpr {
     public:
-        explicit Identifier(const std::string& symbol);
+        explicit Identifier(const Lexer::Token& tok);
+        Identifier(const std::string& symbol, Lexer::Token::Span span);
 
         std::string symbol;
 
@@ -474,8 +475,8 @@ namespace Parser::Nodes {
 
     class IntConstant: public Constant {
     public:
-        explicit IntConstant(int value);
-
+        IntConstant(int value, Lexer::Token::Span span);
+        
         int value;
 
         void accept(Parser::Visitor &v) const override;
@@ -483,7 +484,7 @@ namespace Parser::Nodes {
 
     class StringConstant: public Constant {
     public:
-        explicit StringConstant(const std::string& value);
+        StringConstant(const std::string& value, Lexer::Token::Span span);
 
         std::string value;
 
@@ -492,7 +493,7 @@ namespace Parser::Nodes {
 
     class FloatConstant: public Constant {
     public:
-        explicit FloatConstant(double value);
+        FloatConstant(double value, Lexer::Token::Span span);
 
         double value;
 

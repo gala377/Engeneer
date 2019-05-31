@@ -33,19 +33,21 @@ int main(int argc, char** argv) {
     try {
         ast = p.parse();
         p.excp_handler().throw_if_able();
+    
+        Visitor::Stringify v(ast);
+        ast.accept(v);
+        std::cerr << "Code parsed!\n\n""";
+        std::cerr << v.repr();
+        
+        Visitor::LLVM::Compiler comp(ast, argv[2]);
+   
+        std::cerr << "\nCompiling\n";
+        ast.accept(comp);
+        std::cerr << "Compiled\n";
+
     } catch(Exception::Handler::Abort& e) {
         std::cerr << "Parsing error\n";
         std::cerr << e.what();
-    }
-    Visitor::LLVM::Compiler comp(ast, argv[2]);
-    Visitor::Stringify v(ast);
-    ast.accept(v);
-    std::cerr << "Code parsed!\n\n""";
-    std::cerr << v.repr();
-
-    std::cerr << "\nCompiling\n";
-    ast.accept(comp);
-    std::cerr << "Compiled\n";
-
+    }    
     return 0;
 }

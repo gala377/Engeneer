@@ -11,7 +11,7 @@
 #include <boost/format.hpp>
 #include <lexer/token.h>
 #include <lexer/source/base.h>
-
+#include <parser/nodes/base.h>
 
 namespace Exception {
 
@@ -58,7 +58,8 @@ namespace Exception {
     public:
         using BaseFilePositioned::BaseFilePositioned;
 
-        BaseCompilation(const Lexer::Token& tok, const std::string& mess);
+        BaseCompilation(const Parser::Nodes::Base& node, const std::string& mess);
+        BaseCompilation(const Lexer::Token::Span& span, const std::string& mess);
     };
 }
 
